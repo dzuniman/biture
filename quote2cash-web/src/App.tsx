@@ -55,6 +55,17 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const totals = {
+    clients: clients.length,
+    quotes: quotes.length,
+    jobCards: jobCards.length,
+    costs: costs.length,
+    invoices: invoices.length,
+    statements: statements.length,
+    invoiceAmount: invoices.reduce((sum, item) => sum + item.amount, 0),
+    unpaidAmount: invoices.filter((invoice) => invoice.status !== 'Paid').reduce((sum, item) => sum + item.amount, 0)
+  };
+
   const loadAll = async () => {
     try {
       setError(null);
@@ -168,6 +179,51 @@ function App() {
             {section.toUpperCase()}
           </button>
         ))}
+      </div>
+
+      <div className="dashboard-grid">
+        <div className="summary-card">
+          <span>Clients</span>
+          <strong>{totals.clients}</strong>
+        </div>
+        <div className="summary-card">
+          <span>Quotes</span>
+          <strong>{totals.quotes}</strong>
+        </div>
+        <div className="summary-card">
+          <span>Job cards</span>
+          <strong>{totals.jobCards}</strong>
+        </div>
+        <div className="summary-card">
+          <span>Costs</span>
+          <strong>{totals.costs}</strong>
+        </div>
+        <div className="summary-card">
+          <span>Invoices</span>
+          <strong>{totals.invoices}</strong>
+        </div>
+        <div className="summary-card">
+          <span>Statements</span>
+          <strong>{totals.statements}</strong>
+        </div>
+        <div className="summary-card highlight">
+          <span>Invoice total</span>
+          <strong>{totals.invoiceAmount.toFixed(2)}</strong>
+        </div>
+        <div className="summary-card highlight">
+          <span>Open unpaid</span>
+          <strong>{totals.unpaidAmount.toFixed(2)}</strong>
+        </div>
+      </div>
+
+      <div className="section-header">
+        <div>
+          <h2>{selectedSection.toUpperCase()}</h2>
+          <p>Live workbook data from your API and database.</p>
+        </div>
+        <button className="refresh-button" onClick={refresh} disabled={isLoading}>
+          Refresh data
+        </button>
       </div>
 
       {error && <div className="status error">{error}</div>}

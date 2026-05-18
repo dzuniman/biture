@@ -110,6 +110,65 @@ button:disabled {
   cursor: not-allowed;
 }
 
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.summary-card {
+  border: 1px solid rgba(67, 56, 202, 0.12);
+  background: linear-gradient(180deg, #ffffff 0%, #eef2ff 100%);
+  border-radius: 20px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 108px;
+}
+
+.summary-card span {
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.summary-card strong {
+  font-size: 1.6rem;
+  color: #1e293b;
+}
+
+.summary-card.highlight {
+  background: linear-gradient(180deg, #4338ca 0%, #6366f1 100%);
+  color: white;
+  border-color: transparent;
+}
+
+.section-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.section-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.section-header p {
+  margin: 6px 0 0;
+  color: #475569;
+}
+
+.refresh-button {
+  background: #2563eb;
+  padding: 12px 20px;
+  border-radius: 999px;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
