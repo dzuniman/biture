@@ -70,8 +70,8 @@ namespace Quote2Cash.Persistence.Services
                     Description = $"Job card for {client.Name} task {i}",
                     Status = statuses[Random.Shared.Next(statuses.Length)],
                     CreatedAt = now.AddDays(-Random.Shared.Next(0, 150)),
-                    StartDate = now.AddDays(-Random.Shared.Next(150, 100)),
-                    EndDate = now.AddDays(-Random.Shared.Next(30, 1)),
+                    StartDate = now.AddDays(-Random.Shared.Next(100, 150)),
+                    EndDate = now.AddDays(-Random.Shared.Next(1, 30)),
                     TotalCost = Math.Round((decimal)(2000 + Random.Shared.NextDouble() * 15000), 2)
                 })).ToList();
 
@@ -88,26 +88,54 @@ namespace Quote2Cash.Persistence.Services
                     IncurredAt = job.CreatedAt.AddDays(i * 3)
                 })).ToList();
 
+            var quotesByClient = quotes
+                .GroupBy(q => q.ClientId)
+                .Where(g => g.Key.HasValue)
+                .ToDictionary(g => g.Key!.Value, g => g.ToList());
+
             var invoices = clients.SelectMany((client, index) =>
-                Enumerable.Range(1, 2).Select(i => new Invoice
+                Enumerable.Range(1, 2).Select(i =>
+                {
+                    var clientQuotes = quotesByClient.GetValueOrDefault(client.Id) ?? new List<Quote>();
+                    var attachedQuote = clientQuotes.Count > 0 ? clientQuotes[Random.Shared.Next(clientQuotes.Count)] : null;
+                    var amount = attachedQuote != null
+                        ? Math.Round(attachedQuote.Amount * (decimal)(0.75 + Random.Shared.NextDouble() * 0.5), 2)
+                        : Math.Round((decimal)(3500 + Random.Shared.NextDouble() * 18000), 2);
+
+                    return new Invoice
+                    {
+                        Id = Guid.NewGuid(),
+                        ClientId = client.Id,
+                        QuoteId = attachedQuote?.Id,
+                        InvoiceNumber = $"INV-{index + 1:00}{i:000}",
+                        Amount = amount,
+                        Status = i % 2 == 0 ? "Paid" : "Unpaid",
+                        CreatedAt = now.AddDays(-Random.Shared.Next(15, 90)),
+                        DueDate = now.AddDays(Random.Shared.Next(15, 60))
+                    };
+                })).ToList();
+
+            foreach (var job in jobCards)
+            {
+                job.TotalCost = costs.Where(c => c.JobCardId == job.Id).Sum(c => c.Amount);
+            }
+
+            var statements = clients.Select(client =>
+            {
+                var clientInvoices = invoices.Where(i => i.ClientId == client.Id).ToList();
+                var unpaidInvoiceAmount = clientInvoices.Where(i => i.Status != "Paid").Sum(i => i.Amount);
+                var clientCostAmount = costs.Where(c => c.ClientId == client.Id).Sum(c => c.Amount);
+                var balance = Math.Round(unpaidInvoiceAmount + clientCostAmount * 0.15m, 2);
+
+                return new Statement
                 {
                     Id = Guid.NewGuid(),
                     ClientId = client.Id,
-                    InvoiceNumber = $"INV-{index + 1:00}{i:000}",
-                    Amount = Math.Round((decimal)(3500 + Random.Shared.NextDouble() * 18000), 2),
-                    Status = i % 2 == 0 ? "Paid" : "Unpaid",
-                    CreatedAt = now.AddDays(-Random.Shared.Next(15, 90)),
-                    DueDate = now.AddDays(Random.Shared.Next(15, 60))
-                })).ToList();
-
-            var statements = clients.Select(client => new Statement
-            {
-                Id = Guid.NewGuid(),
-                ClientId = client.Id,
-                Period = "2026-Q2",
-                Balance = Math.Round((decimal)(Random.Shared.NextDouble() * 25000 - 5000), 2),
-                Status = "Open",
-                CreatedAt = now.AddDays(-Random.Shared.Next(1, 20))
+                    Period = "2026-Q2",
+                    Balance = Math.Max(balance, 0),
+                    Status = "Open",
+                    CreatedAt = now.AddDays(-Random.Shared.Next(1, 20))
+                };
             }).ToList();
 
             await context.Clients.AddRangeAsync(clients);

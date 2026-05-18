@@ -14,6 +14,8 @@ export default function StatementList({ statements }: Props) {
             <th>Period</th>
             <th>Client</th>
             <th>Balance</th>
+            <th>Invoice total</th>
+            <th>Open unpaid</th>
             <th>Status</th>
             <th>Created</th>
           </tr>
@@ -24,6 +26,8 @@ export default function StatementList({ statements }: Props) {
               <td>{statement.period}</td>
               <td>{statement.client?.name ?? '—'}</td>
               <td>{statement.balance.toFixed(2)}</td>
+              <td>{(statement.invoiceTotal ?? 0).toFixed(2)}</td>
+              <td>{(statement.unpaidAmount ?? 0).toFixed(2)}</td>
               <td>{statement.status}</td>
               <td>{statement.createdAt ? new Date(statement.createdAt).toLocaleDateString() : '—'}</td>
             </tr>

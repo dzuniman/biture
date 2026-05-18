@@ -21,18 +21,37 @@ namespace Quote2Cash.API.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<object>>> GetQuotes()
         {
+            var invoiceSummaries = await _context.Invoices.AsNoTracking()
+                .Where(i => i.QuoteId != null)
+                .GroupBy(i => i.QuoteId)
+                .Select(g => new
+                {
+                    QuoteId = g.Key!.Value,
+                    Count = g.Count(),
+                    Total = g.Sum(i => i.Amount)
+                })
+                .ToListAsync();
+
+            var invoiceLookup = invoiceSummaries.ToDictionary(x => x.QuoteId, x => x);
             var quotes = await _context.Quotes.AsNoTracking().Include(q => q.Client).OrderByDescending(q => q.CreatedAt).ToListAsync();
-            return Ok(quotes.Select(q => new
+
+            return Ok(quotes.Select(q =>
             {
-                q.Id,
-                q.Reference,
-                q.CustomerName,
-                q.Description,
-                q.Amount,
-                q.Status,
-                q.CreatedAt,
-                q.DueDate,
-                Client = q.Client != null ? new { q.Client.Id, q.Client.Name } : null
+                invoiceLookup.TryGetValue(q.Id, out var summary);
+                return new
+                {
+                    q.Id,
+                    q.Reference,
+                    q.CustomerName,
+                    q.Description,
+                    q.Amount,
+                    q.Status,
+                    q.CreatedAt,
+                    q.DueDate,
+                    InvoiceCount = summary?.Count ?? 0,
+                    InvoiceTotal = summary?.Total ?? 0m,
+                    Client = q.Client != null ? new { q.Client.Id, q.Client.Name } : null
+                };
             }));
         }
 

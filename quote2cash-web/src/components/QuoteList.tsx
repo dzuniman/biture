@@ -15,6 +15,7 @@ export default function QuoteList({ quotes }: Props) {
             <th>Customer</th>
             <th>Client</th>
             <th>Amount</th>
+            <th>Invoices</th>
             <th>Status</th>
             <th>Due</th>
             <th>Created</th>
@@ -27,6 +28,10 @@ export default function QuoteList({ quotes }: Props) {
               <td>{quote.customerName}</td>
               <td>{quote.client?.name ?? '—'}</td>
               <td>{quote.amount.toFixed(2)}</td>
+              <td>
+                {quote.invoiceCount ?? 0}
+                {quote.invoiceTotal ? ` / ${quote.invoiceTotal.toFixed(2)}` : ''}
+              </td>
               <td>{quote.status}</td>
               <td>{quote.dueDate ? new Date(quote.dueDate).toLocaleDateString() : '—'}</td>
               <td>{new Date(quote.createdAt).toLocaleDateString()}</td>

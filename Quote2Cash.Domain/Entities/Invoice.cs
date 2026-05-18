@@ -15,4 +15,4 @@ namespace Quote2Cash.Domain.Entities
         public DateTime CreatedAt { get; set; }
         public DateTime DueDate { get; set; }
     }
-}}
+}

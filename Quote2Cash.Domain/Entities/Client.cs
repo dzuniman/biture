@@ -18,4 +18,4 @@ namespace Quote2Cash.Domain.Entities
         public ICollection<Statement> Statements { get; set; } = new List<Statement>();
         public ICollection<Cost> Costs { get; set; } = new List<Cost>();
     }
-}}
+}

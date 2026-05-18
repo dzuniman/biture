@@ -17,6 +17,8 @@ export interface Quote {
   status: string;
   createdAt: string;
   dueDate?: string;
+  invoiceCount?: number;
+  invoiceTotal?: number;
   client?: { id: string; name: string } | null;
 }
 
@@ -30,6 +32,8 @@ export interface JobCard {
   startDate?: string;
   endDate?: string;
   totalCost: number;
+  costCount?: number;
+  costTotal?: number;
 }
 
 export interface Cost {
@@ -51,6 +55,7 @@ export interface Invoice {
   status: string;
   createdAt: string;
   dueDate: string;
+  isOverdue?: boolean;
   quote?: { id: string; reference: string } | null;
 }
 
@@ -61,6 +66,8 @@ export interface Statement {
   balance: number;
   status: string;
   createdAt: string;
+  invoiceTotal?: number;
+  unpaidAmount?: number;
 }
 
 export interface ClientCreateRequest {

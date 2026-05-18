@@ -15,4 +15,4 @@ namespace Quote2Cash.Domain.Entities
         public string Status { get; set; } = string.Empty;
         public DateTime IncurredAt { get; set; }
     }
-}}
+}

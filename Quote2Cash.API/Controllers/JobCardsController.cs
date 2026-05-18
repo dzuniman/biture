@@ -17,9 +17,13 @@ namespace Quote2Cash.API.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<JobCard>>> GetJobCards()
+        public async Task<ActionResult<IEnumerable<object>>> GetJobCards()
         {
-            var jobCards = await _context.JobCards.AsNoTracking().Include(j => j.Client).ToListAsync();
+            var jobCards = await _context.JobCards.AsNoTracking()
+                .Include(j => j.Client)
+                .Include(j => j.Costs)
+                .ToListAsync();
+
             return Ok(jobCards.Select(j => new
             {
                 j.Id,
@@ -30,6 +34,8 @@ namespace Quote2Cash.API.Controllers
                 j.StartDate,
                 j.EndDate,
                 j.TotalCost,
+                CostCount = j.Costs.Count,
+                CostTotal = j.Costs.Sum(c => c.Amount),
                 Client = j.Client != null ? new { j.Client.Id, j.Client.Name } : null
             }));
         }

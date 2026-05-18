@@ -18,6 +18,7 @@ export default function InvoiceList({ invoices }: Props) {
             <th>Created</th>
             <th>Due</th>
             <th>Status</th>
+            <th>Overdue</th>
           </tr>
         </thead>
         <tbody>
@@ -30,6 +31,7 @@ export default function InvoiceList({ invoices }: Props) {
               <td>{invoice.createdAt ? new Date(invoice.createdAt).toLocaleDateString() : '—'}</td>
               <td>{invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '—'}</td>
               <td>{invoice.status}</td>
+              <td>{invoice.isOverdue ? 'Yes' : 'No'}</td>
             </tr>
           ))}
         </tbody>
