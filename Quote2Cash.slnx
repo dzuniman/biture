@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="Quote2Cash.API/Quote2Cash.API.csproj" />
+  <Project Path="Quote2Cash.Application/Quote2Cash.Application.csproj" />
+  <Project Path="Quote2Cash.Domain/Quote2Cash.Domain.csproj" />
+  <Project Path="Quote2Cash.Infrastructure/Quote2Cash.Infrastructure.csproj" />
+  <Project Path="Quote2Cash.Persistence/Quote2Cash.Persistence.csproj" />
+</Solution>
