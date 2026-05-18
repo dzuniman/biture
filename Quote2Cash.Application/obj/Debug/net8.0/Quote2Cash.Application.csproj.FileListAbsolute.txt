@@ -1,0 +1,11 @@
+C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Application\bin\Debug\net8.0\Quote2Cash.Application.deps.json
+C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Application\bin\Debug\net8.0\Quote2Cash.Application.dll
+C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Application\bin\Debug\net8.0\Quote2Cash.Application.pdb
+C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Application\obj\Debug\net8.0\Quote2Cash.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Application\obj\Debug\net8.0\Quote2Cash.Application.AssemblyInfoInputs.cache
+C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Application\obj\Debug\net8.0\Quote2Cash.Application.AssemblyInfo.cs
+C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Application\obj\Debug\net8.0\Quote2Cash.Application.csproj.CoreCompileInputs.cache
+C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Application\obj\Debug\net8.0\Quote2Cash.Application.dll
+C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Application\obj\Debug\net8.0\refint\Quote2Cash.Application.dll
+C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Application\obj\Debug\net8.0\Quote2Cash.Application.pdb
+C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Application\obj\Debug\net8.0\ref\Quote2Cash.Application.dll
