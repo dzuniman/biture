@@ -47,5 +47,39 @@ namespace Quote2Cash.API.Controllers
             await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetInvoices), new { id = request.Id }, request);
         }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateInvoice(Guid id, [FromBody] Invoice request)
+        {
+            var invoice = await _context.Invoices.FindAsync(id);
+            if (invoice == null)
+            {
+                return NotFound();
+            }
+
+            invoice.ClientId = request.ClientId;
+            invoice.QuoteId = request.QuoteId;
+            invoice.InvoiceNumber = request.InvoiceNumber;
+            invoice.Amount = request.Amount;
+            invoice.Status = request.Status;
+            invoice.DueDate = request.DueDate;
+
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteInvoice(Guid id)
+        {
+            var invoice = await _context.Invoices.FindAsync(id);
+            if (invoice == null)
+            {
+                return NotFound();
+            }
+
+            _context.Invoices.Remove(invoice);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
     }
 }

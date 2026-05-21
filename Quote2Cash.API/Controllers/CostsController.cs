@@ -46,5 +46,40 @@ namespace Quote2Cash.API.Controllers
             await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetCosts), new { id = request.Id }, request);
         }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateCost(Guid id, [FromBody] Cost request)
+        {
+            var cost = await _context.Costs.FindAsync(id);
+            if (cost == null)
+            {
+                return NotFound();
+            }
+
+            cost.ClientId = request.ClientId;
+            cost.JobCardId = request.JobCardId;
+            cost.Category = request.Category;
+            cost.Description = request.Description;
+            cost.Amount = request.Amount;
+            cost.Status = request.Status;
+            cost.IncurredAt = request.IncurredAt == default ? DateTime.UtcNow : request.IncurredAt;
+
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteCost(Guid id)
+        {
+            var cost = await _context.Costs.FindAsync(id);
+            if (cost == null)
+            {
+                return NotFound();
+            }
+
+            _context.Costs.Remove(cost);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
     }
 }

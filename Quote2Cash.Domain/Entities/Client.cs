@@ -7,10 +7,12 @@ namespace Quote2Cash.Domain.Entities
     {
         public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
-        public string? AccountNumber { get; set; }
-        public string? Industry { get; set; }
-        public string? ContactName { get; set; }
-        public string? Email { get; set; }
+        public string? AddressLine1 { get; set; }
+        public string? AddressLine2 { get; set; }
+        public string? AddressLine3 { get; set; }
+        public string? AddressLine4 { get; set; }
+        public string? RepresentativeName { get; set; }
+        public string? RepresentativeNumber { get; set; }
 
         public ICollection<Quote> Quotes { get; set; } = new List<Quote>();
         public ICollection<JobCard> JobCards { get; set; } = new List<JobCard>();

@@ -1,14 +1,16 @@
-import { useState, type FormEvent } from 'react';
-import type { Client, JobCardCreateRequest } from '../types';
+import { useEffect, useState, type FormEvent } from 'react';
+import type { Client, JobCard, JobCardCreateRequest } from '../types';
 
 interface Props {
   clients: Client[];
+  initialData?: JobCard;
   onSubmit: (payload: JobCardCreateRequest) => Promise<void>;
+  onCancel?: () => void;
 }
 
 const statuses = ['Draft', 'Submitted', 'Approved', 'Rejected'];
 
-export default function JobCardForm({ clients, onSubmit }: Props) {
+export default function JobCardForm({ clients, initialData, onSubmit, onCancel }: Props) {
   const [clientId, setClientId] = useState('');
   const [jobNumber, setJobNumber] = useState('');
   const [description, setDescription] = useState('');
@@ -17,6 +19,26 @@ export default function JobCardForm({ clients, onSubmit }: Props) {
   const [endDate, setEndDate] = useState('');
   const [totalCost, setTotalCost] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (initialData) {
+      setClientId(initialData.client?.id ?? '');
+      setJobNumber(initialData.jobNumber);
+      setDescription(initialData.description);
+      setStatus(initialData.status);
+      setStartDate(initialData.startDate ? initialData.startDate.slice(0, 10) : '');
+      setEndDate(initialData.endDate ? initialData.endDate.slice(0, 10) : '');
+      setTotalCost(initialData.totalCost.toString());
+    } else {
+      setClientId('');
+      setJobNumber('');
+      setDescription('');
+      setStatus(statuses[0]);
+      setStartDate('');
+      setEndDate('');
+      setTotalCost('');
+    }
+  }, [initialData]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -32,19 +54,12 @@ export default function JobCardForm({ clients, onSubmit }: Props) {
       totalCost: Number(totalCost)
     });
 
-    setClientId('');
-    setJobNumber('');
-    setDescription('');
-    setStatus(statuses[0]);
-    setStartDate('');
-    setEndDate('');
-    setTotalCost('');
     setIsSaving(false);
   };
 
   return (
     <div className="card">
-      <h2>Add Job Card</h2>
+      <h2>{initialData ? 'Edit Job Card' : 'Add Job Card'}</h2>
       <form onSubmit={handleSubmit}>
         <label>
           Client
@@ -92,9 +107,16 @@ export default function JobCardForm({ clients, onSubmit }: Props) {
             ))}
           </select>
         </label>
-        <button type="submit" disabled={isSaving}>
-          {isSaving ? 'Saving…' : 'Save Job Card'}
-        </button>
+        <div className="form-actions">
+          <button type="submit" disabled={isSaving}>
+            {isSaving ? 'Saving…' : initialData ? 'Update Job Card' : 'Save Job Card'}
+          </button>
+          {initialData && onCancel && (
+            <button type="button" className="secondary" onClick={onCancel}>
+              Cancel
+            </button>
+          )}
+        </div>
       </form>
     </div>
   );

@@ -1,17 +1,33 @@
-import { useState, type FormEvent } from 'react';
-import type { Client, StatementCreateRequest } from '../types';
+import { useEffect, useState, type FormEvent } from 'react';
+import type { Client, Statement, StatementCreateRequest } from '../types';
 
 interface Props {
   clients: Client[];
+  initialData?: Statement;
   onSubmit: (payload: StatementCreateRequest) => Promise<void>;
+  onCancel?: () => void;
 }
 
-export default function StatementForm({ clients, onSubmit }: Props) {
+export default function StatementForm({ clients, initialData, onSubmit, onCancel }: Props) {
   const [clientId, setClientId] = useState('');
   const [period, setPeriod] = useState('');
   const [balance, setBalance] = useState('');
   const [status, setStatus] = useState('Draft');
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (initialData) {
+      setClientId(initialData.client?.id ?? '');
+      setPeriod(initialData.period);
+      setBalance(initialData.balance.toString());
+      setStatus(initialData.status);
+    } else {
+      setClientId('');
+      setPeriod('');
+      setBalance('');
+      setStatus('Draft');
+    }
+  }, [initialData]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -24,16 +40,12 @@ export default function StatementForm({ clients, onSubmit }: Props) {
       status
     });
 
-    setClientId('');
-    setPeriod('');
-    setBalance('');
-    setStatus('Draft');
     setIsSaving(false);
   };
 
   return (
     <div className="card">
-      <h2>Add Statement</h2>
+      <h2>{initialData ? 'Edit Statement' : 'Add Statement'}</h2>
       <form onSubmit={handleSubmit}>
         <label>
           Client
@@ -63,9 +75,16 @@ export default function StatementForm({ clients, onSubmit }: Props) {
             <option value="Closed">Closed</option>
           </select>
         </label>
-        <button type="submit" disabled={isSaving}>
-          {isSaving ? 'Saving…' : 'Save Statement'}
-        </button>
+        <div className="form-actions">
+          <button type="submit" disabled={isSaving}>
+            {isSaving ? 'Saving…' : initialData ? 'Update Statement' : 'Save Statement'}
+          </button>
+          {initialData && onCancel && (
+            <button type="button" className="secondary" onClick={onCancel}>
+              Cancel
+            </button>
+          )}
+        </div>
       </form>
     </div>
   );

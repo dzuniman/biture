@@ -2,9 +2,11 @@ import type { Invoice } from '../types';
 
 interface Props {
   invoices: Invoice[];
+  onEdit: (invoice: Invoice) => void;
+  onDelete: (id: string) => Promise<void>;
 }
 
-export default function InvoiceList({ invoices }: Props) {
+export default function InvoiceList({ invoices, onEdit, onDelete }: Props) {
   return (
     <div className="card">
       <h2>Invoices</h2>
@@ -19,6 +21,7 @@ export default function InvoiceList({ invoices }: Props) {
             <th>Due</th>
             <th>Status</th>
             <th>Overdue</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -32,6 +35,14 @@ export default function InvoiceList({ invoices }: Props) {
               <td>{invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '—'}</td>
               <td>{invoice.status}</td>
               <td>{invoice.isOverdue ? 'Yes' : 'No'}</td>
+              <td className="actions-row">
+                <button type="button" onClick={() => onEdit(invoice)}>
+                  Edit
+                </button>
+                <button type="button" className="danger" onClick={() => onDelete(invoice.id)}>
+                  Delete
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>

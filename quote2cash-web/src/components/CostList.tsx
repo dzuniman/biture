@@ -2,9 +2,11 @@ import type { Cost } from '../types';
 
 interface Props {
   costs: Cost[];
+  onEdit: (cost: Cost) => void;
+  onDelete: (id: string) => Promise<void>;
 }
 
-export default function CostList({ costs }: Props) {
+export default function CostList({ costs, onEdit, onDelete }: Props) {
   return (
     <div className="card">
       <h2>Costs</h2>
@@ -18,6 +20,7 @@ export default function CostList({ costs }: Props) {
             <th>Amount</th>
             <th>Status</th>
             <th>Incurred at</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -30,6 +33,14 @@ export default function CostList({ costs }: Props) {
               <td>{cost.amount.toFixed(2)}</td>
               <td>{cost.status}</td>
               <td>{cost.incurredAt ? new Date(cost.incurredAt).toLocaleDateString() : '—'}</td>
+              <td className="actions-row">
+                <button type="button" onClick={() => onEdit(cost)}>
+                  Edit
+                </button>
+                <button type="button" className="danger" onClick={() => onDelete(cost.id)}>
+                  Delete
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>

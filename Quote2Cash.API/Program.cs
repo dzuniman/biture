@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Quote2Cash.Persistence.Data;
 using Quote2Cash.Persistence.Services;
@@ -6,7 +7,13 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+    });
 builder.Services.AddPersistenceServices(builder.Configuration);
 builder.Services.AddCors(options =>
 {
@@ -24,12 +31,11 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-if (args.Contains("--seed-data", StringComparer.OrdinalIgnoreCase))
+using (var scope = app.Services.CreateScope())
 {
-    using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<Quote2CashDbContext>();
+    await context.Database.MigrateAsync();
     await SeedData.EnsureSeedDataAsync(context);
-    return;
 }
 
 // Configure the HTTP request pipeline.

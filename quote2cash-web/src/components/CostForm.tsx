@@ -1,13 +1,15 @@
-import { useState, type FormEvent } from 'react';
-import type { Client, JobCard, CostCreateRequest } from '../types';
+import { useEffect, useState, type FormEvent } from 'react';
+import type { Client, Cost, JobCard, CostCreateRequest } from '../types';
 
 interface Props {
   clients: Client[];
   jobCards: JobCard[];
+  initialData?: Cost;
   onSubmit: (payload: CostCreateRequest) => Promise<void>;
+  onCancel?: () => void;
 }
 
-export default function CostForm({ clients, jobCards, onSubmit }: Props) {
+export default function CostForm({ clients, jobCards, initialData, onSubmit, onCancel }: Props) {
   const [clientId, setClientId] = useState('');
   const [jobCardId, setJobCardId] = useState('');
   const [description, setDescription] = useState('');
@@ -16,6 +18,26 @@ export default function CostForm({ clients, jobCards, onSubmit }: Props) {
   const [dateIncurred, setDateIncurred] = useState('');
   const [status, setStatus] = useState('Draft');
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (initialData) {
+      setClientId(initialData.client?.id ?? '');
+      setJobCardId(initialData.jobCard?.id ?? '');
+      setDescription(initialData.description);
+      setAmount(initialData.amount.toString());
+      setExpenseCategory(initialData.category);
+      setDateIncurred(initialData.incurredAt ? initialData.incurredAt.slice(0, 10) : '');
+      setStatus(initialData.status);
+    } else {
+      setClientId('');
+      setJobCardId('');
+      setDescription('');
+      setAmount('');
+      setExpenseCategory('');
+      setDateIncurred('');
+      setStatus('Draft');
+    }
+  }, [initialData]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -31,18 +53,12 @@ export default function CostForm({ clients, jobCards, onSubmit }: Props) {
       incurredAt: dateIncurred ? new Date(dateIncurred).toISOString() : new Date().toISOString()
     });
 
-    setClientId('');
-    setJobCardId('');
-    setDescription('');
-    setAmount('');
-    setExpenseCategory('');
-    setDateIncurred('');
     setIsSaving(false);
   };
 
   return (
     <div className="card">
-      <h2>Add Cost</h2>
+      <h2>{initialData ? 'Edit Cost' : 'Add Cost'}</h2>
       <form onSubmit={handleSubmit}>
         <label>
           Client
@@ -91,9 +107,16 @@ export default function CostForm({ clients, jobCards, onSubmit }: Props) {
             <option value="Rejected">Rejected</option>
           </select>
         </label>
-        <button type="submit" disabled={isSaving}>
-          {isSaving ? 'Saving…' : 'Save Cost'}
-        </button>
+        <div className="form-actions">
+          <button type="submit" disabled={isSaving}>
+            {isSaving ? 'Saving…' : initialData ? 'Update Cost' : 'Save Cost'}
+          </button>
+          {initialData && onCancel && (
+            <button type="button" className="secondary" onClick={onCancel}>
+              Cancel
+            </button>
+          )}
+        </div>
       </form>
     </div>
   );

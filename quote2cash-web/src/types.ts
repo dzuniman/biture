@@ -1,25 +1,75 @@
 export interface Client {
   id: string;
   name: string;
-  accountNumber?: string;
-  industry?: string;
-  contactName?: string;
-  email?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  addressLine3?: string;
+  addressLine4?: string;
+  representativeName?: string;
+  representativeNumber?: string;
+}
+
+export interface ClientCreateRequest {
+  name: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  addressLine3?: string;
+  addressLine4?: string;
+  representativeName?: string;
+  representativeNumber?: string;
+}
+
+export interface QuoteItem {
+  id: string;
+  itemNumber: number;
+  quantity: number;
+  uom: string;
+  description: string;
+  unitPrice: number;
+  totalPrice: number;
+}
+
+export interface QuoteItemCreateRequest {
+  itemNumber: number;
+  quantity: number;
+  uom: string;
+  description: string;
+  unitPrice: number;
+  totalPrice: number;
 }
 
 export interface Quote {
   id: string;
+  quoteNumber: number;
+  reference: string;
+  date: string;
+  validityDays: number;
+  vendorNumber: string;
   clientId?: string;
-  reference?: string;
-  customerName: string;
-  description?: string;
-  amount: number;
-  status: string;
-  createdAt: string;
-  dueDate?: string;
-  invoiceCount?: number;
-  invoiceTotal?: number;
-  client?: { id: string; name: string } | null;
+  client?: {
+    id: string;
+    name: string;
+    addressLine1?: string;
+    addressLine2?: string;
+    addressLine3?: string;
+    addressLine4?: string;
+    representativeName?: string;
+    representativeNumber?: string;
+  } | null;
+  items: QuoteItem[];
+  subTotal: number;
+  vat: number;
+  total: number;
+}
+
+export interface QuoteCreateRequest {
+  clientId?: string;
+  quoteNumber: number;
+  reference: string;
+  date: string;
+  validityDays: number;
+  vendorNumber: string;
+  items: QuoteItemCreateRequest[];
 }
 
 export interface JobCard {
@@ -55,6 +105,7 @@ export interface Invoice {
   status: string;
   createdAt: string;
   dueDate: string;
+  description?: string;
   isOverdue?: boolean;
   quote?: { id: string; reference: string } | null;
 }
@@ -68,24 +119,6 @@ export interface Statement {
   createdAt: string;
   invoiceTotal?: number;
   unpaidAmount?: number;
-}
-
-export interface ClientCreateRequest {
-  name: string;
-  accountNumber?: string;
-  industry?: string;
-  contactName?: string;
-  email?: string;
-}
-
-export interface QuoteCreateRequest {
-  clientId?: string;
-  reference: string;
-  customerName: string;
-  description: string;
-  amount: number;
-  status: string;
-  dueDate?: string;
 }
 
 export interface JobCardCreateRequest {
@@ -110,6 +143,7 @@ export interface CostCreateRequest {
 
 export interface InvoiceCreateRequest {
   clientId?: string;
+  quoteId?: string;
   invoiceNumber: string;
   description?: string;
   amount: number;

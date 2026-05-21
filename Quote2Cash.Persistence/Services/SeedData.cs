@@ -1,3 +1,4 @@
+using Npgsql;
 using Microsoft.EntityFrameworkCore;
 using Quote2Cash.Domain.Entities;
 using Quote2Cash.Persistence.Data;
@@ -8,10 +9,34 @@ namespace Quote2Cash.Persistence.Services
     {
         public static async Task EnsureSeedDataAsync(Quote2CashDbContext context)
         {
-            if (await context.Clients.AnyAsync())
+            var connectionString = context.Database.GetConnectionString();
+            await using var connection = new NpgsqlConnection(connectionString);
+            await connection.OpenAsync();
+
+            await using (var createTableCommand = connection.CreateCommand())
             {
-                return;
+                createTableCommand.CommandText = @"CREATE TABLE IF NOT EXISTS ""SeedHistory"" (""Id"" uuid PRIMARY KEY, ""SeededAt"" timestamp with time zone NOT NULL);";
+                await createTableCommand.ExecuteNonQueryAsync();
             }
+
+            await using (var checkCommand = connection.CreateCommand())
+            {
+                checkCommand.CommandText = @"SELECT 1 FROM ""SeedHistory"" LIMIT 1;";
+                var result = await checkCommand.ExecuteScalarAsync();
+                if (result != null)
+                {
+                    return;
+                }
+            }
+
+            context.QuoteItems.RemoveRange(context.QuoteItems);
+            context.Invoices.RemoveRange(context.Invoices);
+            context.Costs.RemoveRange(context.Costs);
+            context.Statements.RemoveRange(context.Statements);
+            context.JobCards.RemoveRange(context.JobCards);
+            context.Quotes.RemoveRange(context.Quotes);
+            context.Clients.RemoveRange(context.Clients);
+            await context.SaveChangesAsync();
 
             var clients = new List<Client>
             {
@@ -19,132 +44,145 @@ namespace Quote2Cash.Persistence.Services
                 {
                     Id = Guid.NewGuid(),
                     Name = "UNISA",
-                    AccountNumber = "UNISA-001",
-                    Industry = "Education",
-                    ContactName = "Finance Team",
-                    Email = "finance@unisa.ac.za"
+                    AddressLine1 = "1 University Avenue",
+                    AddressLine2 = "Campus Central",
+                    AddressLine3 = "Pretoria",
+                    AddressLine4 = "South Africa",
+                    RepresentativeName = "Finance Team",
+                    RepresentativeNumber = "+27 12 123 4567"
                 },
                 new Client
                 {
                     Id = Guid.NewGuid(),
                     Name = "Acme Holdings",
-                    AccountNumber = "ACME-002",
-                    Industry = "Manufacturing",
-                    ContactName = "Riaan van der Merwe",
-                    Email = "riaan@acme.example.com"
+                    AddressLine1 = "42 Industrial Park",
+                    AddressLine2 = "Suite 14B",
+                    AddressLine3 = "Johannesburg",
+                    AddressLine4 = "South Africa",
+                    RepresentativeName = "Riaan van der Merwe",
+                    RepresentativeNumber = "+27 11 987 6543"
                 },
                 new Client
                 {
                     Id = Guid.NewGuid(),
                     Name = "South African Railways",
-                    AccountNumber = "SAR-003",
-                    Industry = "Transport",
-                    ContactName = "Nokuthula Ndlovu",
-                    Email = "nokuthula@sar.example.com"
+                    AddressLine1 = "12 Network Drive",
+                    AddressLine2 = "Dispatch Building",
+                    AddressLine3 = "Cape Town",
+                    AddressLine4 = "South Africa",
+                    RepresentativeName = "Nokuthula Ndlovu",
+                    RepresentativeNumber = "+27 21 555 7890"
                 }
             };
 
-            var statuses = new[] { "Draft", "Submitted", "Approved", "Rejected" };
-            var now = DateTime.UtcNow;
-
-            var quotes = clients.SelectMany((client, index) =>
-                Enumerable.Range(1, 5).Select(i => new Quote
+            var quotes = new List<Quote>
+            {
+                new Quote
                 {
                     Id = Guid.NewGuid(),
-                    ClientId = client.Id,
-                    Reference = $"Q-{index + 1:00}{i:000}",
-                    CustomerName = client.Name,
-                    Description = $"Quote for {client.Name} project {i}",
-                    Amount = Math.Round((decimal)(1500 + Random.Shared.NextDouble() * 12500), 2),
-                    Status = statuses[Random.Shared.Next(statuses.Length)],
-                    CreatedAt = now.AddDays(-Random.Shared.Next(0, 120)),
-                    DueDate = now.AddDays(Random.Shared.Next(15, 45))
-                })).ToList();
-
-            var jobCards = clients.SelectMany((client, index) =>
-                Enumerable.Range(1, 3).Select(i => new JobCard
-                {
-                    Id = Guid.NewGuid(),
-                    ClientId = client.Id,
-                    JobNumber = $"JC-{index + 1:00}{i:000}",
-                    Description = $"Job card for {client.Name} task {i}",
-                    Status = statuses[Random.Shared.Next(statuses.Length)],
-                    CreatedAt = now.AddDays(-Random.Shared.Next(0, 150)),
-                    StartDate = now.AddDays(-Random.Shared.Next(100, 150)),
-                    EndDate = now.AddDays(-Random.Shared.Next(1, 30)),
-                    TotalCost = Math.Round((decimal)(2000 + Random.Shared.NextDouble() * 15000), 2)
-                })).ToList();
-
-            var costs = jobCards.SelectMany(job =>
-                Enumerable.Range(1, 4).Select(i => new Cost
-                {
-                    Id = Guid.NewGuid(),
-                    ClientId = job.ClientId,
-                    JobCardId = job.Id,
-                    Category = i % 2 == 0 ? "Material" : "Labour",
-                    Description = $"Cost line {i} for {job.JobNumber}",
-                    Amount = Math.Round((decimal)(200 + Random.Shared.NextDouble() * 2200), 2),
-                    Status = statuses[Random.Shared.Next(statuses.Length)],
-                    IncurredAt = job.CreatedAt.AddDays(i * 3)
-                })).ToList();
-
-            var quotesByClient = quotes
-                .GroupBy(q => q.ClientId)
-                .Where(g => g.Key.HasValue)
-                .ToDictionary(g => g.Key!.Value, g => g.ToList());
-
-            var invoices = clients.SelectMany((client, index) =>
-                Enumerable.Range(1, 2).Select(i =>
-                {
-                    var clientQuotes = quotesByClient.GetValueOrDefault(client.Id) ?? new List<Quote>();
-                    var attachedQuote = clientQuotes.Count > 0 ? clientQuotes[Random.Shared.Next(clientQuotes.Count)] : null;
-                    var amount = attachedQuote != null
-                        ? Math.Round(attachedQuote.Amount * (decimal)(0.75 + Random.Shared.NextDouble() * 0.5), 2)
-                        : Math.Round((decimal)(3500 + Random.Shared.NextDouble() * 18000), 2);
-
-                    return new Invoice
+                    QuoteNumber = 1001,
+                    Reference = "Q-1001-UNISA",
+                    Date = DateTime.UtcNow.AddDays(-8),
+                    ValidityDays = 30,
+                    VendorNumber = "VN-1001",
+                    ClientId = clients[0].Id,
+                    Items = new List<QuoteItem>
                     {
-                        Id = Guid.NewGuid(),
-                        ClientId = client.Id,
-                        QuoteId = attachedQuote?.Id,
-                        InvoiceNumber = $"INV-{index + 1:00}{i:000}",
-                        Amount = amount,
-                        Status = i % 2 == 0 ? "Paid" : "Unpaid",
-                        CreatedAt = now.AddDays(-Random.Shared.Next(15, 90)),
-                        DueDate = now.AddDays(Random.Shared.Next(15, 60))
-                    };
-                })).ToList();
-
-            foreach (var job in jobCards)
-            {
-                job.TotalCost = costs.Where(c => c.JobCardId == job.Id).Sum(c => c.Amount);
-            }
-
-            var statements = clients.Select(client =>
-            {
-                var clientInvoices = invoices.Where(i => i.ClientId == client.Id).ToList();
-                var unpaidInvoiceAmount = clientInvoices.Where(i => i.Status != "Paid").Sum(i => i.Amount);
-                var clientCostAmount = costs.Where(c => c.ClientId == client.Id).Sum(c => c.Amount);
-                var balance = Math.Round(unpaidInvoiceAmount + clientCostAmount * 0.15m, 2);
-
-                return new Statement
+                        new QuoteItem
+                        {
+                            Id = Guid.NewGuid(),
+                            ItemNumber = 1,
+                            Quantity = 12,
+                            Uom = "Hours",
+                            Description = "Systems integration assessment",
+                            UnitPrice = 350m,
+                            TotalPrice = 4200m
+                        },
+                        new QuoteItem
+                        {
+                            Id = Guid.NewGuid(),
+                            ItemNumber = 2,
+                            Quantity = 25,
+                            Uom = "pcs",
+                            Description = "Custom reporting licenses",
+                            UnitPrice = 120m,
+                            TotalPrice = 3000m
+                        }
+                    }
+                },
+                new Quote
                 {
                     Id = Guid.NewGuid(),
-                    ClientId = client.Id,
-                    Period = "2026-Q2",
-                    Balance = Math.Max(balance, 0),
-                    Status = "Open",
-                    CreatedAt = now.AddDays(-Random.Shared.Next(1, 20))
-                };
-            }).ToList();
+                    QuoteNumber = 1002,
+                    Reference = "Q-1002-ACME",
+                    Date = DateTime.UtcNow.AddDays(-14),
+                    ValidityDays = 45,
+                    VendorNumber = "VN-2002",
+                    ClientId = clients[1].Id,
+                    Items = new List<QuoteItem>
+                    {
+                        new QuoteItem
+                        {
+                            Id = Guid.NewGuid(),
+                            ItemNumber = 1,
+                            Quantity = 8,
+                            Uom = "Days",
+                            Description = "Implementation and handover",
+                            UnitPrice = 650m,
+                            TotalPrice = 5200m
+                        },
+                        new QuoteItem
+                        {
+                            Id = Guid.NewGuid(),
+                            ItemNumber = 2,
+                            Quantity = 50,
+                            Uom = "pcs",
+                            Description = "Support tablets",
+                            UnitPrice = 78m,
+                            TotalPrice = 3900m
+                        }
+                    }
+                },
+                new Quote
+                {
+                    Id = Guid.NewGuid(),
+                    QuoteNumber = 1003,
+                    Reference = "Q-1003-SAR",
+                    Date = DateTime.UtcNow.AddDays(-3),
+                    ValidityDays = 21,
+                    VendorNumber = "VN-3003",
+                    ClientId = clients[2].Id,
+                    Items = new List<QuoteItem>
+                    {
+                        new QuoteItem
+                        {
+                            Id = Guid.NewGuid(),
+                            ItemNumber = 1,
+                            Quantity = 18,
+                            Uom = "Hours",
+                            Description = "Railway schedule optimization",
+                            UnitPrice = 415m,
+                            TotalPrice = 7470m
+                        },
+                        new QuoteItem
+                        {
+                            Id = Guid.NewGuid(),
+                            ItemNumber = 2,
+                            Quantity = 5,
+                            Uom = "pcs",
+                            Description = "Hardware installation kits",
+                            UnitPrice = 980m,
+                            TotalPrice = 4900m
+                        }
+                    }
+                }
+            };
 
             await context.Clients.AddRangeAsync(clients);
             await context.Quotes.AddRangeAsync(quotes);
-            await context.JobCards.AddRangeAsync(jobCards);
-            await context.Costs.AddRangeAsync(costs);
-            await context.Invoices.AddRangeAsync(invoices);
-            await context.Statements.AddRangeAsync(statements);
             await context.SaveChangesAsync();
+
+            await context.Database.ExecuteSqlInterpolatedAsync($@"INSERT INTO ""SeedHistory"" (""Id"", ""SeededAt"") VALUES ({Guid.NewGuid()}, {DateTime.UtcNow});");
         }
     }
 }

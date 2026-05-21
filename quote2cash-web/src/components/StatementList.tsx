@@ -2,9 +2,11 @@ import type { Statement } from '../types';
 
 interface Props {
   statements: Statement[];
+  onEdit: (statement: Statement) => void;
+  onDelete: (id: string) => Promise<void>;
 }
 
-export default function StatementList({ statements }: Props) {
+export default function StatementList({ statements, onEdit, onDelete }: Props) {
   return (
     <div className="card">
       <h2>Statements</h2>
@@ -18,6 +20,7 @@ export default function StatementList({ statements }: Props) {
             <th>Open unpaid</th>
             <th>Status</th>
             <th>Created</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -30,6 +33,14 @@ export default function StatementList({ statements }: Props) {
               <td>{(statement.unpaidAmount ?? 0).toFixed(2)}</td>
               <td>{statement.status}</td>
               <td>{statement.createdAt ? new Date(statement.createdAt).toLocaleDateString() : '—'}</td>
+              <td className="actions-row">
+                <button type="button" onClick={() => onEdit(statement)}>
+                  Edit
+                </button>
+                <button type="button" className="danger" onClick={() => onDelete(statement.id)}>
+                  Delete
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>

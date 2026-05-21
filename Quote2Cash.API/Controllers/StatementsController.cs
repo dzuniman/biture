@@ -73,5 +73,37 @@ namespace Quote2Cash.API.Controllers
             await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetStatements), new { id = request.Id }, request);
         }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateStatement(Guid id, [FromBody] Statement request)
+        {
+            var statement = await _context.Statements.FindAsync(id);
+            if (statement == null)
+            {
+                return NotFound();
+            }
+
+            statement.ClientId = request.ClientId;
+            statement.Period = request.Period;
+            statement.Balance = request.Balance;
+            statement.Status = request.Status;
+
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteStatement(Guid id)
+        {
+            var statement = await _context.Statements.FindAsync(id);
+            if (statement == null)
+            {
+                return NotFound();
+            }
+
+            _context.Statements.Remove(statement);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
     }
 }
