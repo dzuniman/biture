@@ -1,4 +1,5 @@
 import type { JobCard } from '../types';
+import { formatAmount } from '../../formatters';
 
 interface Props {
   jobCards: JobCard[];
@@ -32,9 +33,9 @@ export default function JobCardList({ jobCards, onEdit, onDelete }: Props) {
               <td>{job.client?.name ?? '—'}</td>
               <td>{job.description}</td>
               <td>{job.status}</td>
-              <td>{job.totalCost.toFixed(2)}</td>
+              <td>{formatAmount(job.totalCost)}</td>
               <td>{job.costCount ?? 0}</td>
-              <td>{(job.costTotal ?? 0).toFixed(2)}</td>
+              <td>{formatAmount(job.costTotal ?? 0)}</td>
               <td>{job.startDate ? new Date(job.startDate).toLocaleDateString() : '—'}</td>
               <td>{job.endDate ? new Date(job.endDate).toLocaleDateString() : '—'}</td>
               <td className="actions-row">

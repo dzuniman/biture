@@ -1,4 +1,5 @@
 import type { Quote } from '../types';
+import { formatAmount } from '../../formatters';
 
 interface Props {
   quotes: Quote[];
@@ -36,9 +37,9 @@ export default function QuoteList({ quotes, onEdit, onDelete, onView }: Props) {
               <td>{new Date(quote.date).toLocaleDateString()}</td>
               <td>{quote.validityDays} days</td>
               <td>{quote.vendorNumber}</td>
-              <td>{quote.subTotal.toFixed(2)}</td>
-              <td>{quote.vat.toFixed(2)}</td>
-              <td>{quote.total.toFixed(2)}</td>
+              <td>{formatAmount(quote.subTotal)}</td>
+              <td>{formatAmount(quote.vat)}</td>
+              <td>{formatAmount(quote.total)}</td>
               <td>{quote.items.length}</td>
               <td className="actions-row">
                 <button type="button" onClick={() => onView(quote.id)}>

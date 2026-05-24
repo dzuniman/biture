@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { formatAmount } from '../../formatters';
 import type { Client, Quote, QuoteCreateRequest, QuoteItemCreateRequest } from '../types';
 
 interface Props {
@@ -9,6 +10,7 @@ interface Props {
   onSubmit: (payload: QuoteCreateRequest) => Promise<void>;
   onCancel?: () => void;
   onRequestNewClient: () => void;
+  isDuplicate?: boolean;
 }
 
 const blankItem: QuoteItemCreateRequest = {
@@ -27,7 +29,8 @@ export default function QuoteForm({
   onSelectClientId,
   onSubmit,
   onCancel,
-  onRequestNewClient
+  onRequestNewClient,
+  isDuplicate = false
 }: Props) {
   const [clientId, setClientId] = useState(initialData?.clientId ?? selectedClientId ?? '');
   const [quoteNumber, setQuoteNumber] = useState(initialData?.quoteNumber.toString() ?? '');
@@ -56,7 +59,7 @@ export default function QuoteForm({
       setVendorNumber('');
       setItems([blankItem]);
     }
-  }, [initialData, selectedClientId]);
+  }, [initialData]);
 
   useEffect(() => {
     if (!initialData && selectedClientId) {
@@ -131,18 +134,24 @@ export default function QuoteForm({
     setIsSaving(false);
   };
 
+  const title = isDuplicate ? 'Duplicate Quote' : initialData ? 'Edit Quote' : 'Add Quote';
+  const submitLabel = isDuplicate ? 'Create Duplicate' : initialData ? 'Update Quote' : 'Save Quote';
+
   return (
     <div className="card">
-      <h2>{initialData ? 'Edit Quote' : 'Add Quote'}</h2>
+      <h2>{title}</h2>
       <form onSubmit={handleSubmit}>
         <label>
           Client
           <div className="select-with-action">
-            <select value={clientId} onChange={(event) => {
-              const value = event.target.value;
-              setClientId(value);
-              onSelectClientId?.(value);
-            }}>
+            <select
+              value={clientId}
+              onChange={(event) => {
+                const value = event.target.value;
+                setClientId(value);
+                onSelectClientId?.(value);
+              }}
+            >
               <option value="">Select existing client</option>
               {clients.map((client) => (
                 <option key={client.id} value={client.id}>
@@ -240,8 +249,12 @@ export default function QuoteForm({
                   onChange={(event) => handleUpdateItem(index, 'unitPrice', event.target.value)}
                   required
                 />
-                <input value={item.totalPrice.toFixed(2)} disabled />
-                <button type="button" className="danger small" onClick={() => setItems((current) => current.filter((_, rowIndex) => rowIndex !== index))}>
+                <input value={formatAmount(item.totalPrice)} disabled />
+                <button
+                  type="button"
+                  className="danger small"
+                  onClick={() => setItems((current) => current.filter((_, rowIndex) => rowIndex !== index))}
+                >
                   Remove
                 </button>
               </div>
@@ -251,7 +264,7 @@ export default function QuoteForm({
 
         <div className="form-actions">
           <button type="submit" disabled={isSaving || items.length === 0}>
-            {isSaving ? 'Saving…' : initialData ? 'Update Quote' : 'Save Quote'}
+            {isSaving ? 'Saving…' : submitLabel}
           </button>
           {onCancel && (
             <button type="button" className="secondary" onClick={onCancel}>

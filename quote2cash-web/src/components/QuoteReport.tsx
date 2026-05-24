@@ -1,4 +1,5 @@
 import type { Quote } from '../types';
+import { formatAmount } from '../../formatters';
 
 interface Props {
   quote: Quote;
@@ -63,8 +64,8 @@ export default function QuoteReport({ quote, onClose }: Props) {
                 <td>{item.description}</td>
                 <td>{item.quantity}</td>
                 <td>{item.uom}</td>
-                <td>{item.unitPrice.toFixed(2)}</td>
-                <td>{item.totalPrice.toFixed(2)}</td>
+                <td>{formatAmount(item.unitPrice)}</td>
+                <td>{formatAmount(item.totalPrice)}</td>
               </tr>
             ))}
           </tbody>
@@ -76,15 +77,15 @@ export default function QuoteReport({ quote, onClose }: Props) {
         <div>
           <div className="summary-row">
             <span>Subtotal</span>
-            <strong>{quote.subTotal.toFixed(2)}</strong>
+            <strong>{formatAmount(quote.subTotal)}</strong>
           </div>
           <div className="summary-row">
             <span>VAT (15%)</span>
-            <strong>{quote.vat.toFixed(2)}</strong>
+            <strong>{formatAmount(quote.vat)}</strong>
           </div>
           <div className="summary-row total-row">
             <span>Total</span>
-            <strong>{quote.total.toFixed(2)}</strong>
+            <strong>{formatAmount(quote.total)}</strong>
           </div>
         </div>
       </div>

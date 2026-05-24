@@ -1,4 +1,5 @@
 import type { Invoice } from '../types';
+import { formatAmount } from '../../formatters';
 
 interface Props {
   invoices: Invoice[];
@@ -30,7 +31,7 @@ export default function InvoiceList({ invoices, onEdit, onDelete }: Props) {
               <td>{invoice.invoiceNumber}</td>
               <td>{invoice.client?.name ?? '—'}</td>
               <td>{invoice.quote?.reference ?? '—'}</td>
-              <td>{invoice.amount.toFixed(2)}</td>
+              <td>{formatAmount(invoice.amount)}</td>
               <td>{invoice.createdAt ? new Date(invoice.createdAt).toLocaleDateString() : '—'}</td>
               <td>{invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '—'}</td>
               <td>{invoice.status}</td>

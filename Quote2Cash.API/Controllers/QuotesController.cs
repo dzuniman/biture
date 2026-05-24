@@ -87,13 +87,14 @@ namespace Quote2Cash.API.Controllers
         [HttpPost]
         public async Task<ActionResult<object>> CreateQuote([FromBody] QuoteCreateDto request)
         {
+            var quoteDate = DateTime.SpecifyKind(request.Date, DateTimeKind.Utc);
             var quote = new Quote
             {
                 Id = Guid.NewGuid(),
                 ClientId = request.ClientId,
                 QuoteNumber = request.QuoteNumber,
                 Reference = request.Reference,
-                Date = request.Date,
+                Date = quoteDate,
                 ValidityDays = request.ValidityDays,
                 VendorNumber = request.VendorNumber,
                 Items = request.Items.Select(item => new QuoteItem
@@ -151,7 +152,7 @@ namespace Quote2Cash.API.Controllers
             quote.ClientId = request.ClientId;
             quote.QuoteNumber = request.QuoteNumber;
             quote.Reference = request.Reference;
-            quote.Date = request.Date;
+            quote.Date = DateTime.SpecifyKind(request.Date, DateTimeKind.Utc);
             quote.ValidityDays = request.ValidityDays;
             quote.VendorNumber = request.VendorNumber;
 

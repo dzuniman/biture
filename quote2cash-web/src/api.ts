@@ -3,12 +3,32 @@ import type {
   Client,
   ClientCreateRequest,
   Quote,
-  QuoteCreateRequest
+  QuoteCreateRequest,
+  JobCard,
+  JobCardCreateRequest,
+  Cost,
+  CostCreateRequest,
+  Invoice,
+  InvoiceCreateRequest,
+  Statement,
+  StatementCreateRequest
 } from './types';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:5227/api'
 });
+
+// Add a request interceptor for debugging
+api.interceptors.response.use(
+  response => response,
+  error => {
+    console.error('API Error:', error.response?.status, error.message);
+    if (error.code === 'ERR_NETWORK') {
+      console.error('Network Error: This is likely a CORS issue or the API is unreachable.');
+    }
+    return Promise.reject(error);
+  }
+);
 
 export async function getClients(): Promise<Client[]> {
   const response = await api.get<Client[]>('/clients');
@@ -96,4 +116,77 @@ export async function updateQuote(id: string, payload: QuoteCreateRequest): Prom
 
 export async function deleteQuote(id: string): Promise<void> {
   await api.delete(`/quotes/${id}`);
+}
+
+export async function getJobCards(): Promise<JobCard[]> {
+  const response = await api.get<any[]>('/jobcards');
+  return response.data.map(jc => ({
+    ...jc,
+    totalCost: Number(jc.totalCost ?? 0),
+    costTotal: jc.costTotal ? Number(jc.costTotal) : undefined,
+    client: jc.client ? { id: jc.client.id, name: jc.client.name } : null
+  }));
+}
+
+export async function createJobCard(payload: JobCardCreateRequest): Promise<JobCard> {
+  const response = await api.post<JobCard>('/jobcards', payload);
+  return response.data;
+}
+
+export async function updateJobCard(id: string, payload: JobCardCreateRequest): Promise<void> {
+  await api.put(`/jobcards/${id}`, payload);
+}
+
+export async function deleteJobCard(id: string): Promise<void> {
+  await api.delete(`/jobcards/${id}`);
+}
+
+export async function getCosts(): Promise<Cost[]> {
+  const response = await api.get<any[]>('/costs');
+  return response.data.map(cost => ({
+    ...cost,
+    amount: Number(cost.amount ?? 0),
+    client: cost.client ? { id: cost.client.id, name: cost.client.name } : null,
+    jobCard: cost.jobCard ? { id: cost.jobCard.id, jobNumber: cost.jobCard.jobNumber } : null
+  }));
+}
+
+export async function createCost(payload: CostCreateRequest): Promise<Cost> {
+  const response = await api.post<Cost>('/costs', payload);
+  return response.data;
+}
+
+export async function getInvoices(): Promise<Invoice[]> {
+  const response = await api.get<any[]>('/invoices');
+  return response.data.map(inv => ({
+    ...inv,
+    amount: Number(inv.amount ?? 0),
+    client: inv.client ? { id: inv.client.id, name: inv.client.name } : null,
+    quote: inv.quote ? { id: inv.quote.id, reference: inv.quote.reference } : null
+  }));
+}
+
+export async function createInvoice(payload: InvoiceCreateRequest): Promise<Invoice> {
+  const response = await api.post<Invoice>('/invoices', payload);
+  return response.data;
+}
+
+export async function updateInvoiceStatus(id: string, status: string): Promise<void> {
+  await api.patch(`/invoices/${id}/status`, { status });
+}
+
+export async function getStatements(): Promise<Statement[]> {
+  const response = await api.get<any[]>('/statements');
+  return response.data.map(stmt => ({
+    ...stmt,
+    balance: Number(stmt.balance ?? 0),
+    invoiceTotal: stmt.invoiceTotal ? Number(stmt.invoiceTotal) : undefined,
+    unpaidAmount: stmt.unpaidAmount ? Number(stmt.unpaidAmount) : undefined,
+    client: stmt.client ? { id: stmt.client.id, name: stmt.client.name } : null
+  }));
+}
+
+export async function createStatement(payload: StatementCreateRequest): Promise<Statement> {
+  const response = await api.post<Statement>('/statements', payload);
+  return response.data;
 }

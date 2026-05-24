@@ -1,4 +1,5 @@
 import type { Statement } from '../types';
+import { formatAmount } from '../../formatters';
 
 interface Props {
   statements: Statement[];
@@ -28,9 +29,9 @@ export default function StatementList({ statements, onEdit, onDelete }: Props) {
             <tr key={statement.id}>
               <td>{statement.period}</td>
               <td>{statement.client?.name ?? '—'}</td>
-              <td>{statement.balance.toFixed(2)}</td>
-              <td>{(statement.invoiceTotal ?? 0).toFixed(2)}</td>
-              <td>{(statement.unpaidAmount ?? 0).toFixed(2)}</td>
+              <td>{formatAmount(statement.balance)}</td>
+              <td>{formatAmount(statement.invoiceTotal ?? 0)}</td>
+              <td>{formatAmount(statement.unpaidAmount ?? 0)}</td>
               <td>{statement.status}</td>
               <td>{statement.createdAt ? new Date(statement.createdAt).toLocaleDateString() : '—'}</td>
               <td className="actions-row">

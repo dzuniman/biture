@@ -1,4 +1,5 @@
 import type { Cost } from '../types';
+import { formatAmount } from '../../formatters';
 
 interface Props {
   costs: Cost[];
@@ -30,7 +31,7 @@ export default function CostList({ costs, onEdit, onDelete }: Props) {
               <td>{cost.client?.name ?? '—'}</td>
               <td>{cost.jobCard?.jobNumber ?? '—'}</td>
               <td>{cost.category}</td>
-              <td>{cost.amount.toFixed(2)}</td>
+              <td>{formatAmount(cost.amount)}</td>
               <td>{cost.status}</td>
               <td>{cost.incurredAt ? new Date(cost.incurredAt).toLocaleDateString() : '—'}</td>
               <td className="actions-row">
