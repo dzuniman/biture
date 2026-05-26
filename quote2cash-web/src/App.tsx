@@ -17,6 +17,8 @@ import type {
   Quote,
   QuoteCreateRequest
 } from './types';
+import { useAuth } from './AuthContext';
+import { Login } from './components/Login';
 import ClientsListPage from './components/ClientsListPage';
 import ClientManagementPage from './components/ClientManagementPage';
 import ClientViewPage from './components/ClientViewPage';
@@ -45,6 +47,7 @@ function App() {
   const [quoteClientId, setQuoteClientId] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { isAuthenticated, user, logout } = useAuth();
 
   const loadAll = async () => {
     try {
@@ -61,8 +64,11 @@ function App() {
   };
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
     loadAll();
-  }, []);
+  }, [isAuthenticated]);
 
   const handleCreateClient = async (payload: ClientCreateRequest) => {
     try {
@@ -242,6 +248,10 @@ function App() {
 
   const totalQuoteValue = quotes.reduce((sum, quote) => sum + quote.total, 0);
 
+  if (!isAuthenticated) {
+    return <Login />;
+  }
+
   return (
     <div className="app-shell">
           <header className="hero no-print">
@@ -251,6 +261,19 @@ function App() {
             </div>
             <div>
               <img src={logo} alt="Epec Solutions" className="hero-logo" />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '0.95rem', color: '#f3f4f6' }}>
+                  Signed in as <strong>{user?.username}</strong>
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#d1d5db' }}>
+                  Role: {user?.role}
+                </div>
+              </div>
+              <button className="btn-secondary" onClick={logout} style={{ height: '40px' }}>
+                Logout
+              </button>
             </div>
           </header>
 

@@ -19,6 +19,54 @@ namespace Quote2Cash.Persistence.Services
                 await createTableCommand.ExecuteNonQueryAsync();
             }
 
+            // Create Users table if it doesn't exist
+            await using (var createUsersTable = connection.CreateCommand())
+            {
+                createUsersTable.CommandText = @"CREATE TABLE IF NOT EXISTS ""Users"" (""Id"" uuid PRIMARY KEY, ""Username"" varchar(200) NOT NULL UNIQUE, ""PasswordHash"" text NOT NULL, ""Role"" varchar(100) NOT NULL, ""CreatedAt"" timestamp with time zone NOT NULL);";
+                await createUsersTable.ExecuteNonQueryAsync();
+            }
+
+            // Ensure seed users exist even when the rest of the data has already been seeded
+            await using (var ensureUsers = connection.CreateCommand())
+            {
+                ensureUsers.CommandText = @"SELECT 1 FROM ""Users"" LIMIT 1;";
+                var usersExist = await ensureUsers.ExecuteScalarAsync();
+                if (usersExist == null)
+                {
+                    string HashPassword(string password)
+                    {
+                        using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+                        var salt = new byte[16];
+                        rng.GetBytes(salt);
+                        const int iter = 100_000;
+                        using var pbkdf2 = new System.Security.Cryptography.Rfc2898DeriveBytes(password, salt, iter, System.Security.Cryptography.HashAlgorithmName.SHA256);
+                        var hash = pbkdf2.GetBytes(32);
+                        return $"{iter}.{Convert.ToBase64String(salt)}.{Convert.ToBase64String(hash)}";
+                    }
+
+                    var adminHash = HashPassword("adminpass");
+                    var userHash = HashPassword("userpass");
+
+                    await using var insertCmd = connection.CreateCommand();
+                    insertCmd.CommandText = @"INSERT INTO ""Users"" (""Id"", ""Username"", ""PasswordHash"", ""Role"", ""CreatedAt"") VALUES (@id1, @u1, @p1, @r1, @c1), (@id2, @u2, @p2, @r2, @c2);";
+                    var id1 = Guid.NewGuid();
+                    var id2 = Guid.NewGuid();
+                    insertCmd.Parameters.AddWithValue("@id1", NpgsqlTypes.NpgsqlDbType.Uuid, id1);
+                    insertCmd.Parameters.AddWithValue("@u1", NpgsqlTypes.NpgsqlDbType.Varchar, "admin");
+                    insertCmd.Parameters.AddWithValue("@p1", NpgsqlTypes.NpgsqlDbType.Text, adminHash);
+                    insertCmd.Parameters.AddWithValue("@r1", NpgsqlTypes.NpgsqlDbType.Varchar, "Admin");
+                    insertCmd.Parameters.AddWithValue("@c1", NpgsqlTypes.NpgsqlDbType.TimestampTz, DateTime.UtcNow);
+
+                    insertCmd.Parameters.AddWithValue("@id2", NpgsqlTypes.NpgsqlDbType.Uuid, id2);
+                    insertCmd.Parameters.AddWithValue("@u2", NpgsqlTypes.NpgsqlDbType.Varchar, "user");
+                    insertCmd.Parameters.AddWithValue("@p2", NpgsqlTypes.NpgsqlDbType.Text, userHash);
+                    insertCmd.Parameters.AddWithValue("@r2", NpgsqlTypes.NpgsqlDbType.Varchar, "User");
+                    insertCmd.Parameters.AddWithValue("@c2", NpgsqlTypes.NpgsqlDbType.TimestampTz, DateTime.UtcNow);
+
+                    await insertCmd.ExecuteNonQueryAsync();
+                }
+            }
+
             await using (var checkCommand = connection.CreateCommand())
             {
                 checkCommand.CommandText = @"SELECT 1 FROM ""SeedHistory"" LIMIT 1;";

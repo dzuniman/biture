@@ -11,6 +11,7 @@ namespace Quote2Cash.Persistence.Data
         }
 
         public DbSet<Client> Clients { get; set; } = null!;
+        public DbSet<User> Users { get; set; } = null!;
         public DbSet<Quote> Quotes { get; set; } = null!;
         public DbSet<QuoteItem> QuoteItems { get; set; } = null!;
         public DbSet<JobCard> JobCards { get; set; } = null!;
@@ -101,6 +102,16 @@ namespace Quote2Cash.Persistence.Data
                 entity.Property(e => e.Status).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.CreatedAt).IsRequired();
                 entity.HasOne(e => e.Client).WithMany(c => c.Statements).HasForeignKey(e => e.ClientId);
+            });
+
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Username).IsRequired().HasMaxLength(200);
+                entity.HasIndex(e => e.Username).IsUnique();
+                entity.Property(e => e.PasswordHash).IsRequired();
+                entity.Property(e => e.Role).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.CreatedAt).IsRequired();
             });
         }
     }

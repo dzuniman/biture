@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Quote2Cash.Domain.Entities;
 using Quote2Cash.Persistence.Data;
@@ -24,6 +25,7 @@ namespace Quote2Cash.API.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<Client>> CreateClient([FromBody] Client request)
         {
             request.Id = Guid.NewGuid();
@@ -33,6 +35,7 @@ namespace Quote2Cash.API.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateClient(Guid id, [FromBody] Client request)
         {
             var client = await _context.Clients.FindAsync(id);
@@ -54,6 +57,7 @@ namespace Quote2Cash.API.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteClient(Guid id)
         {
             var client = await _context.Clients.FindAsync(id);

@@ -11,12 +11,26 @@ import type {
   Invoice,
   InvoiceCreateRequest,
   Statement,
-  StatementCreateRequest
+  StatementCreateRequest,
+  LoginRequest,
+  AuthResponse
 } from './types';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? 'http://192.168.1.72:5227/api'
+  baseURL: import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:5227/api'
 });
+
+// Add a request interceptor to include the JWT token in the header
+api.interceptors.request.use(
+  config => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  error => Promise.reject(error)
+);
 
 // Add a request interceptor for debugging
 api.interceptors.response.use(
@@ -26,9 +40,27 @@ api.interceptors.response.use(
     if (error.code === 'ERR_NETWORK') {
       console.error('Network Error: This is likely a CORS issue or the API is unreachable.');
     }
+    // Auto-logout if token is expired or invalid (401 Unauthorized)
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.reload();
+    }
     return Promise.reject(error);
   }
 );
+
+export async function login(payload: LoginRequest): Promise<AuthResponse> {
+  const response = await api.post<AuthResponse>('/auth/login', payload);
+  if (response.data.token) {
+    localStorage.setItem('token', response.data.token);
+  }
+  return response.data;
+}
+
+export function logout(): void {
+  localStorage.removeItem('token');
+}
 
 export async function getClients(): Promise<Client[]> {
   const response = await api.get<Client[]>('/clients');
