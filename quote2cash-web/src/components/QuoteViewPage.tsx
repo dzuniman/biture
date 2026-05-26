@@ -27,15 +27,92 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
   return (
     <div className="page-section">
       <style dangerouslySetInnerHTML={{ __html: `
+        .print-only { display: none !important; }
         @media print {
-          .no-print { display: none !important; }
-          body { background: white !important; padding: 0 !important; }
-          .view-card { box-shadow: none !important; border: none !important; padding: 0 !important; }
-          .items-table-header { background-color: #f3f4f6 !important; -webkit-print-color-adjust: exact; }
-          @page { margin: 1.5cm; }
+          .no-print, .section-header { display: none !important; }
+          .print-only { display: block !important; }
+          body { background: white !important; margin: 0 !important; padding: 0 !important; }
+
+          /* Completely suppress UI-originated borders, shadows, and backgrounds */
+          .page-section, .view-container, .view-card, .view-section, .items-table, .items-table-header, .items-table-row, .summary-row, .summary-total {
+            border: none !important;
+            box-shadow: none !important;
+            background: none !important;
+          }
+
+          .page-section { padding: 0 !important; margin: 0 !important; }
+          .view-container { padding: 0 !important; margin: 0 !important; width: 100% !important; }
+          .view-card { 
+            padding: 20px !important; /* Maintain internal padding for content */
+            width: 100% !important;
+            margin: 0 !important;
+            font-size: 9pt !important;
+          }
+
+          /* Re-apply clean, professional dividers specifically for print document */
+          .company-lines { font-size: 7.5pt !important; line-height: 1.1 !important; }
+          .company-logo { max-height: 60px !important; }
+          .quote-view-header { border-bottom: 0.5pt solid #ccc !important; padding-bottom: 12px !important; margin-bottom: 15px !important; }
+          .quote-view-right { font-size: 6.5pt !important; line-height: 1.1 !important; }
+          .quote-view-right h3 { font-size: 7.5pt !important; margin-bottom: 1px !important; }
+          .view-row .view-label, .view-row .view-value { font-size: 6.5pt !important; }
+          .view-section h3 { font-size: 8pt !important; margin-bottom: 4px !important; }
+          
+          /* Overriding UI line-height: 0 and spacing for print legibility */
+          .view-row, .company-lines, .view-section div, .summary-row, .items-table-row div { 
+            line-height: 1.2 !important; 
+            margin-bottom: 0 !important; 
+            padding-top: 1px !important;
+            padding-bottom: 1px !important;
+          }
+          
+          .items-table div { font-size: 7.5pt !important; }
+          .summary-row span, .summary-row strong { font-size: 8.5pt !important; }
+          .summary-total { 
+            font-size: 10pt !important; 
+            margin-top: 8px !important; 
+            border-top: 1.5pt solid #333 !important; 
+            padding-top: 4px !important; 
+          }
+          
+          /* Add a separator below the summary section for print, targeting the second view-section within quote-view-main */
+          .quote-view-main > .view-section:nth-of-type(2) {
+            border-bottom: 0.5pt solid #ccc !important;
+            padding-bottom: 10px !important;
+            margin-bottom: 10px !important;
+          }
+
+          .items-table-header, .items-table-row {
+            display: grid !important;
+            grid-template-columns: 25px 40px 45px 1fr 100px 100px !important;
+            gap: 8px !important;
+            align-items: start !important;
+            border-bottom: 0.5pt solid #ccc !important;
+            padding-bottom: 4px !important;
+            margin-bottom: 4px !important;
+          }
+          .items-table-header { 
+            background-color: #f3f4f6 !important; 
+            border-bottom: 1.5pt solid #333 !important;
+            -webkit-print-color-adjust: exact; 
+            print-color-adjust: exact; 
+          }
+          .items-table-header div { font-weight: bold !important; }
+          
+          /* Terms and conditions section */
+          /* Target the approval section by its unique inline border and replace with professional divider */
+          .view-section[style*="border-top"] { 
+            border-top: none !important; /* Explicitly remove the UI border */
+            margin-top: 10px !important; 
+            line-height: 1.1 !important; 
+            font-size: 6.5pt !important; 
+          }
+          .view-section[style*="border-top"] div { font-size: 6.5pt !important; }
+
+          @page { size: A4; margin: 1.5cm 1cm; }
         }
       ` }} />
-      <div className="section-header">
+      <div className="section-header no-print">
         <div>
           <h2>{quote.reference}</h2>
           <p>Quote #{quote.quoteNumber}</p>
@@ -59,7 +136,7 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
               </div>
             </div>
 
-            <div className="quote-view-right" style={{ textAlign: 'right', fontSize: '0.75rem', lineHeight: '1.3' }}>
+            <div className="quote-view-right" style={{ textAlign: 'right', fontSize: '0.7rem', lineHeight: '1.3' }}>
               <div className="view-section">
                 <h3 style={{ margin: '0 0 1px 0', fontSize: '0.8rem' }}>Quote Information</h3>
                 <div className="view-row" style={{ marginBottom: '0', lineHeight: '0' }}>
@@ -116,7 +193,7 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
           <div className="quote-view-main">
             <div className="view-section">
               <div className="items-table">
-                <div className="items-table-header">
+                <div className="items-table-header" style={{ display: 'grid', gridTemplateColumns: '25px 40px 45px 1fr 100px 100px', gap: '8px', whiteSpace: 'nowrap' }}>
                   <div>#</div>
                   <div>Qty</div>
                   <div>UOM</div>
@@ -125,7 +202,7 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
                   <div>Total</div>
                 </div>
                 {quote.items.map((item) => (
-                  <div key={item.id} className="items-table-row">
+                  <div key={item.id} className="items-table-row" style={{ display: 'grid', gridTemplateColumns: '25px 40px 45px 1fr 100px 100px', gap: '8px', whiteSpace: 'nowrap' }}>
                     <div>{item.itemNumber}</div>
                     <div>{item.quantity}</div>
                     <div>{item.uom}</div>
@@ -156,16 +233,19 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
               <div style={{ marginBottom: '8px', fontSize: '0.8rem' }}>
                 Received and Approved by: __________________________________________________________
               </div>
+              <div className="print-only" style={{ height: '20px' }}></div>
               <div style={{ marginBottom: '15px', fontSize: '0.8rem' }}>
                 Signature: _________________________________________________________________________
               </div>
+              <div className="print-only" style={{ height: '20px' }}></div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem',marginBottom: '10px' }}>
                 <span>A written order is required should the quote be accepted</span>
                 <span>A soft copy of a purchase order should be forwarded to sales@epec.co.za</span>
               </div>
+              <div className="print-only" style={{ height: '20px' }}></div>
 
-              <div style={{ fontSize: '0.7rem', lineHeight: '1.2' }}>
+              <div style={{ fontSize: '0.65rem', lineHeight: '1.2' }}>
                 <div>THIS QUOTE IS SUBJECT TO THE FOLLOWING:</div>
                 <div style={{ marginTop: '4px' }}>
                   <div>1) This quote automatically expires after thirty (30) days irrespective of the valid date above.</div>

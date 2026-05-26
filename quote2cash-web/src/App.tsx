@@ -328,7 +328,7 @@ function App() {
           <div className="section-header">
             <div>
               <h2>Dashboard</h2>
-              <p>Overview of your business metrics and recent activity</p>
+              <p>Business metrics and recent activity</p>
             </div>
           </div>
 

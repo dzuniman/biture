@@ -58,7 +58,7 @@ export default function QuotesListPage({
       <div className="section-header">
         <div>
           <h2>Quotes</h2>
-          <p>Manage and track your quotations</p>
+          <p>Manage and track quotations</p>
         </div>
         <button onClick={onCreateNew} className="btn-primary-lg">
           + New Quote
