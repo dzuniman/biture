@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: quote2cash-api
+    env: dotnet
+    buildCommand: dotnet publish Quote2Cash.API.csproj -c Release -o out
+    startCommand: dotnet out/Quote2Cash.API.dll
+    rootDir: Quote2Cash.API
+    plan: free
