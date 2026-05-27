@@ -4,8 +4,13 @@ EXPOSE 80
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
+
+# Copy everything (solution + projects)
 COPY . .
-RUN dotnet publish Quote2Cash.API.csproj -c Release -o /app/publish
+
+# Restore and publish from the solution file
+RUN dotnet restore Quote2Cash.sln
+RUN dotnet publish Quote2Cash.API/Quote2Cash.API.csproj -c Release -o /app/publish
 
 FROM base AS final
 WORKDIR /app
