@@ -15,3 +15,4 @@ C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Persistenc
 C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Persistence\obj\Debug\net8.0\Quote2Cash.Persistence.pdb
 C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Persistence\obj\Debug\net8.0\Quote2Cash.Persistence.genruntimeconfig.cache
 C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Persistence\obj\Debug\net8.0\ref\Quote2Cash.Persistence.dll
+C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Persistence\obj\Debug\net8.0\Quote2Cash.Persistence.sourcelink.json

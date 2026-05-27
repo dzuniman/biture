@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   server: {
-    origin: 'https://arcade-scroll-orange-enclosure.trycloudflare.com',
+    origin: 'http://192.168.1.72:5227',
     port: 4173,
     host: true, // This allows access via your network IP (0.0.0.0)
     proxy: {
