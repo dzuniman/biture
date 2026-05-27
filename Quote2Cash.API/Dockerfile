@@ -11,8 +11,8 @@ WORKDIR /src
 COPY . .
 
 # Restore and publish the API project
-RUN dotnet restore Quote2Cash/Quote2Cash.API/Quote2Cash.API.csproj
-RUN dotnet publish Quote2Cash/Quote2Cash.API/Quote2Cash.API.csproj -c Release -o /app/publish
+RUN dotnet restore Quote2Cash.API/Quote2Cash.API.csproj
+RUN dotnet publish Quote2Cash.API/Quote2Cash.API.csproj -c Release -o /app/publish
 
 # Final stage
 FROM base AS final
