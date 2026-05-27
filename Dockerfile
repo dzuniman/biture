@@ -10,8 +10,10 @@ WORKDIR /src
 # Copy everything from the repo
 COPY . .
 
-# Restore and publish the API project
-RUN dotnet restore Quote2Cash.API/Quote2Cash.API.csproj
+# Restore the solution (your file is .slnx)
+RUN dotnet restore Quote2Cash.slnx
+
+# Publish the API project
 RUN dotnet publish Quote2Cash.API/Quote2Cash.API.csproj -c Release -o /app/publish
 
 # Final stage
