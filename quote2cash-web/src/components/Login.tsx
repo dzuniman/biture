@@ -25,42 +25,34 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', marginTop: '100px' }}>
-      <form onSubmit={handleSubmit} style={{ width: '300px', padding: '20px', border: '1px solid #ccc', borderRadius: '8px' }}>
+    <div className="login-container">
+      <form onSubmit={handleSubmit} className="login-form">
         <h2>Login to EPEC Solution</h2>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block' }}>Username</label>
+        {error && <p className="login-error">{error}</p>}
+        <div className="login-field">
+          <label htmlFor="username">Username</label>
           <input
+            id="username"
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            style={{ width: '100%', padding: '8px', marginTop: '5px' }}
             required
           />
         </div>
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block' }}>Password</label>
+        <div className="login-field">
+          <label htmlFor="password">Password</label>
           <input
+            id="password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            style={{ width: '100%', padding: '8px', marginTop: '5px' }}
             required
           />
         </div>
         <button 
           type="submit" 
           disabled={loading}
-          style={{ 
-            width: '100%', 
-            padding: '10px', 
-            backgroundColor: '#007bff', 
-            color: 'white', 
-            border: 'none', 
-            borderRadius: '4px',
-            cursor: loading ? 'not-allowed' : 'pointer'
-          }}
+          className="login-button"
         >
           {loading ? 'Logging in...' : 'Login'}
         </button>
