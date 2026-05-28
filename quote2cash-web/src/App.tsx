@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+﻿﻿import { useEffect, useState } from 'react';
 import { formatAmount } from '../formatters';
 import {
   createClient,
@@ -25,7 +25,7 @@ import ClientViewPage from './components/ClientViewPage';
 import QuotesListPage from './components/QuotesListPage';
 import QuoteManagementPage from './components/QuoteManagementPage';
 import QuoteViewPage from './components/QuoteViewPage';
-import logo from '../resource/Logo.png';
+import logo from './assets/logo.png';
 
 
 type Section = 'dashboard' | 'clients' | 'quotes';

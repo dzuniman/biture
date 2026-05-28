@@ -1,6 +1,6 @@
 import type { Quote } from '../types';
 import { formatAmount } from '../../formatters';
-import logo from '../../resource/Logo.png';
+import logo from '../assets/logo.png';
 
 interface Props {
   quote: Quote;
@@ -98,7 +98,36 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
             print-color-adjust: exact; 
           }
           .items-table-header div { font-weight: bold !important; }
-          
+          .summary-section {
+            margin-left: auto !important; /* Push to the right */
+            width: fit-content !important; /* Shrink to content width */
+          }
+          .quote-details-block .view-row {
+            line-height: 1.2 !important;
+            margin-bottom: 2px !important;
+          }
+          .items-table {
+            border-left: 1px solid #000 !important;
+            border-right: 1px solid #000 !important;
+            border-radius: 2px !important;
+            overflow: hidden !important;
+          }
+          .items-table-header {
+            background-color: #f3f4f6 !important;
+          }
+          .items-table-header div,
+          .items-table-row div {
+            border-left: 1px solid #000 !important;
+            padding: 8px 6px !important;
+          }
+          .items-table-header div:last-child,
+          .items-table-row div:last-child {
+            border-right: 1px solid #000 !important;
+          }
+          .items-table-row {
+            border-bottom: none !important;
+          }
+
           /* Terms and conditions section */
           /* Target the approval section by its unique inline border and replace with professional divider */
           .view-section[style*="border-top"] { 
@@ -132,59 +161,46 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
                   <div>259 Kent Avenue, Randburg, Johannesburg, Gauteng, 2194</div>
                   <div>email: sales@epec.co.za &nbsp;&nbsp; Phone: 065 835 4371</div>
                 </div>
-                <img src={logo} alt="Epec Solutions" className="company-logo" style={{ maxHeight: '150px', width: 'auto' }} />
+                <img src={logo} alt="Epec Solutions" className="company-logo" style={{ display: 'block', maxHeight: '150px', width: 'auto', minHeight: '30px' }} />
               </div>
             </div>
 
-            <div className="quote-view-right" style={{ textAlign: 'right', fontSize: '0.7rem', lineHeight: '1.3' }}>
-              <div className="view-section">
-                <h3 style={{ margin: '0 0 1px 0', fontSize: '0.8rem' }}>Quote Information</h3>
-                <div className="view-row" style={{ marginBottom: '0', lineHeight: '0' }}>
-                  <span className="view-label">Quote Number:</span>
+            <div className="quote-view-right" style={{ textAlign: 'right', fontSize: '0.75rem', lineHeight: '1' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '1px', lineHeight: '1' }}>SALES QUOTATION</div>
+
+              <div className="quote-details-block" style={{ fontSize: '0.75rem', lineHeight: '1', marginBottom: '2px' }}>
+                <div className="view-row" style={{ marginBottom: '1px', lineHeight: '0' }}>
+                  <span className="view-label">QUOTE NUMBER:</span>
                   <span className="view-value">#{quote.quoteNumber}</span>
                 </div>
-                <div className="view-row" style={{ marginBottom: '0', lineHeight: '0' }}>
-                  <span className="view-label">Reference:</span>
+                <div className="view-row" style={{ marginBottom: '1px', lineHeight: '0' }}>
+                  <span className="view-label">REFERENCE:</span>
                   <span className="view-value">{quote.reference}</span>
                 </div>
-                <div className="view-row" style={{ marginBottom: '0', lineHeight: '0' }}>
-                  <span className="view-label">Vendor Number:</span>
-                  <span className="view-value">{quote.vendorNumber}</span>
-                </div>
-                <div className="view-row" style={{ marginBottom: '0', lineHeight: '0' }}>
-                  <span className="view-label">Date:</span>
+                <div className="view-row" style={{ marginBottom: '1px', lineHeight: '0' }}>
+                  <span className="view-label">DATE:</span>
                   <span className="view-value">{formattedDate}</span>
                 </div>
-                <div className="view-row" style={{ marginBottom: '0', lineHeight: '0' }}>
-                  <span className="view-label">Valid Until:</span>
-                  <span className="view-value">{formattedValidUntil}</span>
+                <div className="view-row" style={{ marginBottom: '1px', lineHeight: '0' }}>
+                  <span className="view-label">VALIDITY:</span>
+                  <span className="view-value">{quote.validityDays} Days</span>
+                </div>
+                <div className="view-row" style={{ marginBottom: '1px', lineHeight: '0' }}>
+                  <span className="view-label">VENDOR NUMBER:</span>
+                  <span className="view-value">{quote.vendorNumber}</span>
                 </div>
               </div>
 
               {quote.client && (
-                <div className="view-section" style={{ marginTop: '2px' }}>
-                  <h3 style={{ margin: '0 0 1px 0', fontSize: '0.8rem' }}>Client Information</h3>
-                  <div className="view-row" style={{ marginBottom: '0', lineHeight: '0' }}>
-                    <span className="view-label">Name:</span>
-                    <span className="view-value">{quote.client.name}</span>
-                  </div>
-                  <div className="view-row" style={{ marginBottom: '0', lineHeight: '1.3' }}>
-                    <span className="view-label">Address:</span>
-                    <span className="view-value">
-                      {quote.client.addressLine1 || ''}
-                      {quote.client.addressLine2 ? <><br />{quote.client.addressLine2}</> : null}
-                      {quote.client.addressLine3 ? <><br />{quote.client.addressLine3}</> : null}
-                      {quote.client.addressLine4 ? <><br />{quote.client.addressLine4}</> : null}
-                    </span>
-                  </div>
-                  <div className="view-row" style={{ marginBottom: '0', lineHeight: '0' }}>
-                    <span className="view-label">Representative:</span>
-                    <span className="view-value">{quote.client.representativeName || '—'}</span>
-                  </div>
-                  <div className="view-row" style={{ marginBottom: '0', lineHeight: '0' }}>
-                    <span className="view-label">Contact Number:</span>
-                    <span className="view-value">{quote.client.representativeNumber || '—'}</span>
-                  </div>
+                <div className="customer-box" style={{ border: '1px solid #000', padding: '6px', marginTop: '8px', fontSize: '0.75rem', lineHeight: '1.2' }}>
+                  <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>CUSTOMER</div>
+                  {quote.client.name && <div style={{ marginBottom: '2px' }}>{quote.client.name}</div>}
+                  {quote.client.addressLine1 && <div style={{ marginBottom: '2px' }}>{quote.client.addressLine1}</div>}
+                  {quote.client.addressLine2 && <div style={{ marginBottom: '2px' }}>{quote.client.addressLine2}</div>}
+                  {quote.client.addressLine3 && <div style={{ marginBottom: '2px' }}>{quote.client.addressLine3}</div>}
+                  {quote.client.addressLine4 && <div style={{ marginBottom: '2px' }}>{quote.client.addressLine4}</div>}
+                  <div style={{ marginBottom: '2px' }}>{quote.client.representativeName || '—'}</div>
+                  <div style={{ marginBottom: '2px' }}>C{quote.client.representativeNumber || '—'}</div>
                 </div>
               )}
             </div>
@@ -192,40 +208,47 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
 
           <div className="quote-view-main">
             <div className="view-section">
-              <div className="items-table">
-                <div className="items-table-header" style={{ display: 'grid', gridTemplateColumns: '25px 40px 45px 1fr 100px 100px', gap: '8px', whiteSpace: 'nowrap' }}>
-                  <div>#</div>
-                  <div>Qty</div>
-                  <div>UOM</div>
-                  <div>Description</div>
-                  <div>Unit Price</div>
-                  <div>Total</div>
+              <div className="items-table" style={{ border: '1px solid #000', borderRadius: '2px', overflow: 'hidden' }}>
+                <div className="items-table-header" style={{ display: 'grid', gridTemplateColumns: '50px 40px 45px 1fr 100px 100px', gap: '0', background: '#f3f4f6', borderBottom: '1px solid #000' }}>
+                  <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>ITEM</div>
+                  <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>QTY</div>
+                  <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>UOM</div>
+                  <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>DESCRIPTION</div>
+                  <div style={{ padding: '8px 6px', fontWeight: 'bold', textAlign: 'right' }}>UNIT PRICE</div>
+                  <div style={{ padding: '8px 6px', fontWeight: 'bold', textAlign: 'right' }}>TOTAL</div>
                 </div>
-                {quote.items.map((item) => (
-                  <div key={item.id} className="items-table-row" style={{ display: 'grid', gridTemplateColumns: '25px 40px 45px 1fr 100px 100px', gap: '8px', whiteSpace: 'nowrap' }}>
-                    <div>{item.itemNumber}</div>
-                    <div>{item.quantity}</div>
-                    <div>{item.uom}</div>
-                    <div>{item.description}</div>
-                    <div>{formatAmount(item.unitPrice)}</div>
-                    <div>{formatAmount(item.totalPrice)}</div>
+                {quote.items.slice().sort((a, b) => {
+                  const aNum = Number(a.itemNumber);
+                  const bNum = Number(b.itemNumber);
+                  if (!Number.isNaN(aNum) && !Number.isNaN(bNum)) return aNum - bNum;
+                  return a.itemNumber.toString().localeCompare(b.itemNumber.toString(), undefined, { numeric: true });
+                }).map((item) => (
+                  <div key={item.id} className="items-table-row" style={{ display: 'grid', gridTemplateColumns: '50px 40px 45px 1fr 100px 100px', gap: '0' }}>
+                    <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{item.itemNumber}</div>
+                    <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{item.quantity}</div>
+                    <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{item.uom}</div>
+                    <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{item.description}</div>
+                    <div style={{ padding: '8px 6px', textAlign: 'right', lineHeight: '1.2' }}>{formatAmount(item.unitPrice)}</div>
+                    <div style={{ padding: '8px 6px', textAlign: 'right', lineHeight: '1.2' }}>{formatAmount(item.totalPrice)}</div>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="view-section">
-              <div className="summary-row">
-                <span className="summary-label">Subtotal:</span>
-                <span className="summary-value">{formatAmount(quote.subTotal)}</span>
-              </div>
-              <div className="summary-row">
-                <span className="summary-label">VAT (15%):</span>
-                <span className="summary-value">{formatAmount(quote.vat)}</span>
-              </div>
-              <div className="summary-row summary-total">
-                <span className="summary-label">Total:</span>
-                <span className="summary-value">{formatAmount(quote.total)}</span>
+            <div className="view-section" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
+              <div style={{ width: '220px' }}>
+                <div className="summary-row" style={{ justifyContent: 'space-between', lineHeight: '0', marginBottom: '0px' }}>
+                  <span className="summary-label">Sub Total</span>
+                  <span className="summary-value">{formatAmount(quote.subTotal)}</span>
+                </div>
+                <div className="summary-row" style={{ justifyContent: 'space-between', lineHeight: '0', marginBottom: '0px' }}>
+                  <span className="summary-label">VAT</span>
+                  <span className="summary-value">{formatAmount(quote.vat)}</span>
+                </div>
+                <div className="summary-row summary-total" style={{ justifyContent: 'space-between', lineHeight: '0', marginBottom: '0px' }}>
+                  <span className="summary-label">Total</span>
+                  <span className="summary-value">{formatAmount(quote.total)}</span>
+                </div>
               </div>
             </div>
 

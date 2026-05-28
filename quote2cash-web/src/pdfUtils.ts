@@ -2,122 +2,133 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Quote } from './types';
 import { formatAmount } from '../formatters';
+import logo from './assets/logo.png';
 
-/**
- * Generates a professional PDF for a Quote matching the EPEC format.
- * Layout includes company header with logo, client details, items table, totals, and terms & conditions.
- */
-export const generateQuotePDF = async (quote: Quote) => {
-  const doc = new jsPDF({
-    orientation: 'portrait',
-    unit: 'mm',
-    format: 'a4'
+const loadImageDataUrl = async (url: string): Promise<string> => {
+  const response = await fetch(url);
+  const blob = await response.blob();
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === 'string') {
+        resolve(reader.result);
+      } else {
+        reject(new Error('Unable to convert logo to data URL'));
+      }
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
   });
+};
 
+export const generateQuotePDF = async (quote: Quote) => {
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const marginLeft = 20;
-  const marginRight = 20;
-  const marginTop = 15;
-  const contentWidth = pageWidth - marginLeft - marginRight;
-  let currentY = marginTop;
+  const margin = 15;
+  const bottomMargin = 15;
+  const contentWidth = pageWidth - margin * 2;
 
-  // --- HEADER SECTION ---
-  // Company branding on left
+  let currentY = margin;
+
+  try {
+    const logoDataUrl = await loadImageDataUrl(logo);
+    doc.addImage(logoDataUrl, 'PNG', margin, currentY, 32, 20);
+  } catch {
+    // Continue if the logo cannot be loaded.
+  }
+
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(0, 0, 0);
-  doc.text('EPEC SOLUTIONS (PTY) LTD   Reg: 2012/118990/07   VAT No: 4470275886', marginLeft, currentY);
-  
+  doc.setFontSize(8);
+  doc.text('EPEC SOLUTIONS (PTY) LTD', margin + 38, currentY + 4);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.text('Reg: 2012/118990/07   VAT No: 4470275886', margin + 38, currentY + 8);
+  doc.text('259 Kent Avenue, Randburg, Johannesburg, Gauteng, 2194', margin + 38, currentY + 12);
+  doc.text('email: sales@epec.co.za   Phone: 065 835 4371', margin + 38, currentY + 16);
+
+  const rightX = pageWidth - margin;
+  const labelX = rightX - 78;
+
+  currentY += 2;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.text('SALES QUOTATION', rightX, currentY, { align: 'right' });
+
   currentY += 5;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.text('259 Kent Avenue, Randburg, Johannesburg, Gauteng, 2194', marginLeft, currentY);
-  
-  currentY += 4;
-  doc.text('email: sales@epec.co.za   Phone: 065 835 4371', marginLeft, currentY);
-
-  // Quote title and metadata on right
-  currentY = marginTop;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
-  doc.text('QUOTE', pageWidth - marginRight, currentY, { align: 'right' });
-
-  currentY += 8;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.text(`Quote Number: ${quote.quoteNumber}`, pageWidth - marginRight, currentY, { align: 'right' });
-  
-  currentY += 4;
   const formattedDate = new Date(quote.date).toLocaleDateString('en-ZA', {
     year: 'numeric',
     month: 'long',
     day: 'numeric'
   });
-  doc.text(`Date: ${formattedDate}`, pageWidth - marginRight, currentY, { align: 'right' });
-  
-  currentY += 4;
-  doc.text(`Validity: ${quote.validityDays} Days`, pageWidth - marginRight, currentY, { align: 'right' });
-  
-  if (quote.vendorNumber) {
-    currentY += 4;
-    doc.text(`Vendor Number: ${quote.vendorNumber}`, pageWidth - marginRight, currentY, { align: 'right' });
-  }
 
-  // Separator line
-  currentY = 35;
-  doc.setDrawColor(200, 200, 200);
-  doc.setLineWidth(0.3);
-  doc.line(marginLeft, currentY, pageWidth - marginRight, currentY);
+  const quoteDetails = [
+    ['QUOTE NUMBER:', `#${quote.quoteNumber}`],
+    ['REFERENCE:', quote.reference],
+    ['DATE:', formattedDate],
+    ['VALIDITY:', `${quote.validityDays} Days`],
+    ['VENDOR NUMBER:', quote.vendorNumber || '']
+  ];
 
-  currentY += 8;
+  doc.setFontSize(6.5);
+  quoteDetails.forEach(([label, value]) => {
+    doc.setFont('helvetica', 'bold');
+    doc.text(label, labelX, currentY, { align: 'left' });
+    const labelWidth = doc.getTextWidth(label);
+    doc.setFont('helvetica', 'normal');
+    doc.text(value, labelX + labelWidth + 2, currentY, { align: 'left' });
+    currentY += 3.5;
+  });
 
-  // --- BILL TO SECTION ---
+  const customerBoxTop = margin + 18;
+  const customerBoxWidth = 75;
+  const customerBoxHeight = 48;
+  const customerBoxX = pageWidth - margin - customerBoxWidth;
+
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.35);
+  doc.rect(customerBoxX, customerBoxTop, customerBoxWidth, customerBoxHeight);
+  doc.rect(customerBoxX, customerBoxTop, customerBoxWidth, 6);
+
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.text('BILL TO:', marginLeft, currentY);
+  doc.setFontSize(6.5);
+  doc.text('CUSTOMER', customerBoxX + customerBoxWidth / 2, customerBoxTop + 4, { align: 'center' });
 
-  currentY += 6;
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
+  doc.setFontSize(6.5);
+  let customerTextY = customerBoxTop + 8;
+  const customerLines = [];
+  if (quote.client?.name) customerLines.push(quote.client.name);
+  if (quote.client?.addressLine1) customerLines.push(quote.client.addressLine1);
+  if (quote.client?.addressLine2) customerLines.push(quote.client.addressLine2);
+  if (quote.client?.addressLine3) customerLines.push(quote.client.addressLine3);
+  if (quote.client?.addressLine4) customerLines.push(quote.client.addressLine4);
 
-  if (quote.client) {
-    doc.text(quote.client.name, marginLeft, currentY);
-    currentY += 4;
+  customerLines.forEach((line) => {
+    doc.text(line, customerBoxX + 2, customerTextY);
+    customerTextY += 4;
+  });
 
-    const addressLines = [
-      quote.client.addressLine1,
-      quote.client.addressLine2,
-      quote.client.addressLine3,
-      quote.client.addressLine4
-    ].filter(Boolean) as string[];
+  doc.text(`Representative: ${quote.client?.representativeName || '-'}`, customerBoxX + 2, customerBoxTop + customerBoxHeight - 8);
+  doc.text(`Contact Number: ${quote.client?.representativeNumber || '-'}`, customerBoxX + 2, customerBoxTop + customerBoxHeight - 3);
 
-    addressLines.forEach(line => {
-      doc.text(line, marginLeft, currentY);
-      currentY += 3;
-    });
+  const tableStartY = Math.max(customerBoxTop + customerBoxHeight + 8, currentY + 4, 65);
+  const tableStartX = margin;
+  const tableWidth = pageWidth - margin * 2;
 
-    if (quote.client.representativeName) {
-      currentY += 1;
-      doc.text(`Attention: ${quote.client.representativeName}`, marginLeft, currentY);
-      currentY += 3;
-    }
-  }
+  const sortedItems = quote.items.slice().sort((a, b) => {
+    const aNum = Number(a.itemNumber);
+    const bNum = Number(b.itemNumber);
+    if (!Number.isNaN(aNum) && !Number.isNaN(bNum)) return aNum - bNum;
+    return a.itemNumber.toString().localeCompare(b.itemNumber.toString(), undefined, { numeric: true });
+  });
 
-  // Reference field
-  doc.setFont('helvetica', 'bold');
-  doc.text('Reference:', marginLeft, currentY);
-  doc.setFont('helvetica', 'normal');
-  doc.text(quote.reference, marginLeft + 22, currentY);
-
-  currentY += 8;
-
-  // --- LINE ITEMS TABLE ---
-  const tableStartY = currentY;
   autoTable(doc, {
     startY: tableStartY,
-    head: [['#', 'Qty', 'UOM', 'Description', 'Unit Price', 'Total']],
-    body: quote.items.map(item => [
+    head: [['ITEM', 'QTY', 'UOM', 'DESCRIPTION', 'UNIT PRICE', 'TOTAL']],
+    body: sortedItems.map((item) => [
       item.itemNumber.toString(),
       item.quantity.toString(),
       item.uom,
@@ -125,87 +136,99 @@ export const generateQuotePDF = async (quote: Quote) => {
       formatAmount(item.unitPrice),
       formatAmount(item.totalPrice)
     ]),
-    theme: 'grid',
+    theme: 'plain',
+    styles: {
+      font: 'helvetica',
+      fontSize: 6,
+      textColor: 0,
+      cellPadding: 1.2,
+      lineWidth: 0
+    },
     headStyles: {
-      fillColor: [243, 244, 246],
+      fillColor: [243, 243, 243],
       textColor: 0,
       fontStyle: 'bold',
-      fontSize: 8,
-      lineWidth: 0.3,
+      fontSize: 6.5,
+      lineWidth: 0.1,
       lineColor: [0, 0, 0]
     },
     bodyStyles: {
-      fontSize: 8,
-      lineWidth: 0.2,
-      lineColor: [200, 200, 200]
+      fontSize: 6,
+      valign: 'middle'
     },
     columnStyles: {
-      0: { cellWidth: 15, halign: 'center' },
-      1: { cellWidth: 20, halign: 'center' },
-      2: { cellWidth: 20, halign: 'center' },
-      4: { cellWidth: 35, halign: 'right' },
-      5: { cellWidth: 35, halign: 'right' }
+      0: { cellWidth: 15, halign: 'left' },
+      1: { cellWidth: 14, halign: 'left' },
+      2: { cellWidth: 14, halign: 'left' },
+      3: { cellWidth: 78, halign: 'left' },
+      4: { cellWidth: 28, halign: 'right' },
+      5: { cellWidth: 28, halign: 'right' }
     },
-    margin: { left: marginLeft, right: marginRight },
-    didDrawPage: function() {
-      // Ensure clean borders
+    margin: { left: margin, right: margin },
+    didDrawCell: (data) => {
+      const cell = data.cell;
       doc.setDrawColor(0);
-      doc.setLineWidth(0.3);
+      doc.setLineWidth(0.1);
+      if (cell.section === 'head' || cell.section === 'body') {
+        doc.line(cell.x, cell.y, cell.x, cell.y + cell.height);
+        if (data.column.index === data.table.columns.length - 1) {
+          doc.line(cell.x + cell.width, cell.y, cell.x + cell.width, cell.y + cell.height);
+        }
+      }
+      if (cell.section === 'head') {
+        doc.line(cell.x, cell.y + cell.height, cell.x + cell.width, cell.y + cell.height);
+      }
     }
   });
 
-  currentY = (doc as any).lastAutoTable.finalY + 8;
-
-  // --- TOTALS SECTION ---
-  const totalLabelX = pageWidth - marginRight - 40;
-  const totalValueX = pageWidth - marginRight;
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.text('Subtotal:', totalLabelX, currentY, { align: 'right' });
-  doc.text(formatAmount(quote.subTotal), totalValueX, currentY, { align: 'right' });
-
-  currentY += 4;
-  doc.text('VAT (15%):', totalLabelX, currentY, { align: 'right' });
-  doc.text(formatAmount(quote.vat), totalValueX, currentY, { align: 'right' });
-
-  currentY += 3;
+  const finalY = (doc as any).lastAutoTable?.finalY || tableStartY;
+  const tableBottomY = finalY;
   doc.setDrawColor(0);
-  doc.setLineWidth(0.5);
-  doc.line(totalLabelX - 5, currentY, totalValueX, currentY);
+  doc.setLineWidth(0.1);
+  doc.line(tableStartX, tableStartY, tableStartX + tableWidth, tableStartY);
+  doc.line(tableStartX, tableBottomY, tableStartX + tableWidth, tableBottomY);
+  doc.line(tableStartX, tableStartY, tableStartX, tableBottomY);
+  doc.line(tableStartX + tableWidth, tableStartY, tableStartX + tableWidth, tableBottomY);
 
-  currentY += 4;
+  const totalsTopY = Math.min(tableBottomY + 6, pageHeight - bottomMargin - 60);
+  let statsY = totalsTopY;
+
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.text('TOTAL:', totalLabelX, currentY, { align: 'right' });
-  doc.text(formatAmount(quote.total), totalValueX, currentY, { align: 'right' });
-
-  // --- APPROVAL SECTION ---
-  currentY += 12;
+  doc.setFontSize(6.5);
+  doc.text('Sub Total', rightX - 42, statsY, { align: 'right' });
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.text('Received and Approved by: ___________________________________________', marginLeft, currentY);
+  doc.text(formatAmount(quote.subTotal), rightX, statsY, { align: 'right' });
 
-  currentY += 8;
-  doc.text('Signature: ___________________________________________', marginLeft, currentY);
+  statsY += 3.4;
+  doc.setFont('helvetica', 'bold');
+  doc.text('VAT', rightX - 42, statsY, { align: 'right' });
+  doc.setFont('helvetica', 'normal');
+  doc.text(formatAmount(quote.vat), rightX, statsY, { align: 'right' });
 
-  // --- FOOTER INSTRUCTIONS ---
-  currentY += 8;
+  statsY += 3.4;
+  doc.setFont('helvetica', 'bold');
+  doc.text('Total', rightX - 42, statsY, { align: 'right' });
+  doc.text(formatAmount(quote.total), rightX, statsY, { align: 'right' });
+
+  const approvalTop = pageHeight - bottomMargin - 46;
+  doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
+  doc.text('Received and Approved by: ___________________________________________', margin, approvalTop);
+  doc.text('Signature: ___________________________________________', margin, approvalTop + 6);
+
+  doc.setFontSize(6);
   const footerText = [
     'A written order is required should the quote be accepted',
     'A soft copy of a purchase order should be forwarded to sales@epec.co.za'
   ];
-  doc.text(footerText.join('  |  '), marginLeft, currentY);
+  doc.text(footerText.join('  |  '), margin, approvalTop + 12);
 
-  // --- TERMS AND CONDITIONS ---
-  currentY += 6;
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7);
-  doc.text('THIS QUOTE IS SUBJECT TO THE FOLLOWING:', marginLeft, currentY);
+  doc.setFontSize(6.5);
+  doc.text('THIS QUOTE IS SUBJECT TO THE FOLLOWING:', margin, approvalTop + 18);
 
-  currentY += 3;
   doc.setFont('helvetica', 'normal');
+  doc.setFontSize(5.5);
   const terms = [
     '1) This quote automatically expires after thirty (30) days irrespective of the valid date above.',
     '2) The standard terms and conditions of sale of EPEC (Pty) Ltd shall apply (such terms and conditions available on request)',
@@ -216,19 +239,20 @@ export const generateQuotePDF = async (quote: Quote) => {
     '8) This quotation is conditional upon your signed acceptance thereof, including the terms and conditions referred above and that it is returned to EPEC (Pty) Ltd within thirty (30) working days.'
   ];
 
-  doc.setFontSize(6);
-  terms.forEach(term => {
-    const wrappedText = doc.splitTextToSize(term, contentWidth);
-    wrappedText.forEach((line: string) => {
-      if (currentY > pageHeight - 15) {
-        doc.addPage();
-        currentY = marginTop;
-      }
-      doc.text(line, marginLeft, currentY);
-      currentY += 2.5;
+  let termY = approvalTop + 22;
+  const termLineHeight = 3.2;
+  terms.forEach((term) => {
+    const wrapped = doc.splitTextToSize(term, contentWidth);
+    wrapped.forEach((line: string) => {
+      if (termY > pageHeight - bottomMargin) return;
+      doc.text(line, margin, termY);
+      termY += termLineHeight;
     });
   });
 
-  // Save the PDF
-  doc.save(`Quote_${quote.quoteNumber}_${quote.client?.name.replace(/\s+/g, '_') || 'Draft'}.pdf`);
+  const fileName = `${quote.quoteNumber} ${quote.client?.name || 'Client'} ${quote.reference}`
+    .replace(/[\\/:*?"<>|]/g, '')
+    .trim();
+
+  doc.save(`${fileName}.pdf`);
 };
