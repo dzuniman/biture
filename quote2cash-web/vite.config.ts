@@ -9,7 +9,7 @@ export default defineConfig({
     host: true, // This allows access via your network IP (0.0.0.0)
     proxy: {
       '/api': {
-        target: 'http://192.168.1.72:5227',
+        target: 'http://localhost:5227',
         changeOrigin: true,
         secure: false,
       }
@@ -20,7 +20,7 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-        target: 'http://192.168.1.72:5227',
+        target: 'http://localhost:5227',
         changeOrigin: true,
         secure: false,
       }
