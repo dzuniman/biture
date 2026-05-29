@@ -57,12 +57,14 @@ export default function QuoteDescriptionManagementPage({ descriptions, onBack, o
       if (current) {
         await updateQuoteDescription(current.id, { id: current.id, value: value.trim() });
       } else {
-        await createQuoteDescription({ id: '', value: value.trim() });
+        await createQuoteDescription({ value: value.trim() } as any);
       }
       await onRefresh();
       cancel();
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? 'Unable to save description.');
+      const data = err?.response?.data;
+      const detail = data?.message || (data?.errors ? Object.values(data.errors).flat().join(' ') : null);
+      setError(detail ?? 'Unable to save description.');
     } finally {
       setIsSaving(false);
     }
@@ -118,14 +120,14 @@ export default function QuoteDescriptionManagementPage({ descriptions, onBack, o
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
-                  <tr>
+                  <tr style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}>
                     <td colSpan={2} className="empty-row">
                       No descriptions found.
                     </td>
                   </tr>
                 ) : (
                   filtered.map((description) => (
-                    <tr key={description.id}>
+                    <tr key={description.id} style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }} className="table-row-dark-hover">
                       <td>{description.value}</td>
                       <td className="actions-column">
                         <button className="btn-secondary small" onClick={() => startEdit(description)}>

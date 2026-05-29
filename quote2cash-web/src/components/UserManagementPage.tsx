@@ -83,7 +83,9 @@ export default function UserManagementPage({ users, onBack, onRefresh }: Props) 
       await onRefresh();
       cancel();
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? 'Unable to save user.');
+      const data = err?.response?.data;
+      const detail = data?.message || (data?.errors ? Object.values(data.errors).flat().join(' ') : null);
+      setError(detail ?? 'Unable to save user.');
     } finally {
       setIsSaving(false);
     }
@@ -140,14 +142,14 @@ export default function UserManagementPage({ users, onBack, onRefresh }: Props) 
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
-                  <tr>
+                  <tr style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}>
                     <td colSpan={3} className="empty-row">
                       No users found.
                     </td>
                   </tr>
                 ) : (
                   filtered.map((user) => (
-                    <tr key={user.id}>
+                    <tr key={user.id} style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }} className="table-row-dark-hover">
                       <td>{user.username}</td>
                       <td>{user.role}</td>
                       <td className="actions-column">
