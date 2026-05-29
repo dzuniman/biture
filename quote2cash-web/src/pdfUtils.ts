@@ -33,8 +33,10 @@ export const generateQuotePDF = async (quote: Quote) => {
   let currentY = margin;
 
   try {
-    const logoDataUrl = await loadImageDataUrl(logo);
-    doc.addImage(logoDataUrl, 'PNG', margin, currentY, 32, 20);
+    if (logo) {
+      const logoDataUrl = await loadImageDataUrl(logo);
+      doc.addImage(logoDataUrl, 'PNG', margin, currentY, 32, 20);
+    }
   } catch {
     // Continue if the logo cannot be loaded.
   }

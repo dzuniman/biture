@@ -26,7 +26,7 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="login-container">
+    <div className="login-container" style={{ color: '#000' }}>
       <form onSubmit={handleSubmit} className="login-form">
         <img src={logo} alt="Logo" style={{ display: 'block', margin: '0 auto 20px', height: '60px', width: 'auto' }} />
         <h2>Login to Quote2Cash</h2>

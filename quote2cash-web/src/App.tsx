@@ -308,7 +308,15 @@ function App() {
     <div className="app-shell">
       <header className="site-header no-print">
         <div className="header-left">
-          <div className="brand-block">
+          <div 
+            className="brand-block" 
+            onClick={() => {
+              setSection('dashboard');
+              clearClientState();
+              clearQuoteState();
+            }}
+            style={{ cursor: 'pointer' }}
+          >
             <img 
               src={logo} 
               alt="Logo" 
