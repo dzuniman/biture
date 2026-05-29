@@ -279,6 +279,7 @@ function App() {
       const fullQuote = await getQuote(quote.id);
       setViewingQuote(fullQuote);
       setQuoteView('view');
+      setSection('quotes');
     } catch (err: any) {
       setError(getErrorMessage(err, 'Unable to load quote.'));
     } finally {
