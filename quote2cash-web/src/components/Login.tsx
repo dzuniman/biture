@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { login as apiLogin } from '../api';
 import { useAuth } from '../AuthContext';
-const logo = "/logo.png";
+import logo from '../assets/logo.png';
 
 export const Login: React.FC = () => {
   const [username, setUsername] = useState('');
