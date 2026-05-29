@@ -141,7 +141,8 @@ export default function QuoteForm({
       setReference(initialData.reference);
       setDate(initialData.date.slice(0, 10));
       setValidityDays(initialData.validityDays.toString());
-      setItems(initialData.items.length ? initialData.items : [blankItem]);
+      const sorted = [...initialData.items].sort((a, b) => a.itemNumber - b.itemNumber);
+      setItems(sorted.length ? sorted : [blankItem]);
     } else {
       setClientId(selectedClientId ?? '');
       setQuoteNumber('');
@@ -167,7 +168,9 @@ export default function QuoteForm({
   }, [initialData, selectedClientId]);
 
   const reindexItems = (currentItems: QuoteItemCreateRequest[]) => {
-    return currentItems.map((item, index) => ({ ...item, itemNumber: index + 1 }));
+    return [...currentItems]
+      .sort((a, b) => a.itemNumber - b.itemNumber)
+      .map((item, index) => ({ ...item, itemNumber: index + 1 }));
   };
 
 
@@ -190,6 +193,11 @@ export default function QuoteForm({
 
       item.totalPrice = parseFloat((item.quantity * item.unitPrice).toFixed(2));
       next[index] = item;
+
+      if (field === 'itemNumber') {
+        next.sort((a, b) => a.itemNumber - b.itemNumber);
+      }
+
       return next;
     });
   };

@@ -2,7 +2,7 @@ import { jsPDF } from 'jspdf';
 import { autoTable } from 'jspdf-autotable';
 import type { Quote } from '../types';
 import { formatAmount } from '../../formatters';
-import logo from '../assets/logo.png'; // Assuming logo is directly importable as a data URL by Vite
+const logo = "/logo.png";
 
 export const generateQuotePDF = async (quote: Quote) => {
   const doc = new jsPDF({
@@ -21,7 +21,10 @@ export const generateQuotePDF = async (quote: Quote) => {
   logoImg.src = logo;
   await new Promise((resolve) => {
     logoImg.onload = resolve;
-    logoImg.onerror = resolve; // Continue even if logo fails to avoid blocking PDF generation
+    logoImg.onerror = () => {
+      console.error("PDF Generator: Could not load logo image from", logo);
+      resolve(null);
+    };
   });
 
   // --- Top Section: Company Info (Left) and Quote Details (Right) ---
@@ -41,8 +44,10 @@ export const generateQuotePDF = async (quote: Quote) => {
   companyInfoY += 6; // Space before logo
 
   const logoHeight = 20;
-  const logoWidth = 50; 
   if (logoImg.complete && logoImg.naturalWidth > 0) {
+    // Add logo with calculated width to maintain aspect ratio
+    const aspectRatio = logoImg.naturalWidth / logoImg.naturalHeight;
+    const logoWidth = logoHeight * aspectRatio;
     doc.addImage(logoImg, 'PNG', companyInfoStartX, companyInfoY, logoWidth, logoHeight);
   }
   companyInfoY += logoHeight + 5; // Final Y for left block

@@ -148,3 +148,4 @@ C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.API\bin\De
 C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.API\bin\Debug\net8.0\Microsoft.IdentityModel.Tokens.dll
 C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.API\bin\Debug\net8.0\System.IdentityModel.Tokens.Jwt.dll
 C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.API\obj\Debug\net8.0\Quote2Cash.API.sourcelink.json
+C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.API\bin\Debug\net8.0\Quote2Cash.API.staticwebassets.runtime.json
