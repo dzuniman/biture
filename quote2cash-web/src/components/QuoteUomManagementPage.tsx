@@ -57,12 +57,14 @@ export default function QuoteUomManagementPage({ uoms, onBack, onRefresh }: Prop
       if (current) {
         await updateQuoteUom(current.id, { id: current.id, value: value.trim() });
       } else {
-        await createQuoteUom({ id: '', value: value.trim() });
+        await createQuoteUom({ value: value.trim() } as any);
       }
       await onRefresh();
       cancel();
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? 'Unable to save UOM.');
+      const data = err?.response?.data;
+      const detail = data?.message || (data?.errors ? Object.values(data.errors).flat().join(' ') : null);
+      setError(detail ?? 'Unable to save UOM.');
     } finally {
       setIsSaving(false);
     }
@@ -118,14 +120,14 @@ export default function QuoteUomManagementPage({ uoms, onBack, onRefresh }: Prop
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
-                  <tr>
+                  <tr style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}>
                     <td colSpan={2} className="empty-row">
                       No UOMs found.
                     </td>
                   </tr>
                 ) : (
                   filtered.map((uom) => (
-                    <tr key={uom.id}>
+                    <tr key={uom.id} style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }} className="table-row-dark-hover">
                       <td>{uom.value}</td>
                       <td className="actions-column">
                         <button className="btn-secondary small" onClick={() => startEdit(uom)}>
