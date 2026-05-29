@@ -1,6 +1,7 @@
 import type { Quote } from '../types';
 import { formatAmount } from '../../formatters';
 import logo from '../assets/logo.png';
+import { generateQuotePDF } from './QuotePdfGenerator';
 
 interface Props {
   quote: Quote;
@@ -107,10 +108,10 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
             margin-bottom: 2px !important;
           }
           .items-table {
-            border-left: 1px solid #000 !important;
-            border-right: 1px solid #000 !important;
-            border-radius: 2px !important;
-            overflow: hidden !important;
+            border-left: none !important; /* Managed by cell borders */
+            border-right: none !important; /* Managed by cell borders */
+            border-radius: 0 !important;
+            overflow: visible !important; /* Ensure content is not clipped */
           }
           .items-table-header {
             background-color: #f3f4f6 !important;
@@ -123,6 +124,8 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
           .items-table-header div:last-child,
           .items-table-row div:last-child {
             border-right: 1px solid #000 !important;
+            /* Ensure right border is drawn for the last column */
+            border-right: 0.5pt solid #ccc !important;
           }
           .items-table-row {
             border-bottom: none !important;
@@ -139,6 +142,15 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
           .view-section[style*="border-top"] div { font-size: 6.5pt !important; }
 
           @page { size: A4; margin: 1.5cm 1cm; }
+
+          /* Adjust grid columns for print to be more flexible */
+          .items-table-header, .items-table-row {
+            grid-template-columns: 0.5fr 0.5fr 0.7fr 3fr 1fr 1fr !important; /* More flexible widths */
+            gap: 4px !important; /* Reduce gap for tighter fit */
+          }
+          .items-table-header div, .items-table-row div {
+            border-left: 0.5pt solid #ccc !important; /* Consistent border style */
+          }
         }
       ` }} />
       <div className="section-header no-print">
@@ -242,7 +254,7 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
                   <span className="summary-value">{formatAmount(quote.subTotal)}</span>
                 </div>
                 <div className="summary-row" style={{ justifyContent: 'space-between', lineHeight: '0', marginBottom: '0px' }}>
-                  <span className="summary-label">VAT</span>
+                  <span className="summary-label">VAT (15%)</span>
                   <span className="summary-value">{formatAmount(quote.vat)}</span>
                 </div>
                 <div className="summary-row summary-total" style={{ justifyContent: 'space-between', lineHeight: '0', marginBottom: '0px' }}>
@@ -289,8 +301,19 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
               <button onClick={onDuplicate} className="btn-secondary" type="button">
                 Duplicate Quote
               </button>
-              <button onClick={() => window.print()} className="btn-secondary" type="button">
-                Print to PDF
+              <button 
+                onClick={async () => {
+                  try {
+                    await generateQuotePDF(quote);
+                  } catch (err) {
+                    console.error("PDF Generation failed:", err);
+                    alert("Could not generate PDF. Please check the console for errors.");
+                  }
+                }} 
+                className="btn-secondary" 
+                type="button"
+              >
+                Download PDF
               </button>
             </div>
           </div>

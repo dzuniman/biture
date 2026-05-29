@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, useRef, type FormEvent } from 'react';
 import { formatAmount } from '../../formatters';
+import * as XLSX from 'xlsx';
 import type { Client, Quote, QuoteCreateRequest, QuoteItemCreateRequest, QuoteUom, QuoteDescription } from '../types';
 import { getQuoteNextNumber } from '../api';
 
@@ -131,6 +132,7 @@ export default function QuoteForm({
   const [validityDays, setValidityDays] = useState(initialData?.validityDays.toString() ?? '30');
   const [items, setItems] = useState<QuoteItemCreateRequest[]>(initialData?.items.length ? initialData.items : [blankItem]);
   const [isSaving, setIsSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (initialData) {
@@ -164,6 +166,11 @@ export default function QuoteForm({
     }
   }, [initialData, selectedClientId]);
 
+  const reindexItems = (currentItems: QuoteItemCreateRequest[]) => {
+    return currentItems.map((item, index) => ({ ...item, itemNumber: index + 1 }));
+  };
+
+
   const handleUpdateItem = (index: number, field: keyof QuoteItemCreateRequest, value: string) => {
     setItems((current) => {
       const next = [...current];
@@ -181,7 +188,7 @@ export default function QuoteForm({
         item.description = value;
       }
 
-      item.totalPrice = Number((item.quantity * item.unitPrice).toFixed(2));
+      item.totalPrice = parseFloat((item.quantity * item.unitPrice).toFixed(2));
       next[index] = item;
       return next;
     });
@@ -196,13 +203,80 @@ export default function QuoteForm({
         uom: '',
         description: '',
         unitPrice: 0,
-        totalPrice: 0
+        totalPrice: 0,
       }
     ]);
   };
 
+  const handleDownloadTemplate = () => {
+    const headers = ['Quantity', 'UOM', 'Description', 'Unit Price'];
+    const data = [headers];
+
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Quote Items');
+    XLSX.writeFile(wb, 'quote_items_template.xlsx');
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const data = new Uint8Array(e.target?.result as ArrayBuffer);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const json: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+      if (json.length < 2) {
+        alert('Excel file is empty or missing headers.');
+        return;
+      }
+
+      const headers = json[0].map((h: any) => String(h || '').trim().toLowerCase());
+      const expectedHeaders = ['Quantity', 'UOM', 'Description', 'Unit Price'];
+      const expectedHeadersLower = expectedHeaders.map(h => h.toLowerCase());
+
+      if (!expectedHeadersLower.every(h => headers.includes(h))) {
+        alert(`Missing expected headers. Please ensure the file contains: ${expectedHeaders.join(', ')}`);
+        return;
+      }
+
+      const newItems: QuoteItemCreateRequest[] = [];
+      for (let i = 1; i < json.length; i++) {
+        const row = json[i];
+        const item: QuoteItemCreateRequest = {
+          itemNumber: 0, // Will be re-indexed later
+          quantity: parseFloat(row[headers.indexOf('quantity')] || 0),
+          uom: row[headers.indexOf('uom')] || '',
+          description: row[headers.indexOf('description')] || '',
+          unitPrice: parseFloat(row[headers.indexOf('unit price')] || 0),
+          totalPrice: 0, // Calculated below
+        };
+        item.totalPrice = parseFloat((item.quantity * item.unitPrice).toFixed(2));
+        newItems.push(item);
+      }
+
+      setItems((current) => {
+        const combinedItems = [...current, ...newItems];
+        return reindexItems(combinedItems);
+      });
+
+      // Clear the file input value to allow re-uploading the same file
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
   const handleRemoveItem = (index: number) => {
-    setItems((current) => current.filter((_, itemIndex) => itemIndex !== index));
+    setItems((current) => {
+      const filtered = current.filter((_, itemIndex) => itemIndex !== index);
+      return reindexItems(filtered);
+    });
   };
 
   const lineCount = useMemo(() => items.length, [items]);
@@ -222,7 +296,7 @@ export default function QuoteForm({
         quantity: item.quantity,
         uom: item.uom.trim(),
         description: item.description.trim(),
-        unitPrice: item.unitPrice,
+        unitPrice: parseFloat(item.unitPrice.toFixed(2)),
         totalPrice: Number((item.quantity * item.unitPrice).toFixed(2))
       }))
     });
@@ -292,9 +366,24 @@ export default function QuoteForm({
         <div className="line-items">
           <div className="section-title">
             <h3>Quote items</h3>
-            <button type="button" className="secondary" onClick={handleAddItem}>
-              Add line
-            </button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button type="button" className="secondary" onClick={handleDownloadTemplate}>
+                Download Template
+              </button>
+              <button type="button" className="secondary" onClick={() => fileInputRef.current?.click()}>
+                Upload Items
+              </button>
+              <button type="button" className="secondary" onClick={handleAddItem}>
+                Add line
+              </button>
+            </div>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              accept=".xlsx, .xls"
+              style={{ display: 'none' }}
+            />
           </div>
           <div className="items-grid">
             <div className="item-row header">
@@ -349,7 +438,7 @@ export default function QuoteForm({
                 <button
                   type="button"
                   className="danger small"
-                  onClick={() => setItems((current) => current.filter((_, rowIndex) => rowIndex !== index))}
+                  onClick={() => handleRemoveItem(index)}
                 >
                   Remove
                 </button>
