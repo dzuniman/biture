@@ -15,6 +15,10 @@ export default function ClientCard({ client, onEdit, onView, onDelete }: Props) 
       </div>
       <div className="card-item-body">
         <div className="card-item-detail">
+          <span className="label">Vendor:</span>
+          <span>{client.vendorNumber || '—'}</span>
+        </div>
+        <div className="card-item-detail">
           <span className="label">Representative:</span>
           <span>{client.representativeName || '—'}</span>
         </div>

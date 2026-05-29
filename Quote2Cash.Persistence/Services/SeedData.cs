@@ -26,6 +26,18 @@ namespace Quote2Cash.Persistence.Services
                 await createUsersTable.ExecuteNonQueryAsync();
             }
 
+            await using (var createQuoteUomsTable = connection.CreateCommand())
+            {
+                createQuoteUomsTable.CommandText = @"CREATE TABLE IF NOT EXISTS ""QuoteUoms"" (""Id"" uuid PRIMARY KEY, ""Value"" varchar(150) NOT NULL UNIQUE);";
+                await createQuoteUomsTable.ExecuteNonQueryAsync();
+            }
+
+            await using (var createQuoteDescriptionsTable = connection.CreateCommand())
+            {
+                createQuoteDescriptionsTable.CommandText = @"CREATE TABLE IF NOT EXISTS ""QuoteDescriptions"" (""Id"" uuid PRIMARY KEY, ""Value"" varchar(1000) NOT NULL UNIQUE);";
+                await createQuoteDescriptionsTable.ExecuteNonQueryAsync();
+            }
+
             // Ensure seed users exist even when the rest of the data has already been seeded
             await using (var ensureUsers = connection.CreateCommand())
             {
@@ -92,6 +104,7 @@ namespace Quote2Cash.Persistence.Services
                 {
                     Id = Guid.NewGuid(),
                     Name = "UNISA",
+                    VendorNumber = "VN-1001",
                     AddressLine1 = "1 University Avenue",
                     AddressLine2 = "Campus Central",
                     AddressLine3 = "Pretoria",
@@ -103,6 +116,7 @@ namespace Quote2Cash.Persistence.Services
                 {
                     Id = Guid.NewGuid(),
                     Name = "Acme Holdings",
+                    VendorNumber = "VN-2002",
                     AddressLine1 = "42 Industrial Park",
                     AddressLine2 = "Suite 14B",
                     AddressLine3 = "Johannesburg",
@@ -114,6 +128,7 @@ namespace Quote2Cash.Persistence.Services
                 {
                     Id = Guid.NewGuid(),
                     Name = "South African Railways",
+                    VendorNumber = "VN-3003",
                     AddressLine1 = "12 Network Drive",
                     AddressLine2 = "Dispatch Building",
                     AddressLine3 = "Cape Town",
@@ -128,11 +143,10 @@ namespace Quote2Cash.Persistence.Services
                 new Quote
                 {
                     Id = Guid.NewGuid(),
-                    QuoteNumber = 1001,
+                    QuoteNumber = "Q2026050000",
                     Reference = "Q-1001-UNISA",
                     Date = DateTime.UtcNow.AddDays(-8),
                     ValidityDays = 30,
-                    VendorNumber = "VN-1001",
                     ClientId = clients[0].Id,
                     Items = new List<QuoteItem>
                     {
@@ -161,11 +175,10 @@ namespace Quote2Cash.Persistence.Services
                 new Quote
                 {
                     Id = Guid.NewGuid(),
-                    QuoteNumber = 1002,
+                    QuoteNumber = "Q2026050001",
                     Reference = "Q-1002-ACME",
                     Date = DateTime.UtcNow.AddDays(-14),
                     ValidityDays = 45,
-                    VendorNumber = "VN-2002",
                     ClientId = clients[1].Id,
                     Items = new List<QuoteItem>
                     {
@@ -194,11 +207,10 @@ namespace Quote2Cash.Persistence.Services
                 new Quote
                 {
                     Id = Guid.NewGuid(),
-                    QuoteNumber = 1003,
+                    QuoteNumber = "Q2026050002",
                     Reference = "Q-1003-SAR",
                     Date = DateTime.UtcNow.AddDays(-3),
                     ValidityDays = 21,
-                    VendorNumber = "VN-3003",
                     ClientId = clients[2].Id,
                     Items = new List<QuoteItem>
                     {
@@ -228,6 +240,23 @@ namespace Quote2Cash.Persistence.Services
 
             await context.Clients.AddRangeAsync(clients);
             await context.Quotes.AddRangeAsync(quotes);
+
+            var quoteUoms = quotes
+                .SelectMany(q => q.Items.Select(item => item.Uom.Trim()))
+                .Where(value => !string.IsNullOrWhiteSpace(value))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Select(value => new QuoteUom { Id = Guid.NewGuid(), Value = value })
+                .ToList();
+
+            var quoteDescriptions = quotes
+                .SelectMany(q => q.Items.Select(item => item.Description.Trim()))
+                .Where(value => !string.IsNullOrWhiteSpace(value))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Select(value => new QuoteDescription { Id = Guid.NewGuid(), Value = value })
+                .ToList();
+
+            await context.QuoteUoms.AddRangeAsync(quoteUoms);
+            await context.QuoteDescriptions.AddRangeAsync(quoteDescriptions);
             await context.SaveChangesAsync();
 
             await context.Database.ExecuteSqlInterpolatedAsync($@"INSERT INTO ""SeedHistory"" (""Id"", ""SeededAt"") VALUES ({Guid.NewGuid()}, {DateTime.UtcNow});");

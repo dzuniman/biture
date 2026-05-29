@@ -1,4 +1,4 @@
-import type { Client, Quote, QuoteCreateRequest } from '../types';
+import type { Client, Quote, QuoteCreateRequest, QuoteUom, QuoteDescription } from '../types';
 import QuoteForm from './QuoteForm';
 
 interface Props {
@@ -6,6 +6,8 @@ interface Props {
   clients: Client[];
   selectedClientId?: string;
   onSelectClientId?: (clientId: string) => void;
+  uomOptions: QuoteUom[];
+  descriptionOptions: QuoteDescription[];
   isNew: boolean;
   onSubmit: (payload: QuoteCreateRequest) => Promise<void>;
   onCancel: () => void;
@@ -17,6 +19,8 @@ export default function QuoteManagementPage({
   quote,
   clients,
   selectedClientId,
+  uomOptions,
+  descriptionOptions,
   onSelectClientId,
   isNew,
   onSubmit,
@@ -51,6 +55,8 @@ export default function QuoteManagementPage({
       <div className="management-container">
         <QuoteForm
           clients={clients}
+          uomOptions={uomOptions}
+          descriptionOptions={descriptionOptions}
           initialData={quote}
           selectedClientId={selectedClientId}
           onSelectClientId={onSelectClientId}

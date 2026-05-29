@@ -14,6 +14,8 @@ namespace Quote2Cash.Persistence.Data
         public DbSet<User> Users { get; set; } = null!;
         public DbSet<Quote> Quotes { get; set; } = null!;
         public DbSet<QuoteItem> QuoteItems { get; set; } = null!;
+        public DbSet<QuoteUom> QuoteUoms { get; set; } = null!;
+        public DbSet<QuoteDescription> QuoteDescriptions { get; set; } = null!;
         public DbSet<JobCard> JobCards { get; set; } = null!;
         public DbSet<Cost> Costs { get; set; } = null!;
         public DbSet<Invoice> Invoices { get; set; } = null!;
@@ -27,6 +29,7 @@ namespace Quote2Cash.Persistence.Data
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.VendorNumber).HasMaxLength(150);
                 entity.Property(e => e.AddressLine1).HasMaxLength(300);
                 entity.Property(e => e.AddressLine2).HasMaxLength(300);
                 entity.Property(e => e.AddressLine3).HasMaxLength(300);
@@ -38,11 +41,10 @@ namespace Quote2Cash.Persistence.Data
             modelBuilder.Entity<Quote>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.QuoteNumber).IsRequired();
+                entity.Property(e => e.QuoteNumber).IsRequired().HasMaxLength(32);
                 entity.Property(e => e.Reference).HasMaxLength(100);
                 entity.Property(e => e.Date).IsRequired();
                 entity.Property(e => e.ValidityDays).IsRequired();
-                entity.Property(e => e.VendorNumber).HasMaxLength(150);
                 entity.Property(e => e.Description).HasMaxLength(2000);
                 entity.HasOne(e => e.Client).WithMany(c => c.Quotes).HasForeignKey(e => e.ClientId);
             });
@@ -57,6 +59,20 @@ namespace Quote2Cash.Persistence.Data
                 entity.Property(e => e.UnitPrice).HasPrecision(18, 2);
                 entity.Property(e => e.TotalPrice).HasPrecision(18, 2);
                 entity.HasOne(e => e.Quote).WithMany(q => q.Items).HasForeignKey(e => e.QuoteId).OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<QuoteUom>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Value).IsRequired().HasMaxLength(150);
+                entity.HasIndex(e => e.Value).IsUnique();
+            });
+
+            modelBuilder.Entity<QuoteDescription>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Value).IsRequired().HasMaxLength(1000);
+                entity.HasIndex(e => e.Value).IsUnique();
             });
 
             modelBuilder.Entity<JobCard>(entity =>

@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { formatAmount } from '../../formatters';
-import type { Client, Quote, QuoteCreateRequest, QuoteItemCreateRequest } from '../types';
+import type { Client, Quote, QuoteCreateRequest, QuoteItemCreateRequest, QuoteUom, QuoteDescription } from '../types';
+import { getQuoteNextNumber } from '../api';
 
 interface Props {
   clients: Client[];
+  uomOptions: QuoteUom[];
+  descriptionOptions: QuoteDescription[];
   initialData?: Quote;
   selectedClientId?: string;
   onSelectClientId?: (clientId: string) => void;
@@ -13,10 +16,96 @@ interface Props {
   isDuplicate?: boolean;
 }
 
+type SuggestionOption = { id: string; value: string };
+
+interface SuggestionInputProps {
+  options: SuggestionOption[];
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  required?: boolean;
+}
+
+function SuggestionInput({
+  options,
+  value,
+  onChange,
+  placeholder,
+  required = false
+}: SuggestionInputProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const filteredOptions = useMemo(() => {
+    const query = value.trim().toLowerCase();
+    const list = query
+      ? options.filter((option) => option.value.toLowerCase().includes(query))
+      : options;
+    return list.slice(0, 10);
+  }, [options, value]);
+
+  return (
+    <div className="suggestion-input" style={{ position: 'relative' }}>
+      <input
+        type="text"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        onFocus={() => setIsOpen(true)}
+        onBlur={() => setTimeout(() => setIsOpen(false), 150)}
+        placeholder={placeholder}
+        required={required}
+        autoComplete="off"
+      />
+      {isOpen && filteredOptions.length > 0 && (
+        <div
+          className="suggestion-list"
+          style={{
+            position: 'absolute',
+            zIndex: 20,
+            top: '100%',
+            left: 0,
+            right: 0,
+            maxHeight: '240px',
+            overflowY: 'auto',
+            background: 'white',
+            border: '1px solid #d1d5db',
+            borderRadius: '12px',
+            boxShadow: '0 14px 50px rgba(15, 23, 42, 0.12)',
+            marginTop: '8px'
+          }}
+        >
+          {filteredOptions.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              onMouseDown={(event) => {
+                event.preventDefault();
+                onChange(option.value);
+              }}
+              className="suggestion-item"
+              style={{
+                width: '100%',
+                textAlign: 'left',
+                padding: '12px 16px',
+                background: 'white',
+                border: 'none',
+                borderBottom: '1px solid #e5e7eb',
+                color: '#0f172a',
+                cursor: 'pointer'
+              }}
+            >
+              {option.value}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const blankItem: QuoteItemCreateRequest = {
   itemNumber: 1,
   quantity: 1,
-  uom: 'pcs',
+  uom: '',
   description: '',
   unitPrice: 0,
   totalPrice: 0
@@ -24,6 +113,8 @@ const blankItem: QuoteItemCreateRequest = {
 
 export default function QuoteForm({
   clients,
+  uomOptions,
+  descriptionOptions,
   initialData,
   selectedClientId,
   onSelectClientId,
@@ -32,34 +123,40 @@ export default function QuoteForm({
   onRequestNewClient,
   isDuplicate = false
 }: Props) {
+  const today = new Date().toISOString().slice(0, 10);
   const [clientId, setClientId] = useState(initialData?.clientId ?? selectedClientId ?? '');
-  const [quoteNumber, setQuoteNumber] = useState(initialData?.quoteNumber.toString() ?? '');
+  const [quoteNumber, setQuoteNumber] = useState(initialData?.quoteNumber ?? '');
   const [reference, setReference] = useState(initialData?.reference ?? '');
-  const [date, setDate] = useState(initialData ? initialData.date.slice(0, 10) : '');
+  const [date, setDate] = useState(initialData ? initialData.date.slice(0, 10) : today);
   const [validityDays, setValidityDays] = useState(initialData?.validityDays.toString() ?? '30');
-  const [vendorNumber, setVendorNumber] = useState(initialData?.vendorNumber ?? '');
   const [items, setItems] = useState<QuoteItemCreateRequest[]>(initialData?.items.length ? initialData.items : [blankItem]);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (initialData) {
       setClientId(initialData.clientId ?? '');
-      setQuoteNumber(initialData.quoteNumber.toString());
+      setQuoteNumber(initialData.quoteNumber);
       setReference(initialData.reference);
       setDate(initialData.date.slice(0, 10));
       setValidityDays(initialData.validityDays.toString());
-      setVendorNumber(initialData.vendorNumber);
       setItems(initialData.items.length ? initialData.items : [blankItem]);
     } else {
       setClientId(selectedClientId ?? '');
       setQuoteNumber('');
       setReference('');
-      setDate('');
+      setDate(today);
       setValidityDays('30');
-      setVendorNumber('');
       setItems([blankItem]);
     }
-  }, [initialData]);
+  }, [initialData, selectedClientId, today]);
+
+  useEffect(() => {
+    if (!initialData && !quoteNumber) {
+      getQuoteNextNumber().then(setQuoteNumber).catch(() => {
+        // silenced, number will remain blank until available
+      });
+    }
+  }, [initialData, quoteNumber]);
 
   useEffect(() => {
     if (!initialData && selectedClientId) {
@@ -96,7 +193,7 @@ export default function QuoteForm({
       {
         itemNumber: current.length + 1,
         quantity: 1,
-        uom: 'pcs',
+        uom: '',
         description: '',
         unitPrice: 0,
         totalPrice: 0
@@ -116,11 +213,10 @@ export default function QuoteForm({
 
     await onSubmit({
       clientId: clientId || undefined,
-      quoteNumber: Number(quoteNumber),
+      quoteNumber: quoteNumber.trim(),
       reference: reference.trim(),
       date: date || new Date().toISOString(),
       validityDays: Number(validityDays),
-      vendorNumber: vendorNumber.trim(),
       items: items.map((item) => ({
         itemNumber: item.itemNumber,
         quantity: item.quantity,
@@ -167,9 +263,10 @@ export default function QuoteForm({
         <label>
           Quote number
           <input
-            type="number"
+            type="text"
             value={quoteNumber}
             onChange={(event) => setQuoteNumber(event.target.value)}
+            placeholder="Qyyyymm0000"
             required
           />
         </label>
@@ -192,11 +289,6 @@ export default function QuoteForm({
             />
           </label>
         </div>
-        <label>
-          Vendor number
-          <input value={vendorNumber} onChange={(event) => setVendorNumber(event.target.value)} required />
-        </label>
-
         <div className="line-items">
           <div className="section-title">
             <h3>Quote items</h3>
@@ -206,7 +298,7 @@ export default function QuoteForm({
           </div>
           <div className="items-grid">
             <div className="item-row header">
-              <span>#</span>
+              <span>Item</span>
               <span>Qty</span>
               <span>UOM</span>
               <span>Description</span>
@@ -231,14 +323,18 @@ export default function QuoteForm({
                   onChange={(event) => handleUpdateItem(index, 'quantity', event.target.value)}
                   required
                 />
-                <input
+                <SuggestionInput
+                  options={uomOptions.map((option) => ({ id: option.id, value: option.value }))}
                   value={item.uom}
-                  onChange={(event) => handleUpdateItem(index, 'uom', event.target.value)}
+                  onChange={(value) => handleUpdateItem(index, 'uom', value)}
+                  placeholder="Select or type UOM"
                   required
                 />
-                <input
+                <SuggestionInput
+                  options={descriptionOptions.map((option) => ({ id: option.id, value: option.value }))}
                   value={item.description}
-                  onChange={(event) => handleUpdateItem(index, 'description', event.target.value)}
+                  onChange={(value) => handleUpdateItem(index, 'description', value)}
+                  placeholder="Select or type description"
                   required
                 />
                 <input

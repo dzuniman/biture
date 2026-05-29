@@ -8,11 +8,10 @@ namespace Quote2Cash.Domain.Entities
     public class Quote
     {
         public Guid Id { get; set; }
-        public int QuoteNumber { get; set; }
+        public string QuoteNumber { get; set; } = string.Empty;
         public string Reference { get; set; } = string.Empty;
         public DateTime Date { get; set; }
         public int ValidityDays { get; set; }
-        public string VendorNumber { get; set; } = string.Empty;
         public Guid? ClientId { get; set; }
         public Client? Client { get; set; }
 

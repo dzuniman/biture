@@ -152,7 +152,7 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
       </div>
 
       <div className="view-container">
-        <div className="view-card">
+        <div className="view-card" style={{ color: '#000' }}>
           <div className="quote-view-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
             <div className="quote-view-left">
               <div className="company-block">

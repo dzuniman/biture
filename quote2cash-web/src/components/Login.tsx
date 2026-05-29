@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { login as apiLogin } from '../api';
 import { useAuth } from '../AuthContext';
+import logo from '../assets/logo.png';
 
 export const Login: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -27,7 +28,8 @@ export const Login: React.FC = () => {
   return (
     <div className="login-container">
       <form onSubmit={handleSubmit} className="login-form">
-        <h2>Login to EPEC Solution</h2>
+        <img src={logo} alt="Logo" style={{ display: 'block', margin: '0 auto 20px', height: '60px', width: 'auto' }} />
+        <h2>Login to Quote2Cash</h2>
         {error && <p className="login-error">{error}</p>}
         <div className="login-field">
           <label htmlFor="username">Username</label>

@@ -1,4 +1,4 @@
-﻿﻿import { useEffect, useState } from 'react';
+﻿﻿import { useEffect, useRef, useState } from 'react';
 import { formatAmount } from '../formatters';
 import {
   createClient,
@@ -7,7 +7,10 @@ import {
   deleteQuote,
   getClients,
   getQuote,
+  getQuoteDescriptions,
+  getQuoteUoms,
   getQuotes,
+  getUsers,
   updateClient,
   updateQuote
 } from './api';
@@ -15,7 +18,10 @@ import type {
   Client,
   ClientCreateRequest,
   Quote,
-  QuoteCreateRequest
+  QuoteCreateRequest,
+  QuoteDescription,
+  QuoteUom,
+  User
 } from './types';
 import { useAuth } from './AuthContext';
 import { Login } from './components/Login';
@@ -25,12 +31,17 @@ import ClientViewPage from './components/ClientViewPage';
 import QuotesListPage from './components/QuotesListPage';
 import QuoteManagementPage from './components/QuoteManagementPage';
 import QuoteViewPage from './components/QuoteViewPage';
+import AdminHomePage from './components/AdminHomePage';
+import QuoteUomManagementPage from './components/QuoteUomManagementPage';
+import QuoteDescriptionManagementPage from './components/QuoteDescriptionManagementPage';
+import UserManagementPage from './components/UserManagementPage';
 import logo from './assets/logo.png';
 
 
-type Section = 'dashboard' | 'clients' | 'quotes';
+type Section = 'dashboard' | 'clients' | 'quotes' | 'admin';
 type ClientView = 'list' | 'manage' | 'view';
 type QuoteView = 'list' | 'manage' | 'view';
+type AdminView = 'home' | 'uoms' | 'descriptions' | 'users';
 
 function App() {
   const [section, setSection] = useState<Section>('dashboard');
@@ -42,6 +53,12 @@ function App() {
   const [editingQuote, setEditingQuote] = useState<Quote | null>(null);
   const [viewingClient, setViewingClient] = useState<Client | null>(null);
   const [viewingQuote, setViewingQuote] = useState<Quote | null>(null);
+  const [quoteUoms, setQuoteUoms] = useState<QuoteUom[]>([]);
+  const [quoteDescriptions, setQuoteDescriptions] = useState<QuoteDescription[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [adminView, setAdminView] = useState<AdminView>('home');
+  const [quickActionsOpen, setQuickActionsOpen] = useState(false);
+  const quickActionsRef = useRef<HTMLDivElement | null>(null);
   const [isDuplicatingClient, setIsDuplicatingClient] = useState(false);
   const [isDuplicatingQuote, setIsDuplicatingQuote] = useState(false);
   const [quoteClientId, setQuoteClientId] = useState('');
@@ -53,9 +70,18 @@ function App() {
     try {
       setError(null);
       setIsLoading(true);
-      const [clientsData, quotesData] = await Promise.all([getClients(), getQuotes()]);
+      const [clientsData, quotesData, uomsData, descriptionsData, usersData] = await Promise.all([
+        getClients(),
+        getQuotes(),
+        getQuoteUoms(),
+        getQuoteDescriptions(),
+        getUsers()
+      ]);
       setClients(clientsData);
       setQuotes(quotesData);
+      setQuoteUoms(uomsData);
+      setQuoteDescriptions(descriptionsData);
+      setUsers(usersData);
     } catch {
       setError('Unable to load data. Confirm the API is running.');
     } finally {
@@ -69,6 +95,22 @@ function App() {
     }
     loadAll();
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (quickActionsRef.current && !quickActionsRef.current.contains(event.target as Node)) {
+        setQuickActionsOpen(false);
+      }
+    };
+
+    if (quickActionsOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [quickActionsOpen]);
 
   const handleCreateClient = async (payload: ClientCreateRequest) => {
     try {
@@ -247,6 +289,16 @@ function App() {
   };
 
   const totalQuoteValue = quotes.reduce((sum, quote) => sum + quote.total, 0);
+  const averageQuoteValue = quotes.length ? totalQuoteValue / quotes.length : 0;
+  const largestQuoteValue = quotes.length ? Math.max(...quotes.map((quote) => quote.total)) : 0;
+  const topClients = clients
+    .map((client) => ({
+      name: client.name,
+      total: quotes.filter((quote) => quote.clientId === client.id).reduce((sum, quote) => sum + quote.total, 0)
+    }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 5);
+  const chartMax = Math.max(...topClients.map((client) => client.total), 1);
 
   if (!isAuthenticated) {
     return <Login />;
@@ -254,63 +306,143 @@ function App() {
 
   return (
     <div className="app-shell">
-          <header className="hero no-print">
+      <header className="site-header no-print">
+        <div className="header-left">
+          <div className="brand-block">
+            <img 
+              src={logo} 
+              alt="Logo" 
+              className="brand-logo" 
+              style={{ display: 'block', height: '40px', width: 'auto', flexShrink: 0, marginRight: '12px' }} 
+            />
             <div>
-              <h1>EPEC Solutions</h1>
-              <p>EXPLORE THE POSIBILITY</p>
+              <div className="brand-title">EPEC Solution</div>
+              <div className="brand-tagline">EXPLORE THE POSIBILITY</div>
             </div>
-            <div>
-              <img src={logo} alt="Epec Solutions" className="hero-logo" />
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '0.95rem', color: '#f3f4f6' }}>
-                  Signed in as <strong>{user?.username}</strong>
-                </div>
-                <div style={{ fontSize: '0.8rem', color: '#d1d5db' }}>
-                  Role: {user?.role}
-                </div>
-              </div>
-              <button className="btn-secondary" onClick={logout} style={{ height: '40px' }}>
-                Logout
-              </button>
-            </div>
-          </header>
+          </div>
 
-      <div className="tabs no-print">
-        <button
-          className={`tab-button ${section === 'dashboard' ? 'active' : ''}`}
-          onClick={() => {
-            setSection('dashboard');
-            clearClientState();
-            clearQuoteState();
-          }}
-        >
-          Dashboard
-        </button>
-        <button
-          className={`tab-button ${section === 'clients' ? 'active' : ''}`}
-          onClick={() => {
-            setSection('clients');
-            setClientView('list');
-            clearClientState();
-            clearQuoteState();
-          }}
-        >
-          Clients
-        </button>
-        <button
-          className={`tab-button ${section === 'quotes' ? 'active' : ''}`}
-          onClick={() => {
-            setSection('quotes');
-            setQuoteView('list');
-            clearClientState();
-            clearQuoteState();
-          }}
-        >
-          Quotes
-        </button>
-      </div>
+          <div className="site-toolbar">
+            <div className="dropdown" ref={quickActionsRef}>
+              <button
+                type="button"
+                className={`dropdown-toggle ${quickActionsOpen ? 'active' : ''}`}
+                onClick={() => setQuickActionsOpen((open) => !open)}
+              >
+                QuickActions ▾
+              </button>
+              {quickActionsOpen && (
+                <div className="dropdown-menu">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSection('quotes');
+                      setQuoteView('list');
+                      clearClientState();
+                      clearQuoteState();
+                      setQuickActionsOpen(false);
+                    }}
+                  >
+                    View Quotes
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSection('clients');
+                      setClientView('list');
+                      clearClientState();
+                      clearQuoteState();
+                      setQuickActionsOpen(false);
+                    }}
+                  >
+                    View Clients
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSection('quotes');
+                      clearQuoteState();
+                      setQuoteView('manage');
+                      setQuickActionsOpen(false);
+                    }}
+                  >
+                    Create Quote
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSection('clients');
+                      clearClientState();
+                      setClientView('manage');
+                      setQuickActionsOpen(false);
+                    }}
+                  >
+                    Create Client
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <button
+              type="button"
+              className={`nav-button ${section === 'dashboard' ? 'active' : ''}`}
+              onClick={() => {
+                setSection('dashboard');
+                clearClientState();
+                clearQuoteState();
+              }}
+            >
+              Dashboard
+            </button>
+            <button
+              type="button"
+              className={`nav-button ${section === 'clients' ? 'active' : ''}`}
+              onClick={() => {
+                setSection('clients');
+                setClientView('list');
+                clearClientState();
+                clearQuoteState();
+              }}
+            >
+              Clients
+            </button>
+            <button
+              type="button"
+              className={`nav-button ${section === 'quotes' ? 'active' : ''}`}
+              onClick={() => {
+                setSection('quotes');
+                setQuoteView('list');
+                clearClientState();
+                clearQuoteState();
+              }}
+            >
+              Quotes
+            </button>
+            <button
+              type="button"
+              className={`nav-button ${section === 'admin' ? 'active' : ''}`}
+              onClick={() => {
+                setSection('admin');
+                setAdminView('home');
+                clearClientState();
+                clearQuoteState();
+              }}
+            >
+              Admin
+            </button>
+          </div>
+        </div>
+
+        <div className="user-block">
+          <div className="user-copy">
+            <span>Signed in as</span>
+            <strong>{user?.username}</strong>
+            <span className="user-role">{user?.role}</span>
+          </div>
+          <button className="btn-logout" onClick={logout}>
+            Logout
+          </button>
+        </div>
+      </header>
 
       {error && (
         <div
@@ -351,7 +483,7 @@ function App() {
           <div className="section-header">
             <div>
               <h2>Dashboard</h2>
-              <p>Business metrics and recent activity</p>
+              <p>Live quote insights and client performance.</p>
             </div>
           </div>
 
@@ -365,82 +497,93 @@ function App() {
               <span className="stat-value">{quotes.length}</span>
             </div>
             <div className="stat-box">
-              <span className="stat-label">Quote Value</span>
+              <span className="stat-label">Total Quote Value</span>
               <span className="stat-value">{formatAmount(totalQuoteValue)}</span>
             </div>
+            <div className="stat-box">
+              <span className="stat-label">Avg. Quote Value</span>
+              <span className="stat-value">{formatAmount(averageQuoteValue)}</span>
+            </div>
           </div>
 
-          <div style={{ display: 'grid', gap: '24px', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
-            <div className="card">
-              <h3>Quick Actions</h3>
-              <div style={{ display: 'flex', gap: '12px', flexDirection: 'column' }}>
-                <button
-                  className="btn-primary"
-                  onClick={() => {
-                    setSection('clients');
-                    setClientView('list');
-                    clearClientState();
-                  }}
-                >
-                  Browse Clients
-                </button>
-                <button
-                  className="btn-primary"
-                  onClick={() => {
-                    setSection('quotes');
-                    setQuoteView('list');
-                    clearQuoteState();
-                  }}
-                >
-                  Browse Quotes
-                </button>
-                <button
-                  className="btn-secondary"
-                  onClick={() => {
-                    setSection('clients');
-                    clearClientState();
-                    setClientView('manage');
-                  }}
-                >
-                  Create Client
-                </button>
-                <button
-                  className="btn-secondary"
-                  onClick={() => {
-                    setSection('quotes');
-                    clearQuoteState();
-                    setQuoteView('manage');
-                  }}
-                >
-                  Create Quote
-                </button>
+          <div className="chart-grid">
+            <div className="dashboard-card chart-card">
+              <div className="card-heading">
+                <h3>Top Clients by Quote Value</h3>
+                <span className="badge accent-red">Live</span>
               </div>
+              {topClients.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-state-icon">📊</div>
+                  <p>No client quote totals available yet.</p>
+                </div>
+              ) : (
+                <div className="bar-chart">
+                  {topClients.map((client) => (
+                    <div className="chart-row" key={client.name}>
+                      <div className="chart-row-label">{client.name}</div>
+                      <div className="chart-bar-wrap">
+                        <div
+                          className="chart-bar-fill"
+                          style={{ width: `${(client.total / chartMax) * 100}%` }}
+                        />
+                      </div>
+                      <div className="chart-row-value">{formatAmount(client.total)}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {quotes.length > 0 && (
-              <div className="card">
-                <h3>Recent Quotes</h3>
-                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {quotes.slice(0, 5).map((quote) => (
-                    <li
-                      key={quote.id}
-                      style={{
-                        padding: '12px',
-                        background: '#f9fafb',
-                        borderRadius: '6px',
-                        fontSize: '0.9rem',
-                        cursor: 'pointer'
-                      }}
-                      onClick={() => handleViewQuote(quote)}
-                    >
-                      <strong>#{quote.quoteNumber}</strong> {quote.reference} • {quote.client?.name ?? 'No client'} •{' '}
-                      <strong>{formatAmount(quote.total)}</strong>
-                    </li>
-                  ))}
-                </ul>
+            <div className="dashboard-card metrics-card">
+              <div className="card-heading">
+                <h3>Quote Performance</h3>
+                <span className="badge accent-yellow">Trend</span>
               </div>
-            )}
+              <div className="metric-grid">
+                <div className="metric-tile metric-blue">
+                  <span>Total Value</span>
+                  <strong>{formatAmount(totalQuoteValue)}</strong>
+                </div>
+                <div className="metric-tile metric-white">
+                  <span>Average Quote</span>
+                  <strong>{formatAmount(averageQuoteValue)}</strong>
+                </div>
+                <div className="metric-tile metric-red">
+                  <span>Largest Quote</span>
+                  <strong>{formatAmount(largestQuoteValue)}</strong>
+                </div>
+                <div className="metric-tile metric-dark">
+                  <span>Clients with Quotes</span>
+                  <strong>{topClients.filter((client) => client.total > 0).length}</strong>
+                </div>
+              </div>
+            </div>
           </div>
+
+          {quotes.length > 0 && (
+            <div className="dashboard-card quote-list-card">
+              <div className="card-heading">
+                <h3>Recent Quotes</h3>
+              </div>
+              <div className="quote-list">
+                {quotes.slice(0, 5).map((quote) => (
+                  <button
+                    type="button"
+                    key={quote.id}
+                    className="quote-list-item"
+                    onClick={() => handleViewQuote(quote)}
+                  >
+                    <div>
+                      <strong>#{quote.quoteNumber}</strong> {quote.reference}
+                      <div className="quote-list-meta">{quote.client?.name ?? 'No client'}</div>
+                    </div>
+                    <span>{formatAmount(quote.total)}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -505,6 +648,8 @@ function App() {
           quote={editingQuote ?? undefined}
           clients={clients}
           selectedClientId={quoteClientId}
+          uomOptions={quoteUoms}
+          descriptionOptions={quoteDescriptions}
           onSelectClientId={setQuoteClientId}
           isNew={!editingQuote}
           isDuplicate={isDuplicatingQuote}
@@ -535,6 +680,26 @@ function App() {
             setQuoteView('list');
           }}
         />
+      )}
+
+      {!isLoading && section === 'admin' && adminView === 'home' && (
+        <AdminHomePage
+          onViewUoms={() => setAdminView('uoms')}
+          onViewDescriptions={() => setAdminView('descriptions')}
+          onViewUsers={() => setAdminView('users')}
+        />
+      )}
+
+      {!isLoading && section === 'admin' && adminView === 'uoms' && (
+        <QuoteUomManagementPage uoms={quoteUoms} onBack={() => setAdminView('home')} onRefresh={loadAll} />
+      )}
+
+      {!isLoading && section === 'admin' && adminView === 'descriptions' && (
+        <QuoteDescriptionManagementPage descriptions={quoteDescriptions} onBack={() => setAdminView('home')} onRefresh={loadAll} />
+      )}
+
+      {!isLoading && section === 'admin' && adminView === 'users' && (
+        <UserManagementPage users={users} onBack={() => setAdminView('home')} onRefresh={loadAll} />
       )}
     </div>
   );

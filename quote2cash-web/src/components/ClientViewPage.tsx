@@ -21,12 +21,16 @@ export default function ClientViewPage({ client, onEdit, onDuplicate, onBack }: 
       </div>
 
       <div className="view-container">
-        <div className="view-card">
+        <div className="view-card" style={{ color: '#000' }}>
           <div className="view-section">
             <h3>Contact Information</h3>
             <div className="view-row">
               <span className="view-label">Name:</span>
               <span className="view-value">{client.name}</span>
+            </div>
+            <div className="view-row">
+              <span className="view-label">Vendor number:</span>
+              <span className="view-value">{client.vendorNumber || '—'}</span>
             </div>
             <div className="view-row">
               <span className="view-label">Representative:</span>

@@ -84,6 +84,7 @@ using (var scope = app.Services.CreateScope())
     app.UseSwaggerUI();
 // }
 
+app.UseStaticFiles();
 // app.UseHttpsRedirection();
 app.UseCors("AllowLocalhost");
 

@@ -6,7 +6,7 @@ using Quote2Cash.Persistence.Data;
 namespace Quote2Cash.API.Controllers
 {
     public record QuoteItemDto(int ItemNumber, decimal Quantity, string Uom, string Description, decimal UnitPrice, decimal TotalPrice);
-    public record QuoteCreateDto(Guid? ClientId, int QuoteNumber, string Reference, DateTime Date, int ValidityDays, string VendorNumber, QuoteItemDto[] Items);
+    public record QuoteCreateDto(Guid? ClientId, string QuoteNumber, string Reference, DateTime Date, int ValidityDays, QuoteItemDto[] Items);
 
     [ApiController]
     [Route("api/[controller]")]
@@ -17,6 +17,30 @@ namespace Quote2Cash.API.Controllers
         public QuotesController(Quote2CashDbContext context)
         {
             _context = context;
+        }
+
+        [HttpGet("next-number")]
+        public async Task<ActionResult<object>> GetNextQuoteNumber()
+        {
+            var prefix = $"Q{DateTime.UtcNow:yyyyMM}";
+            var latestQuoteNumber = await _context.Quotes.AsNoTracking()
+                .Where(q => q.QuoteNumber.StartsWith(prefix))
+                .OrderByDescending(q => q.QuoteNumber)
+                .Select(q => q.QuoteNumber)
+                .FirstOrDefaultAsync();
+
+            var nextSequence = 0;
+            if (!string.IsNullOrWhiteSpace(latestQuoteNumber) && latestQuoteNumber.Length >= prefix.Length + 4)
+            {
+                var suffix = latestQuoteNumber[prefix.Length..];
+                if (int.TryParse(suffix, out var lastSequence))
+                {
+                    nextSequence = lastSequence + 1;
+                }
+            }
+
+            var nextQuoteNumber = prefix + nextSequence.ToString("D4");
+            return Ok(new { nextQuoteNumber });
         }
 
         [HttpGet]
@@ -35,7 +59,7 @@ namespace Quote2Cash.API.Controllers
                 q.Reference,
                 q.Date,
                 q.ValidityDays,
-                q.VendorNumber,
+                VendorNumber = q.Client?.VendorNumber ?? string.Empty,
                 q.ClientId,
                 Client = q.Client != null ? new { q.Client.Id, q.Client.Name } : null,
                 SubTotal = q.SubTotal,
@@ -65,9 +89,9 @@ namespace Quote2Cash.API.Controllers
                 quote.Reference,
                 quote.Date,
                 quote.ValidityDays,
-                quote.VendorNumber,
+                VendorNumber = quote.Client?.VendorNumber ?? string.Empty,
                 quote.ClientId,
-                Client = quote.Client != null ? new { quote.Client.Id, quote.Client.Name, quote.Client.AddressLine1, quote.Client.AddressLine2, quote.Client.AddressLine3, quote.Client.AddressLine4, quote.Client.RepresentativeName, quote.Client.RepresentativeNumber } : null,
+                Client = quote.Client != null ? new { quote.Client.Id, quote.Client.Name, quote.Client.AddressLine1, quote.Client.AddressLine2, quote.Client.AddressLine3, quote.Client.AddressLine4, quote.Client.RepresentativeName, quote.Client.RepresentativeNumber, quote.Client.VendorNumber } : null,
                 Items = quote.Items.Select(item => new
                 {
                     item.Id,
@@ -87,6 +111,8 @@ namespace Quote2Cash.API.Controllers
         [HttpPost]
         public async Task<ActionResult<object>> CreateQuote([FromBody] QuoteCreateDto request)
         {
+            await EnsureQuoteItemDimensionsAsync(request.Items);
+
             var quoteDate = DateTime.SpecifyKind(request.Date, DateTimeKind.Utc);
             var quote = new Quote
             {
@@ -96,7 +122,6 @@ namespace Quote2Cash.API.Controllers
                 Reference = request.Reference,
                 Date = quoteDate,
                 ValidityDays = request.ValidityDays,
-                VendorNumber = request.VendorNumber,
                 Items = request.Items.Select(item => new QuoteItem
                 {
                     Id = Guid.NewGuid(),
@@ -119,7 +144,7 @@ namespace Quote2Cash.API.Controllers
                 quote.Reference,
                 quote.Date,
                 quote.ValidityDays,
-                quote.VendorNumber,
+                VendorNumber = quote.Client?.VendorNumber ?? string.Empty,
                 quote.ClientId,
                 Client = (object?)null,
                 Items = quote.Items.Select(item => new
@@ -149,14 +174,14 @@ namespace Quote2Cash.API.Controllers
                 return NotFound();
             }
 
+            await EnsureQuoteItemDimensionsAsync(request.Items);
+
             quote.ClientId = request.ClientId;
             quote.QuoteNumber = request.QuoteNumber;
             quote.Reference = request.Reference;
             quote.Date = DateTime.SpecifyKind(request.Date, DateTimeKind.Utc);
             quote.ValidityDays = request.ValidityDays;
-            quote.VendorNumber = request.VendorNumber;
 
-            // Remove existing items and persist before adding new ones to avoid concurrency issues
             var existingItems = quote.Items.ToList();
             if (existingItems.Any())
             {
@@ -197,6 +222,34 @@ namespace Quote2Cash.API.Controllers
             _context.Quotes.Remove(quote);
             await _context.SaveChangesAsync();
             return NoContent();
+        }
+
+        private async Task EnsureQuoteItemDimensionsAsync(IEnumerable<QuoteItemDto> items)
+        {
+            var uomValues = items.Select(i => i.Uom.Trim()).Where(v => !string.IsNullOrWhiteSpace(v)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+            var descriptionValues = items.Select(i => i.Description.Trim()).Where(v => !string.IsNullOrWhiteSpace(v)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+
+            var existingUoms = await _context.QuoteUoms.AsNoTracking().Where(u => uomValues.Contains(u.Value)).Select(u => u.Value).ToListAsync();
+            var existingDescriptions = await _context.QuoteDescriptions.AsNoTracking().Where(d => descriptionValues.Contains(d.Value)).Select(d => d.Value).ToListAsync();
+
+            var newUoms = uomValues.Except(existingUoms, StringComparer.OrdinalIgnoreCase)
+                .Select(value => new QuoteUom { Id = Guid.NewGuid(), Value = value });
+            var newDescriptions = descriptionValues.Except(existingDescriptions, StringComparer.OrdinalIgnoreCase)
+                .Select(value => new QuoteDescription { Id = Guid.NewGuid(), Value = value });
+
+            if (newUoms.Any())
+            {
+                _context.QuoteUoms.AddRange(newUoms);
+            }
+            if (newDescriptions.Any())
+            {
+                _context.QuoteDescriptions.AddRange(newDescriptions);
+            }
+
+            if (newUoms.Any() || newDescriptions.Any())
+            {
+                await _context.SaveChangesAsync();
+            }
         }
     }
 }

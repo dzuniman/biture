@@ -9,6 +9,7 @@ interface Props {
 
 export default function ClientForm({ initialData, onSubmit, onCancel }: Props) {
   const [name, setName] = useState('');
+  const [vendorNumber, setVendorNumber] = useState('');
   const [addressLine1, setAddressLine1] = useState('');
   const [addressLine2, setAddressLine2] = useState('');
   const [addressLine3, setAddressLine3] = useState('');
@@ -20,6 +21,7 @@ export default function ClientForm({ initialData, onSubmit, onCancel }: Props) {
   useEffect(() => {
     if (initialData) {
       setName(initialData.name);
+      setVendorNumber(initialData.vendorNumber ?? '');
       setAddressLine1(initialData.addressLine1 ?? '');
       setAddressLine2(initialData.addressLine2 ?? '');
       setAddressLine3(initialData.addressLine3 ?? '');
@@ -28,6 +30,7 @@ export default function ClientForm({ initialData, onSubmit, onCancel }: Props) {
       setRepresentativeNumber(initialData.representativeNumber ?? '');
     } else {
       setName('');
+      setVendorNumber('');
       setAddressLine1('');
       setAddressLine2('');
       setAddressLine3('');
@@ -43,6 +46,7 @@ export default function ClientForm({ initialData, onSubmit, onCancel }: Props) {
 
     await onSubmit({
       name: name.trim(),
+      vendorNumber: vendorNumber.trim() || undefined,
       addressLine1: addressLine1.trim() || undefined,
       addressLine2: addressLine2.trim() || undefined,
       addressLine3: addressLine3.trim() || undefined,
@@ -77,6 +81,10 @@ export default function ClientForm({ initialData, onSubmit, onCancel }: Props) {
         <label>
           Address line 4
           <input value={addressLine4} onChange={(event) => setAddressLine4(event.target.value)} />
+        </label>
+        <label>
+          Vendor number
+          <input value={vendorNumber} onChange={(event) => setVendorNumber(event.target.value)} />
         </label>
         <label>
           Representative name

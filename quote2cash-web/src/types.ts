@@ -17,6 +17,7 @@ export interface LoginRequest {
 export interface Client {
   id: string;
   name: string;
+  vendorNumber?: string;
   addressLine1?: string;
   addressLine2?: string;
   addressLine3?: string;
@@ -27,6 +28,7 @@ export interface Client {
 
 export interface ClientCreateRequest {
   name: string;
+  vendorNumber?: string;
   addressLine1?: string;
   addressLine2?: string;
   addressLine3?: string;
@@ -56,7 +58,7 @@ export interface QuoteItemCreateRequest {
 
 export interface Quote {
   id: string;
-  quoteNumber: number;
+  quoteNumber: string;
   reference: string;
   date: string;
   validityDays: number;
@@ -65,6 +67,7 @@ export interface Quote {
   client?: {
     id: string;
     name: string;
+    vendorNumber?: string;
     addressLine1?: string;
     addressLine2?: string;
     addressLine3?: string;
@@ -80,12 +83,33 @@ export interface Quote {
 
 export interface QuoteCreateRequest {
   clientId?: string;
-  quoteNumber: number;
+  quoteNumber: string;
   reference: string;
   date: string;
   validityDays: number;
-  vendorNumber: string;
   items: QuoteItemCreateRequest[];
+}
+
+export interface QuoteUom {
+  id: string;
+  value: string;
+}
+
+export interface QuoteDescription {
+  id: string;
+  value: string;
+}
+
+export interface UserCreateRequest {
+  username: string;
+  password: string;
+  role: string;
+}
+
+export interface UserUpdateRequest {
+  username: string;
+  password?: string;
+  role: string;
 }
 
 export interface JobCard {

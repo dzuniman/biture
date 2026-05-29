@@ -20,6 +20,7 @@ export default function ClientList({ clients, onEdit, onDelete }: Props) {
         <thead>
           <tr>
             <th>Name</th>
+            <th>Vendor</th>
             <th>Representative</th>
             <th>Phone</th>
             <th>Address</th>
@@ -30,6 +31,7 @@ export default function ClientList({ clients, onEdit, onDelete }: Props) {
           {clients.map((client) => (
             <tr key={client.id}>
               <td>{client.name}</td>
+              <td>{client.vendorNumber ?? '—'}</td>
               <td>{client.representativeName ?? '—'}</td>
               <td>{client.representativeNumber ?? '—'}</td>
               <td>{formatAddress(client)}</td>

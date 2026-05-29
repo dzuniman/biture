@@ -4,6 +4,11 @@ import type {
   ClientCreateRequest,
   Quote,
   QuoteCreateRequest,
+  QuoteUom,
+  QuoteDescription,
+  User,
+  UserCreateRequest,
+  UserUpdateRequest,
   JobCard,
   JobCardCreateRequest,
   Cost,
@@ -115,6 +120,7 @@ export async function getQuote(id: string): Promise<Quote> {
     client: quote.client ? {
       id: quote.client.id,
       name: quote.client.name,
+      vendorNumber: quote.client.vendorNumber,
       addressLine1: quote.client.addressLine1,
       addressLine2: quote.client.addressLine2,
       addressLine3: quote.client.addressLine3,
@@ -135,6 +141,69 @@ export async function getQuote(id: string): Promise<Quote> {
     vat: Number(quote.vat ?? 0),
     total: Number(quote.total ?? 0)
   };
+}
+
+export async function getQuoteNextNumber(): Promise<string> {
+  const response = await api.get<{ nextQuoteNumber: string }>('/quotes/next-number');
+  return response.data.nextQuoteNumber;
+}
+
+export async function getQuoteUoms(): Promise<QuoteUom[]> {
+  const response = await api.get<QuoteUom[]>('/quoteuoms');
+  return response.data;
+}
+
+export async function createQuoteUom(payload: QuoteUom): Promise<QuoteUom> {
+  const response = await api.post<QuoteUom>('/quoteuoms', payload);
+  return response.data;
+}
+
+export async function updateQuoteUom(id: string, payload: QuoteUom): Promise<void> {
+  await api.put(`/quoteuoms/${id}`, payload);
+}
+
+export async function deleteQuoteUom(id: string): Promise<void> {
+  await api.delete(`/quoteuoms/${id}`);
+}
+
+export async function getQuoteDescriptions(): Promise<QuoteDescription[]> {
+  const response = await api.get<QuoteDescription[]>('/quotedescriptions');
+  return response.data;
+}
+
+export async function createQuoteDescription(payload: QuoteDescription): Promise<QuoteDescription> {
+  const response = await api.post<QuoteDescription>('/quotedescriptions', payload);
+  return response.data;
+}
+
+export async function updateQuoteDescription(id: string, payload: QuoteDescription): Promise<void> {
+  await api.put(`/quotedescriptions/${id}`, payload);
+}
+
+export async function deleteQuoteDescription(id: string): Promise<void> {
+  await api.delete(`/quotedescriptions/${id}`);
+}
+
+export async function getUsers(): Promise<User[]> {
+  const response = await api.get<any[]>('/users');
+  return response.data.map((user) => ({
+    id: user.id,
+    username: user.username,
+    role: user.role
+  }));
+}
+
+export async function createUser(payload: UserCreateRequest): Promise<User> {
+  const response = await api.post<User>('/users', payload);
+  return response.data;
+}
+
+export async function updateUser(id: string, payload: UserUpdateRequest): Promise<void> {
+  await api.put(`/users/${id}`, payload);
+}
+
+export async function deleteUser(id: string): Promise<void> {
+  await api.delete(`/users/${id}`);
 }
 
 export async function createQuote(payload: QuoteCreateRequest): Promise<Quote> {

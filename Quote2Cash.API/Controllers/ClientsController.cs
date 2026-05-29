@@ -45,6 +45,7 @@ namespace Quote2Cash.API.Controllers
             }
 
             client.Name = request.Name;
+            client.VendorNumber = request.VendorNumber;
             client.AddressLine1 = request.AddressLine1;
             client.AddressLine2 = request.AddressLine2;
             client.AddressLine3 = request.AddressLine3;
