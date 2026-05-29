@@ -29,7 +29,7 @@ export const Login: React.FC = () => {
     <div className="login-container" style={{ color: '#000' }}>
       <form onSubmit={handleSubmit} className="login-form">
         <img src={logo} alt="Logo" style={{ display: 'block', margin: '0 auto 20px', height: '60px', width: 'auto' }} />
-        <h2>Login to Quote2Cash</h2>
+        <h2>Login to EPEC Solution</h2>
         {error && <p className="login-error">{error}</p>}
         <div className="login-field">
           <label htmlFor="username">Username</label>
