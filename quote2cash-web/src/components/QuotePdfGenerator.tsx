@@ -2,7 +2,7 @@ import { jsPDF } from 'jspdf';
 import { autoTable } from 'jspdf-autotable';
 import type { Quote } from '../types';
 import { formatAmount } from '../../formatters';
-const logo = "/logo.png";
+import logo from '../assets/logo.png';
 
 export const generateQuotePDF = async (quote: Quote) => {
   const doc = new jsPDF({

@@ -35,7 +35,7 @@ import AdminHomePage from './components/AdminHomePage';
 import QuoteUomManagementPage from './components/QuoteUomManagementPage';
 import QuoteDescriptionManagementPage from './components/QuoteDescriptionManagementPage';
 import UserManagementPage from './components/UserManagementPage';
-const logo = "/logo.png";
+import logo from './assets/logo.png';
 
 
 type Section = 'dashboard' | 'clients' | 'quotes' | 'admin';

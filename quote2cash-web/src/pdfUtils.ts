@@ -2,7 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Quote } from './types';
 import { formatAmount } from '../formatters';
-const logo = "/logo.png";
+import logo from './assets/logo.png';
 
 const loadImageDataUrl = async (url: string): Promise<string> => {
   const response = await fetch(url);
