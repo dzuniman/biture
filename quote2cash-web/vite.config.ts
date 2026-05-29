@@ -4,11 +4,15 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   server: {
-    origin: 'http://192.168.1.72:5227',
     port: 4173,
     host: true, // This allows access via your network IP (0.0.0.0)
     proxy: {
       '/api': {
+        target: 'http://localhost:5227',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/logo.png': {
         target: 'http://localhost:5227',
         changeOrigin: true,
         secure: false,
@@ -20,6 +24,11 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
+        target: 'http://localhost:5227',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/logo.png': {
         target: 'http://localhost:5227',
         changeOrigin: true,
         secure: false,

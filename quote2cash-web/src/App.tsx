@@ -35,7 +35,7 @@ import AdminHomePage from './components/AdminHomePage';
 import QuoteUomManagementPage from './components/QuoteUomManagementPage';
 import QuoteDescriptionManagementPage from './components/QuoteDescriptionManagementPage';
 import UserManagementPage from './components/UserManagementPage';
-import logo from './assets/logo.png';
+const logo = "/logo.png";
 
 
 type Section = 'dashboard' | 'clients' | 'quotes' | 'admin';
@@ -66,6 +66,19 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const { isAuthenticated, user, logout } = useAuth();
 
+  const getErrorMessage = (err: any, fallback: string) => {
+    if (err.message === 'Network Error' || !err.response) {
+      return 'API Connection Error. Ensure the backend is running and migrations are applied.';
+    }
+    const data = err.response.data;
+    if (typeof data === 'string' && (data.includes('<!DOCTYPE html>') || data.includes('<html'))) {
+      return 'Internal Server Error (500). Check the API console for the stack trace.';
+    }
+    const detail = data?.detail || data?.message || data?.title;
+    const validationErrors = data?.errors ? Object.values(data.errors).flat().join(' ') : null;
+    return validationErrors || detail || fallback;
+  };
+
   const loadAll = async () => {
     try {
       setError(null);
@@ -82,8 +95,8 @@ function App() {
       setQuoteUoms(uomsData);
       setQuoteDescriptions(descriptionsData);
       setUsers(usersData);
-    } catch {
-      setError('Unable to load data. Confirm the API is running.');
+    } catch (err: any) {
+      setError(getErrorMessage(err, 'Unable to load data. Confirm the API is running.'));
     } finally {
       setIsLoading(false);
     }
@@ -121,8 +134,8 @@ function App() {
       await loadAll();
       setSection('clients');
       setClientView('list');
-    } catch {
-      setError('Unable to save client.');
+    } catch (err: any) {
+      setError(getErrorMessage(err, 'Unable to save client.'));
     } finally {
       setIsLoading(false);
     }
@@ -136,8 +149,8 @@ function App() {
       clearClientState();
       await loadAll();
       setClientView('list');
-    } catch {
-      setError('Unable to update client.');
+    } catch (err: any) {
+      setError(getErrorMessage(err, 'Unable to update client.'));
     } finally {
       setIsLoading(false);
     }
@@ -150,8 +163,8 @@ function App() {
         setIsLoading(true);
         await deleteClient(id);
         await loadAll();
-      } catch {
-        setError('Unable to delete client.');
+      } catch (err: any) {
+        setError(getErrorMessage(err, 'Unable to delete client.'));
       } finally {
         setIsLoading(false);
       }
@@ -167,8 +180,8 @@ function App() {
       await loadAll();
       setSection('quotes');
       setQuoteView('list');
-    } catch {
-      setError('Unable to save quote.');
+    } catch (err: any) {
+      setError(getErrorMessage(err, 'Unable to save quote.'));
     } finally {
       setIsLoading(false);
     }
@@ -182,8 +195,8 @@ function App() {
       clearQuoteState();
       await loadAll();
       setQuoteView('list');
-    } catch {
-      setError('Unable to update quote.');
+    } catch (err: any) {
+      setError(getErrorMessage(err, 'Unable to update quote.'));
     } finally {
       setIsLoading(false);
     }
@@ -196,8 +209,8 @@ function App() {
         setIsLoading(true);
         await deleteQuote(id);
         await loadAll();
-      } catch {
-        setError('Unable to delete quote.');
+      } catch (err: any) {
+        setError(getErrorMessage(err, 'Unable to delete quote.'));
       } finally {
         setIsLoading(false);
       }
@@ -238,8 +251,8 @@ function App() {
         setIsDuplicatingClient(true);
         setClientView('manage');
       }
-    } catch {
-      setError('Unable to load client for duplication.');
+    } catch (err: any) {
+      setError(getErrorMessage(err, 'Unable to load client for duplication.'));
     } finally {
       setIsLoading(false);
     }
@@ -253,8 +266,8 @@ function App() {
       setIsDuplicatingQuote(false);
       setQuoteClientId(fullQuote.clientId ?? '');
       setQuoteView('manage');
-    } catch {
-      setError('Unable to load quote for editing.');
+    } catch (err: any) {
+      setError(getErrorMessage(err, 'Unable to load quote for editing.'));
     } finally {
       setIsLoading(false);
     }
@@ -266,8 +279,8 @@ function App() {
       const fullQuote = await getQuote(quote.id);
       setViewingQuote(fullQuote);
       setQuoteView('view');
-    } catch {
-      setError('Unable to load quote.');
+    } catch (err: any) {
+      setError(getErrorMessage(err, 'Unable to load quote.'));
     } finally {
       setIsLoading(false);
     }
@@ -281,8 +294,8 @@ function App() {
       setIsDuplicatingQuote(true);
       setQuoteClientId(fullQuote.clientId ?? '');
       setQuoteView('manage');
-    } catch {
-      setError('Unable to load quote for duplication.');
+    } catch (err: any) {
+      setError(getErrorMessage(err, 'Unable to load quote for duplication.'));
     } finally {
       setIsLoading(false);
     }
@@ -321,12 +334,12 @@ function App() {
               src={logo} 
               alt="Logo" 
               className="brand-logo" 
-              style={{ display: 'block', height: '40px', width: 'auto', flexShrink: 0, marginRight: '12px' }} 
+              style={{ display: 'block', height: '80px', width: 'auto', flexShrink: 0, marginRight: '12px' }} 
             />
-            <div>
+            {/*<div>
               <div className="brand-title">EPEC Solution</div>
               <div className="brand-tagline">EXPLORE THE POSIBILITY</div>
-            </div>
+            </div>*/}
           </div>
 
           <div className="site-toolbar">

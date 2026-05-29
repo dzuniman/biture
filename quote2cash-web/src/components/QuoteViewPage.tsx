@@ -1,6 +1,6 @@
 import type { Quote } from '../types';
 import { formatAmount } from '../../formatters';
-import logo from '../assets/logo.png';
+const logo = "/logo.png";
 import { generateQuotePDF } from './QuotePdfGenerator';
 
 interface Props {
