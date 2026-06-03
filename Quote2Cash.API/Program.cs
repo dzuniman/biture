@@ -1,6 +1,5 @@
 using System.Text.Json.Serialization;
 using System.Text;
-using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -11,10 +10,9 @@ using Quote2Cash.Persistence.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Controllers with default authorization
 builder.Services.AddControllers(options =>
     {
-        // Require authentication by default
         options.Filters.Add(new AuthorizeFilter());
     })
     .AddJsonOptions(options =>
@@ -24,7 +22,7 @@ builder.Services.AddControllers(options =>
         options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
     });
 
-// Configure JWT authentication
+// JWT authentication
 var jwtSection = builder.Configuration.GetSection("Jwt");
 var jwtKey = jwtSection.GetValue<string>("Key");
 var jwtIssuer = jwtSection.GetValue<string>("Issuer");
@@ -54,7 +52,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 builder.Services.AddPersistenceServices(builder.Configuration);
 
-// Configure CORS
+// ✅ Configure CORS properly
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -64,11 +62,11 @@ builder.Services.AddCors(options =>
             "http://localhost:5173"            // dev frontend
         )
         .AllowAnyHeader()
-        .AllowAnyMethod();
+        .AllowAnyMethod()
+        .AllowCredentials();
     });
 });
 
-// Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -82,14 +80,14 @@ using (var scope = app.Services.CreateScope())
     await SeedData.EnsureSeedDataAsync(context);
 }
 
-// Configure the HTTP request pipeline
+// Middleware order matters
 app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseStaticFiles();
 // app.UseHttpsRedirection();
 
-app.UseCors("AllowFrontend");
+app.UseCors("AllowFrontend");   // ✅ must be before auth
 
 app.UseAuthentication();
 app.UseAuthorization();
