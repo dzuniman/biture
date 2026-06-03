@@ -1,10 +1,9 @@
 interface Props {
-  onViewUoms: () => void;
   onViewDescriptions: () => void;
   onViewUsers: () => void;
 }
 
-export default function AdminHomePage({ onViewUoms, onViewDescriptions, onViewUsers }: Props) {
+export default function AdminHomePage({ onViewDescriptions, onViewUsers }: Props) {
   return (
     <div className="page-section">
       <div className="section-header">
@@ -16,15 +15,8 @@ export default function AdminHomePage({ onViewUoms, onViewDescriptions, onViewUs
 
       <div className="cards-grid">
         <div className="card">
-          <h3>Quote UOMs</h3>
-          <p>Manage units of measure used in quote line items.</p>
-          <button className="btn-primary" onClick={onViewUoms}>
-            Manage UOMs
-          </button>
-        </div>
-        <div className="card">
           <h3>Quote Descriptions</h3>
-          <p>Manage commonly used line item descriptions.</p>
+          <p>Manage commonly used line item lookup entries.</p>
           <button className="btn-primary" onClick={onViewDescriptions}>
             Manage Descriptions
           </button>

@@ -144,6 +144,7 @@ export const generateQuotePDF = async (quote: Quote) => {
   }).map(item => [
     item.itemNumber,
     item.quantity,
+    item.code || '—',
     item.uom,
     item.description,
     formatAmount(item.unitPrice), // Formatted for display
@@ -152,7 +153,7 @@ export const generateQuotePDF = async (quote: Quote) => {
 
   autoTable(doc, {
     startY: currentY,
-    head: [['ITEM', 'QTY', 'UOM', 'DESCRIPTION', 'UNIT PRICE', 'TOTAL']],
+    head: [['ITEM', 'QTY', 'CODE', 'UOM', 'DESCRIPTION', 'UNIT PRICE', 'TOTAL']],
     body: tableRows,
     theme: 'grid',
     styles: {
@@ -170,8 +171,8 @@ export const generateQuotePDF = async (quote: Quote) => {
       lineWidth: 0.1,
     },
     columnStyles: {
-      0: { cellWidth: 12 }, 1: { cellWidth: 12 }, 2: { cellWidth: 15 },
-      3: { cellWidth: 'auto' }, 4: { cellWidth: 25, halign: 'right' }, 5: { cellWidth: 25, halign: 'right' },
+      0: { cellWidth: 12 }, 1: { cellWidth: 12 }, 2: { cellWidth: 18 }, 3: { cellWidth: 15 },
+      4: { cellWidth: 'auto' }, 5: { cellWidth: 25, halign: 'right' }, 6: { cellWidth: 25, halign: 'right' },
     },
     margin: { left: margin, right: margin },
   });

@@ -26,15 +26,9 @@ namespace Quote2Cash.Persistence.Services
                 await createUsersTable.ExecuteNonQueryAsync();
             }
 
-            await using (var createQuoteUomsTable = connection.CreateCommand())
-            {
-                createQuoteUomsTable.CommandText = @"CREATE TABLE IF NOT EXISTS ""QuoteUoms"" (""Id"" uuid PRIMARY KEY, ""Value"" varchar(150) NOT NULL UNIQUE);";
-                await createQuoteUomsTable.ExecuteNonQueryAsync();
-            }
-
             await using (var createQuoteDescriptionsTable = connection.CreateCommand())
             {
-                createQuoteDescriptionsTable.CommandText = @"CREATE TABLE IF NOT EXISTS ""QuoteDescriptions"" (""Id"" uuid PRIMARY KEY, ""Value"" varchar(1000) NOT NULL UNIQUE);";
+                createQuoteDescriptionsTable.CommandText = @"CREATE TABLE IF NOT EXISTS ""QuoteDescriptions"" (""Id"" uuid PRIMARY KEY, ""Code"" varchar(150) NOT NULL UNIQUE, ""Uom"" varchar(150) NOT NULL, ""Description"" varchar(1000) NOT NULL);";
                 await createQuoteDescriptionsTable.ExecuteNonQueryAsync();
             }
 
@@ -155,6 +149,7 @@ namespace Quote2Cash.Persistence.Services
                             Id = Guid.NewGuid(),
                             ItemNumber = 1,
                             Quantity = 12,
+                            Code = "SYS-INT",
                             Uom = "Hours",
                             Description = "Systems integration assessment",
                             UnitPrice = 350m,
@@ -165,6 +160,7 @@ namespace Quote2Cash.Persistence.Services
                             Id = Guid.NewGuid(),
                             ItemNumber = 2,
                             Quantity = 25,
+                            Code = "LIC-REP",
                             Uom = "pcs",
                             Description = "Custom reporting licenses",
                             UnitPrice = 120m,
@@ -187,6 +183,7 @@ namespace Quote2Cash.Persistence.Services
                             Id = Guid.NewGuid(),
                             ItemNumber = 1,
                             Quantity = 8,
+                            Code = "IMP-HDO",
                             Uom = "Days",
                             Description = "Implementation and handover",
                             UnitPrice = 650m,
@@ -197,6 +194,7 @@ namespace Quote2Cash.Persistence.Services
                             Id = Guid.NewGuid(),
                             ItemNumber = 2,
                             Quantity = 50,
+                            Code = "SUP-TBL",
                             Uom = "pcs",
                             Description = "Support tablets",
                             UnitPrice = 78m,
@@ -219,6 +217,7 @@ namespace Quote2Cash.Persistence.Services
                             Id = Guid.NewGuid(),
                             ItemNumber = 1,
                             Quantity = 18,
+                            Code = "SCHED-OPT",
                             Uom = "Hours",
                             Description = "Railway schedule optimization",
                             UnitPrice = 415m,
@@ -229,6 +228,7 @@ namespace Quote2Cash.Persistence.Services
                             Id = Guid.NewGuid(),
                             ItemNumber = 2,
                             Quantity = 5,
+                            Code = "HW-KIT",
                             Uom = "pcs",
                             Description = "Hardware installation kits",
                             UnitPrice = 980m,
@@ -241,21 +241,20 @@ namespace Quote2Cash.Persistence.Services
             await context.Clients.AddRangeAsync(clients);
             await context.Quotes.AddRangeAsync(quotes);
 
-            var quoteUoms = quotes
-                .SelectMany(q => q.Items.Select(item => item.Uom.Trim()))
-                .Where(value => !string.IsNullOrWhiteSpace(value))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .Select(value => new QuoteUom { Id = Guid.NewGuid(), Value = value })
-                .ToList();
-
             var quoteDescriptions = quotes
-                .SelectMany(q => q.Items.Select(item => item.Description.Trim()))
-                .Where(value => !string.IsNullOrWhiteSpace(value))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .Select(value => new QuoteDescription { Id = Guid.NewGuid(), Value = value })
+                .SelectMany(q => q.Items.Select(item => new { item.Code, item.Uom, item.Description }))
+                .Where(item => !string.IsNullOrWhiteSpace(item.Code))
+                .GroupBy(item => item.Code.Trim(), StringComparer.OrdinalIgnoreCase)
+                .Select(group => group.First())
+                .Select(item => new QuoteDescription
+                {
+                    Id = Guid.NewGuid(),
+                    Code = item.Code.Trim(),
+                    Uom = item.Uom.Trim(),
+                    Description = item.Description.Trim()
+                })
                 .ToList();
 
-            await context.QuoteUoms.AddRangeAsync(quoteUoms);
             await context.QuoteDescriptions.AddRangeAsync(quoteDescriptions);
             await context.SaveChangesAsync();
 

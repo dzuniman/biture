@@ -85,7 +85,7 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
 
           .items-table-header, .items-table-row {
             display: grid !important;
-            grid-template-columns: 25px 40px 45px 1fr 100px 100px !important;
+            grid-template-columns: 25px 40px 55px 45px 1fr 100px 100px !important;
             gap: 8px !important;
             align-items: start !important;
             border-bottom: 0.5pt solid #ccc !important;
@@ -145,7 +145,7 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
 
           /* Adjust grid columns for print to be more flexible */
           .items-table-header, .items-table-row {
-            grid-template-columns: 0.5fr 0.5fr 0.7fr 3fr 1fr 1fr !important; /* More flexible widths */
+            grid-template-columns: 0.5fr 0.5fr 0.7fr 0.7fr 3fr 1fr 1fr !important; /* More flexible widths */
             gap: 4px !important; /* Reduce gap for tighter fit */
           }
           .items-table-header div, .items-table-row div {
@@ -183,7 +183,7 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
               <div className="quote-details-block" style={{ fontSize: '0.75rem', lineHeight: '1', marginBottom: '2px' }}>
                 <div className="view-row" style={{ marginBottom: '1px', lineHeight: '0' }}>
                   <span className="view-label">QUOTE NUMBER:</span>
-                  <span className="view-value">#{quote.quoteNumber}</span>
+                  <span className="view-value">{quote.quoteNumber}</span>
                 </div>
                 <div className="view-row" style={{ marginBottom: '1px', lineHeight: '0' }}>
                   <span className="view-label">REFERENCE:</span>
@@ -205,14 +205,14 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
 
               {quote.client && (
                 <div className="customer-box" style={{ border: '1px solid #000', padding: '6px', marginTop: '8px', fontSize: '0.75rem', lineHeight: '1.2' }}>
-                  <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>CUSTOMER</div>
+                  <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>BILL TO:</div>
                   {quote.client.name && <div style={{ marginBottom: '2px' }}>{quote.client.name}</div>}
                   {quote.client.addressLine1 && <div style={{ marginBottom: '2px' }}>{quote.client.addressLine1}</div>}
                   {quote.client.addressLine2 && <div style={{ marginBottom: '2px' }}>{quote.client.addressLine2}</div>}
                   {quote.client.addressLine3 && <div style={{ marginBottom: '2px' }}>{quote.client.addressLine3}</div>}
                   {quote.client.addressLine4 && <div style={{ marginBottom: '2px' }}>{quote.client.addressLine4}</div>}
                   <div style={{ marginBottom: '2px' }}>{quote.client.representativeName || '—'}</div>
-                  <div style={{ marginBottom: '2px' }}>C{quote.client.representativeNumber || '—'}</div>
+                  <div style={{ marginBottom: '2px' }}>{quote.client.representativeNumber || '—'}</div>
                 </div>
               )}
             </div>
@@ -221,9 +221,10 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
           <div className="quote-view-main">
             <div className="view-section">
               <div className="items-table" style={{ border: '1px solid #000', borderRadius: '2px', overflow: 'hidden' }}>
-                <div className="items-table-header" style={{ display: 'grid', gridTemplateColumns: '50px 40px 45px 1fr 100px 100px', gap: '0', background: '#f3f4f6', borderBottom: '1px solid #000' }}>
+                <div className="items-table-header" style={{ display: 'grid', gridTemplateColumns: '50px 40px 55px 45px 1fr 100px 100px', gap: '0', background: '#f3f4f6', borderBottom: '1px solid #000' }}>
                   <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>ITEM</div>
                   <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>QTY</div>
+                  <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>CODE</div>
                   <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>UOM</div>
                   <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>DESCRIPTION</div>
                   <div style={{ padding: '8px 6px', fontWeight: 'bold', textAlign: 'right' }}>UNIT PRICE</div>
@@ -235,9 +236,10 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
                   if (!Number.isNaN(aNum) && !Number.isNaN(bNum)) return aNum - bNum;
                   return a.itemNumber.toString().localeCompare(b.itemNumber.toString(), undefined, { numeric: true });
                 }).map((item) => (
-                  <div key={item.id} className="items-table-row" style={{ display: 'grid', gridTemplateColumns: '50px 40px 45px 1fr 100px 100px', gap: '0' }}>
+                  <div key={item.id} className="items-table-row" style={{ display: 'grid', gridTemplateColumns: '50px 40px 55px 45px 1fr 100px 100px', gap: '0' }}>
                     <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{item.itemNumber}</div>
                     <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{item.quantity}</div>
+                    <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{item.code || '—'}</div>
                     <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{item.uom}</div>
                     <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{item.description}</div>
                     <div style={{ padding: '8px 6px', textAlign: 'right', lineHeight: '1.2' }}>{formatAmount(item.unitPrice)}</div>

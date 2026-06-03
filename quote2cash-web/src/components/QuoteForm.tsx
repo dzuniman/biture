@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState, useRef, type FormEvent } from 'react';
 import { formatAmount } from '../../formatters';
 import * as XLSX from 'xlsx';
-import type { Client, Quote, QuoteCreateRequest, QuoteItemCreateRequest, QuoteUom, QuoteDescription } from '../types';
+import type { Client, Quote, QuoteCreateRequest, QuoteItemCreateRequest, QuoteDescription } from '../types';
 import { getQuoteNextNumber } from '../api';
 
 interface Props {
   clients: Client[];
-  uomOptions: QuoteUom[];
   descriptionOptions: QuoteDescription[];
   initialData?: Quote;
   selectedClientId?: string;
@@ -106,6 +105,7 @@ function SuggestionInput({
 const blankItem: QuoteItemCreateRequest = {
   itemNumber: 1,
   quantity: 1,
+  code: '',
   uom: '',
   description: '',
   unitPrice: 0,
@@ -114,7 +114,6 @@ const blankItem: QuoteItemCreateRequest = {
 
 export default function QuoteForm({
   clients,
-  uomOptions,
   descriptionOptions,
   initialData,
   selectedClientId,
@@ -167,6 +166,12 @@ export default function QuoteForm({
     }
   }, [initialData, selectedClientId]);
 
+  const findDescriptionByCode = (value: string) => {
+    if (!value.trim()) return undefined;
+    const lookup = value.trim().toLowerCase();
+    return descriptionOptions.find((option) => option.code.trim().toLowerCase() === lookup);
+  };
+
   const reindexItems = (currentItems: QuoteItemCreateRequest[]) => {
     return [...currentItems]
       .sort((a, b) => a.itemNumber - b.itemNumber)
@@ -182,9 +187,16 @@ export default function QuoteForm({
       if (field === 'itemNumber') {
         item.itemNumber = Number(value);
       } else if (field === 'quantity') {
-        item.quantity = Number(value);
+        item.quantity = Math.max(0, Number(value));
       } else if (field === 'unitPrice') {
-        item.unitPrice = Number(value);
+        item.unitPrice = Math.max(0, Number(value));
+      } else if (field === 'code') {
+        item.code = value;
+        const matched = findDescriptionByCode(value);
+        if (matched) {
+          item.uom = matched.uom;
+          item.description = matched.description;
+        }
       } else if (field === 'uom') {
         item.uom = value;
       } else if (field === 'description') {
@@ -208,6 +220,7 @@ export default function QuoteForm({
       {
         itemNumber: current.length + 1,
         quantity: 1,
+        code: '',
         uom: '',
         description: '',
         unitPrice: 0,
@@ -217,7 +230,7 @@ export default function QuoteForm({
   };
 
   const handleDownloadTemplate = () => {
-    const headers = ['Quantity', 'UOM', 'Description', 'Unit Price'];
+    const headers = ['Code', 'Quantity', 'UOM', 'Description', 'Unit Price'];
     const data = [headers];
 
     const ws = XLSX.utils.aoa_to_sheet(data);
@@ -244,7 +257,7 @@ export default function QuoteForm({
       }
 
       const headers = json[0].map((h: any) => String(h || '').trim().toLowerCase());
-      const expectedHeaders = ['Quantity', 'UOM', 'Description', 'Unit Price'];
+      const expectedHeaders = ['Code', 'Quantity', 'UOM', 'Description', 'Unit Price'];
       const expectedHeadersLower = expectedHeaders.map(h => h.toLowerCase());
 
       if (!expectedHeadersLower.every(h => headers.includes(h))) {
@@ -257,6 +270,7 @@ export default function QuoteForm({
         const row = json[i];
         const item: QuoteItemCreateRequest = {
           itemNumber: 0, // Will be re-indexed later
+          code: row[headers.indexOf('code')] || '',
           quantity: parseFloat(row[headers.indexOf('quantity')] || 0),
           uom: row[headers.indexOf('uom')] || '',
           description: row[headers.indexOf('description')] || '',
@@ -287,6 +301,20 @@ export default function QuoteForm({
     });
   };
 
+  const uomSuggestionOptions = useMemo(() => {
+    const seen = new Set<string>();
+    return descriptionOptions.reduce<{ id: string; value: string }[]>((list, option) => {
+      const value = option.uom?.trim();
+      if (!value || seen.has(value.toLowerCase())) return list;
+      seen.add(value.toLowerCase());
+      return [...list, { id: option.id, value }];
+    }, []);
+  }, [descriptionOptions]);
+
+  const codeSuggestionOptions = useMemo(() => {
+    return descriptionOptions.map((option) => ({ id: option.id, value: option.code }));
+  }, [descriptionOptions]);
+
   const lineCount = useMemo(() => items.length, [items]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -302,6 +330,7 @@ export default function QuoteForm({
       items: items.map((item) => ({
         itemNumber: item.itemNumber,
         quantity: item.quantity,
+        code: item.code?.trim() || '',
         uom: item.uom.trim(),
         description: item.description.trim(),
         unitPrice: parseFloat(item.unitPrice.toFixed(2)),
@@ -397,6 +426,7 @@ export default function QuoteForm({
             <div className="item-row header">
               <span>Item</span>
               <span>Qty</span>
+              <span>Code</span>
               <span>UOM</span>
               <span>Description</span>
               <span>Unit price</span>
@@ -421,14 +451,20 @@ export default function QuoteForm({
                   required
                 />
                 <SuggestionInput
-                  options={uomOptions.map((option) => ({ id: option.id, value: option.value }))}
+                  options={codeSuggestionOptions}
+                  value={item.code ?? ''}
+                  onChange={(value) => handleUpdateItem(index, 'code', value)}
+                  placeholder="Select or type code"
+                />
+                <SuggestionInput
+                  options={uomSuggestionOptions}
                   value={item.uom}
                   onChange={(value) => handleUpdateItem(index, 'uom', value)}
                   placeholder="Select or type UOM"
                   required
                 />
                 <SuggestionInput
-                  options={descriptionOptions.map((option) => ({ id: option.id, value: option.value }))}
+                  options={descriptionOptions.map((option) => ({ id: option.id, value: option.description }))}
                   value={item.description}
                   onChange={(value) => handleUpdateItem(index, 'description', value)}
                   placeholder="Select or type description"
@@ -445,10 +481,12 @@ export default function QuoteForm({
                 <input value={formatAmount(item.totalPrice)} disabled />
                 <button
                   type="button"
-                  className="danger small"
+                  className="danger small remove-line-button"
+                  title="Remove line"
+                  aria-label="Remove line"
                   onClick={() => handleRemoveItem(index)}
                 >
-                  Remove
+                  −
                 </button>
               </div>
             ))}

@@ -10,6 +10,7 @@ namespace Quote2Cash.Domain.Entities
 
         public int ItemNumber { get; set; }
         public decimal Quantity { get; set; }
+        public string Code { get; set; } = string.Empty;
         public string Uom { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public decimal UnitPrice { get; set; }

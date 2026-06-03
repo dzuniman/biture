@@ -132,6 +132,7 @@ export async function getQuote(id: string): Promise<Quote> {
       id: item.id,
       itemNumber: item.itemNumber,
       quantity: item.quantity,
+      code: item.code,
       uom: item.uom,
       description: item.description,
       unitPrice: item.unitPrice,

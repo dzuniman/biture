@@ -19,26 +19,36 @@ namespace Quote2Cash.API.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<QuoteDescription>>> GetQuoteDescriptions()
         {
-            var descriptions = await _context.QuoteDescriptions.AsNoTracking().OrderBy(d => d.Value).ToListAsync();
+            var descriptions = await _context.QuoteDescriptions.AsNoTracking().OrderBy(d => d.Code).ToListAsync();
             return Ok(descriptions);
         }
 
         [HttpPost]
         public async Task<ActionResult<QuoteDescription>> CreateQuoteDescription([FromBody] QuoteDescription request)
         {
-            if (string.IsNullOrWhiteSpace(request.Value))
+            if (string.IsNullOrWhiteSpace(request.Code))
             {
-                return BadRequest(new { message = "Value is required." });
+                return BadRequest(new { message = "Code is required." });
+            }
+            if (string.IsNullOrWhiteSpace(request.Uom))
+            {
+                return BadRequest(new { message = "UOM is required." });
+            }
+            if (string.IsNullOrWhiteSpace(request.Description))
+            {
+                return BadRequest(new { message = "Description is required." });
             }
 
-            var normalized = request.Value.Trim();
-            if (await _context.QuoteDescriptions.AnyAsync(d => d.Value == normalized))
+            var code = request.Code.Trim();
+            if (await _context.QuoteDescriptions.AnyAsync(d => d.Code == code))
             {
-                return Conflict(new { message = "The description already exists." });
+                return Conflict(new { message = "The code already exists." });
             }
 
             request.Id = Guid.NewGuid();
-            request.Value = normalized;
+            request.Code = code;
+            request.Uom = request.Uom.Trim();
+            request.Description = request.Description.Trim();
             _context.QuoteDescriptions.Add(request);
             await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetQuoteDescriptions), new { id = request.Id }, request);
@@ -53,13 +63,28 @@ namespace Quote2Cash.API.Controllers
                 return NotFound();
             }
 
-            var normalized = request.Value.Trim();
-            if (await _context.QuoteDescriptions.AnyAsync(d => d.Id != id && d.Value == normalized))
+            if (string.IsNullOrWhiteSpace(request.Code))
             {
-                return Conflict(new { message = "Another description with this value already exists." });
+                return BadRequest(new { message = "Code is required." });
+            }
+            if (string.IsNullOrWhiteSpace(request.Uom))
+            {
+                return BadRequest(new { message = "UOM is required." });
+            }
+            if (string.IsNullOrWhiteSpace(request.Description))
+            {
+                return BadRequest(new { message = "Description is required." });
             }
 
-            existing.Value = normalized;
+            var code = request.Code.Trim();
+            if (await _context.QuoteDescriptions.AnyAsync(d => d.Id != id && d.Code == code))
+            {
+                return Conflict(new { message = "Another code with this value already exists." });
+            }
+
+            existing.Code = code;
+            existing.Uom = request.Uom.Trim();
+            existing.Description = request.Description.Trim();
             await _context.SaveChangesAsync();
             return NoContent();
         }

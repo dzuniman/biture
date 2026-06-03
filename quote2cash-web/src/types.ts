@@ -41,6 +41,7 @@ export interface QuoteItem {
   id: string;
   itemNumber: number;
   quantity: number;
+  code?: string;
   uom: string;
   description: string;
   unitPrice: number;
@@ -50,6 +51,7 @@ export interface QuoteItem {
 export interface QuoteItemCreateRequest {
   itemNumber: number;
   quantity: number;
+  code?: string;
   uom: string;
   description: string;
   unitPrice: number;
@@ -97,7 +99,9 @@ export interface QuoteUom {
 
 export interface QuoteDescription {
   id: string;
-  value: string;
+  code: string;
+  uom: string;
+  description: string;
 }
 
 export interface UserCreateRequest {
