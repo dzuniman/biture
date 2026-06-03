@@ -12,15 +12,15 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Controllers with default authorization
 builder.Services.AddControllers(options =>
-    {
-        options.Filters.Add(new AuthorizeFilter());
-    })
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
-        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
-    });
+{
+    options.Filters.Add(new AuthorizeFilter());
+})
+.AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+    options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+    options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+});
 
 // JWT authentication
 var jwtSection = builder.Configuration.GetSection("Jwt");
@@ -52,7 +52,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 builder.Services.AddPersistenceServices(builder.Configuration);
 
-// ✅ Configure CORS properly
+// ✅ Configure CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -62,8 +62,7 @@ builder.Services.AddCors(options =>
             "http://localhost:5173"            // dev frontend
         )
         .AllowAnyHeader()
-        .AllowAnyMethod()
-        .AllowCredentials();
+        .AllowAnyMethod();
     });
 });
 
