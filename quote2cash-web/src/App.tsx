@@ -283,15 +283,20 @@ function App() {
         return;
       }
       try {
-        const fullInvoice = await getInvoice(invoice.id).catch(() => null);
+        const fullInvoice = await getInvoice(invoice.id);
         let resolvedInvoice = fullInvoice || { ...invoice };
 
-        // Reconstruct relationships locally if data is shallow
+        // Reconstruct relationships locally if data is shallow or missing
         if (!resolvedInvoice.client && (resolvedInvoice as any).clientId) {
           resolvedInvoice.client = clients.find(c => c.id === (resolvedInvoice as any).clientId) || null;
         }
         if (!resolvedInvoice.quote && (resolvedInvoice as any).quoteId) {
           resolvedInvoice.quote = quotes.find(q => q.id === (resolvedInvoice as any).quoteId) || null;
+        }
+
+        // Deep reconstruction: ensure the quote's client is also linked
+        if (resolvedInvoice.quote && !resolvedInvoice.quote.client && resolvedInvoice.quote.clientId) {
+          resolvedInvoice.quote.client = clients.find(c => c.id === resolvedInvoice.quote.clientId) || null;
         }
 
         setEditingInvoice(resolvedInvoice);
@@ -317,15 +322,20 @@ function App() {
         return;
       }
       try {
-        const fullInvoice = await getInvoice(invoice.id).catch(() => null);
+        const fullInvoice = await getInvoice(invoice.id);
         let resolvedInvoice = fullInvoice || { ...invoice };
 
-        // Reconstruct relationships locally if data is shallow
+        // Reconstruct relationships locally if data is shallow or missing
         if (!resolvedInvoice.client && (resolvedInvoice as any).clientId) {
           resolvedInvoice.client = clients.find(c => c.id === (resolvedInvoice as any).clientId) || null;
         }
         if (!resolvedInvoice.quote && (resolvedInvoice as any).quoteId) {
           resolvedInvoice.quote = quotes.find(q => q.id === (resolvedInvoice as any).quoteId) || null;
+        }
+
+        // Deep reconstruction: ensure the quote's client is also linked
+        if (resolvedInvoice.quote && !resolvedInvoice.quote.client && resolvedInvoice.quote.clientId) {
+          resolvedInvoice.quote.client = clients.find(c => c.id === resolvedInvoice.quote.clientId) || null;
         }
 
         setViewingInvoice(resolvedInvoice);
