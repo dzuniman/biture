@@ -24,7 +24,7 @@ export default function InvoiceForm({ quotes, initialData, onSubmit, onCancel }:
       setDescription(initialData.description ?? '');
 
       let dateStr = '';
-      const rawDate = initialData.date || initialData.createdAt;
+      const rawDate = (initialData as any).date || initialData.createdAt;
       if (rawDate) {
         const d = new Date(rawDate);
         if (!isNaN(d.getTime())) {
