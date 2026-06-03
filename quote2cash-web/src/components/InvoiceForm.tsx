@@ -20,28 +20,59 @@ export default function InvoiceForm({ quotes, initialData, onSubmit, onCancel }:
   useEffect(() => {
     if (initialData) {
       setQuoteId(initialData.quote?.id ?? '');
-      setInvoiceNumber(initialData.invoiceNumber);
+      setInvoiceNumber(initialData.invoiceNumber ?? '');
       setDescription(initialData.description ?? '');
-      setDate(initialData.createdAt ? initialData.createdAt.slice(0, 10) : '');
-      setStatus(initialData.status);
+
+      let dateStr = '';
+      const rawDate = initialData.date || initialData.createdAt;
+      if (rawDate) {
+        const d = new Date(rawDate);
+        if (!isNaN(d.getTime())) {
+          dateStr = d.toISOString().slice(0, 10);
+        }
+      }
+      setDate(dateStr);
+      setStatus(initialData.status ?? 'Draft');
     } else {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
       setQuoteId('');
-      setInvoiceNumber('');
+      setInvoiceNumber(`INV${year}${month}0001`);
       setDescription('');
-      setDate(new Date().toISOString().slice(0, 10));
+      setDate(now.toISOString().slice(0, 10));
       setStatus('Draft');
     }
   }, [initialData]);
 
   useEffect(() => {
-    if (!initialData && !invoiceNumber) {
+    const now = new Date();
+    const prefix = `INV${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const defaultWithSequence = `${prefix}0001`;
+
+    if (!initialData && (invoiceNumber === '' || invoiceNumber === prefix || invoiceNumber === defaultWithSequence)) {
       getInvoiceNextNumber().then((nextNumber) => {
-        setInvoiceNumber(nextNumber);
+        // Ensure the number matches the sequence pattern if the API returns a raw digit
+        let formatted = nextNumber;
+        if (nextNumber && !nextNumber.startsWith('INV')) {
+          formatted = `${prefix}${nextNumber.padStart(4, '0')}`;
+        }
+        setInvoiceNumber(prev => (prev === '' || prev === prefix || prev === defaultWithSequence ? formatted : prev));
       }).catch(() => {
         // ignore next number failure and allow manual input
       });
     }
   }, [initialData, invoiceNumber]);
+
+  const handleQuoteChange = (id: string) => {
+    setQuoteId(id);
+    const selectedQuote = quotes.find(q => q.id === id);
+    // Inherit description from the client name if a quote is selected and description is currently empty
+    if (selectedQuote && (!description || description === '')) {
+      const clientName = selectedQuote.client?.name ?? '';
+      setDescription(clientName ? `Invoice for ${clientName}` : '');
+    }
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -52,12 +83,13 @@ export default function InvoiceForm({ quotes, initialData, onSubmit, onCancel }:
     }
 
     setIsSaving(true);
+    const submissionDate = date ? new Date(date) : new Date();
     await onSubmit({
       quoteId,
       invoiceNumber: invoiceNumber.trim(),
       description: description.trim(),
       status,
-      date: new Date(date).toISOString()
+      date: isNaN(submissionDate.getTime()) ? new Date().toISOString() : submissionDate.toISOString()
     });
     setIsSaving(false);
   };
@@ -68,7 +100,7 @@ export default function InvoiceForm({ quotes, initialData, onSubmit, onCancel }:
       <form onSubmit={handleSubmit}>
         <label>
           Quote
-          <select value={quoteId} onChange={(event) => setQuoteId(event.target.value)} required>
+          <select value={quoteId} onChange={(event) => handleQuoteChange(event.target.value)} required>
             <option value="">Select a quote</option>
             {quotes.map((quote) => (
               <option key={quote.id} value={quote.id}>
@@ -82,9 +114,8 @@ export default function InvoiceForm({ quotes, initialData, onSubmit, onCancel }:
           <input
             value={invoiceNumber}
             onChange={(event) => setInvoiceNumber(event.target.value)}
-            required={Boolean(initialData)}
-            readOnly={!initialData}
-            placeholder="Auto-generated when creating a new invoice"
+            required
+            placeholder={`e.g., INV${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}0001`}
           />
         </label>
         <label>

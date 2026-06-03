@@ -1,21 +1,26 @@
 import { useMemo, useState } from 'react';
+import { formatAmount } from '../../formatters';
 import type { Invoice } from '../types';
-import InvoiceCard from './InvoiceCard';
 import SearchBar from './SearchBar';
 import Pagination from './Pagination';
-import { formatAmount } from '../../formatters';
 
 interface Props {
   invoices: Invoice[];
-  onView: (invoice: Invoice) => void;
   onEdit: (invoice: Invoice) => void;
+  onView: (invoice: Invoice) => void;
   onDelete: (invoiceId: string) => void;
   onCreateNew: () => void;
 }
 
-const ITEMS_PER_PAGE = 6;
+const ITEMS_PER_PAGE = 10;
 
-export default function InvoiceListPage({ invoices, onView, onEdit, onDelete, onCreateNew }: Props) {
+export default function InvoiceListPage({
+  invoices,
+  onEdit,
+  onView,
+  onDelete,
+  onCreateNew
+}: Props) {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -23,11 +28,12 @@ export default function InvoiceListPage({ invoices, onView, onEdit, onDelete, on
     const term = searchTerm.toLowerCase();
     if (!term) return invoices;
 
-    return invoices.filter((invoice) =>
-      invoice.invoiceNumber.toLowerCase().includes(term) ||
-      invoice.status.toLowerCase().includes(term) ||
-      invoice.quote?.reference.toLowerCase().includes(term) ||
-      invoice.client?.name.toLowerCase().includes(term)
+    return invoices.filter(
+      (invoice) =>
+        invoice.invoiceNumber.toLowerCase().includes(term) ||
+        invoice.client?.name.toLowerCase().includes(term) ||
+        invoice.quote?.reference.toLowerCase().includes(term) ||
+        invoice.status.toLowerCase().includes(term)
     );
   }, [invoices, searchTerm]);
 
@@ -49,7 +55,7 @@ export default function InvoiceListPage({ invoices, onView, onEdit, onDelete, on
       <div className="section-header">
         <div>
           <h2>Invoices</h2>
-          <p>Manage and track invoice records</p>
+          <p>Manage and track invoices</p>
         </div>
         <button type="button" onClick={onCreateNew} className="btn-primary-lg">
           + New Invoice
@@ -68,38 +74,67 @@ export default function InvoiceListPage({ invoices, onView, onEdit, onDelete, on
       </div>
 
       <SearchBar
-        placeholder="Search invoices by number, client, quote, or status..."
+        placeholder="Search invoices by number, client, reference, or status..."
         value={searchTerm}
         onChange={setSearchTerm}
       />
 
       {paginatedInvoices.length === 0 ? (
         <div className="empty-state">
-          <div className="empty-state-icon">🧾</div>
+          <div className="empty-state-icon">📋</div>
           <h3>No invoices found</h3>
           <p>
             {filteredInvoices.length === 0 && searchTerm
-              ? 'Try a different invoice number, quote, or status.'
-              : 'Create your first invoice to get started.'}
+              ? 'Try adjusting your search terms'
+              : 'Get started by creating your first invoice'}
           </p>
-          {!searchTerm && (
-            <button type="button" onClick={onCreateNew} className="btn-primary">
-              Create Invoice
-            </button>
-          )}
+          {!searchTerm && <button type="button" onClick={onCreateNew} className="btn-primary">
+            Create Invoice
+          </button>}
         </div>
       ) : (
         <>
-          <div className="cards-grid cards-grid-2col">
-            {paginatedInvoices.map((invoice) => (
-              <InvoiceCard
-                key={invoice.id}
-                invoice={invoice}
-                onView={onView}
-                onEdit={onEdit}
-                onDelete={onDelete}
-              />
-            ))}
+          <div className="card">
+            <table>
+              <thead>
+                <tr>
+                  <th>Invoice Number</th>
+                  <th>Client</th>
+                  <th>Reference</th>
+                  <th>Amount</th>
+                  <th>Created</th>
+                  <th>Due</th>
+                  <th>Status</th>
+                  <th>Overdue</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedInvoices.map((invoice) => (
+                  <tr key={invoice.id}>
+                    <td>{invoice.invoiceNumber}</td>
+                    <td>{invoice.client?.name ?? '—'}</td>
+                    <td>{invoice.quote?.reference ?? '—'}</td>
+                    <td>{formatAmount(invoice.amount)}</td>
+                    <td>{invoice.createdAt ? new Date(invoice.createdAt).toLocaleDateString() : '—'}</td>
+                    <td>{invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '—'}</td>
+                    <td>{invoice.status}</td>
+                    <td>{invoice.isOverdue ? 'Yes' : 'No'}</td>
+                    <td className="actions-row">
+                      <button type="button" onClick={() => onView(invoice)}>
+                        View
+                      </button>
+                      <button type="button" onClick={() => onEdit(invoice)}>
+                        Edit
+                      </button>
+                      <button type="button" className="danger" onClick={() => onDelete(invoice.id)}>
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
           <Pagination
             currentPage={currentPage}
