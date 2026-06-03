@@ -1,4 +1,4 @@
-import type { Invoice, Client } from '../types';
+import { Invoice, Client, Quote, InvoiceQuote } from '../types';
 import { formatAmount } from '../../formatters';
 import logo from '../assets/logo.png';
 
@@ -122,7 +122,7 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
               {displayClient ? (
                 <div className="customer-box" style={{ border: '1px solid #000', padding: '8px', marginTop: '8px', fontSize: '0.75rem', lineHeight: '1.4', textAlign: 'left', minHeight: '80px' }}>
                   <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>BILL TO:</div> 
-                  {displayClient.name && <div style={{ marginBottom: '1px' }}>{displayClient.name}</div>}
+                  {displayClient.name && <div style={{ marginBottom: '2px' }}>{displayClient.name}</div>}
                   {displayClient.addressLine1 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine1}</div>}
                   {displayClient.addressLine2 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine2}</div>}
                   {displayClient.addressLine3 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine3}</div>}

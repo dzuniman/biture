@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import type { Invoice, InvoiceCreateRequest, Quote } from '../types';
+import type { Invoice, InvoiceCreateRequest, Quote, InvoiceQuote } from '../types';
 import { getInvoiceNextNumber } from '../api';
 
 interface Props {

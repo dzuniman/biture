@@ -147,7 +147,11 @@ export interface InvoiceQuote {
 
 export interface Invoice {
   id: string;
+  clientId?: string;
+  ClientId?: string;
   client?: Client | null;
+  quoteId?: string;
+  QuoteId?: string;
   invoiceNumber: string;
   amount: number;
   status: string;
@@ -191,6 +195,7 @@ export interface CostCreateRequest {
 
 export interface InvoiceCreateRequest {
   quoteId: string;
+  clientId?: string;
   invoiceNumber: string;
   description?: string;
   status: string;

@@ -4,21 +4,21 @@
     "useDefineForClassFields": true,
     "lib": ["DOM", "DOM.Iterable", "ES2020"],
     "allowJs": false,
-    "skipLibCheck": true,                // skips type checks in node_modules
+    "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "strict": true,                      // keeps strict type safety
+    "strict": true,
     "forceConsistentCasingInFileNames": true,
     "module": "ESNext",
-    "moduleResolution": "Node",          // safer than "Bundler" for Render builds
+    "moduleResolution": "Node",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "types": ["node", "vite/client"]     // ensures Render sees Node + Vite types
+    "types": ["vite/client"]   // ✅ removed "node"
   },
   "include": ["src"],
-  "exclude": ["node_modules", "dist"],   // exclude build artifacts
+  "exclude": ["node_modules", "dist"],
   "references": [
     { "path": "./tsconfig.node.json" }
   ]
