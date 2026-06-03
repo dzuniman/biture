@@ -85,7 +85,23 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseStaticFiles();
-// app.UseHttpsRedirection();
+
+// ✅ Global error handler that still adds CORS headers
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (Exception ex)
+    {
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        context.Response.Headers.Add("Access-Control-Allow-Origin", context.Request.Headers["Origin"]);
+        context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        await context.Response.WriteAsync($"Server error: {ex.Message}");
+    }
+});
 
 // ✅ Handle OPTIONS preflight explicitly
 app.Use(async (context, next) =>
