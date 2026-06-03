@@ -32,7 +32,17 @@ namespace Quote2Cash.Persistence.Migrations
                 nullable: true);
 
             migrationBuilder.Sql(
-                @"UPDATE ""QuoteDescriptions"" SET ""Code"" = COALESCE(NULLIF(""Value"", ''), 'legacy-' || ""Id""::text);");
+                @"UPDATE ""QuoteDescriptions"" SET ""Code"" = COALESCE(NULLIF(LEFT(""Value"", 150), ''), LEFT('legacy-' || ""Id""::text, 150));");
+            migrationBuilder.Sql(
+                @"WITH duplicates AS (
+                        SELECT ""Id"", ""Code"", ROW_NUMBER() OVER (PARTITION BY ""Code"" ORDER BY ""Id"") AS rn
+                        FROM ""QuoteDescriptions""
+                        WHERE ""Code"" IS NOT NULL
+                    )
+                    UPDATE ""QuoteDescriptions"" q
+                    SET ""Code"" = LEFT(q.""Code"" || '-' || md5(q.""Id""::text), 150)
+                    FROM duplicates d
+                    WHERE q.""Id"" = d.""Id"" AND d.rn > 1;");
             migrationBuilder.Sql(
                 @"UPDATE ""QuoteDescriptions"" SET ""Uom"" = COALESCE(""Uom"", '');");
             migrationBuilder.Sql(
