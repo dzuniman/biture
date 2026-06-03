@@ -20,15 +20,15 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
     });
   };
 
-  const invoiceDate = formatDate(invoice.date || invoice.createdAt);
+  const invoiceDate = formatDate((invoice as any).date || invoice.createdAt);
   const dueDate = formatDate(invoice.dueDate);
 
   const quote = invoice.quote;
   const items = quote?.items ?? [];
-  const displayClient = invoice.client || quote?.client;
+  const displayClient: any = invoice.client || quote?.client;
   
   const total = Number(quote?.total ?? invoice.amount ?? 0);
-  const vat = Number(quote?.vat ?? invoice.vat ?? 0);
+  const vat = Number(quote?.vat ?? (invoice as any).vat ?? 0);
   const subTotal = Number(quote?.subTotal ?? (total - vat));
 
   return (

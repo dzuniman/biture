@@ -295,8 +295,9 @@ function App() {
         }
 
         // Deep reconstruction: ensure the quote's client is also linked
-        if (resolvedInvoice.quote && !resolvedInvoice.quote.client && resolvedInvoice.quote.clientId) {
-          resolvedInvoice.quote.client = clients.find(c => c.id === resolvedInvoice.quote.clientId) || null;
+        const qEdit = resolvedInvoice.quote;
+        if (qEdit && !qEdit.client && (qEdit as any).clientId) {
+          qEdit.client = clients.find(c => c.id === (qEdit as any).clientId) || null;
         }
 
         setEditingInvoice(resolvedInvoice);
@@ -334,8 +335,9 @@ function App() {
         }
 
         // Deep reconstruction: ensure the quote's client is also linked
-        if (resolvedInvoice.quote && !resolvedInvoice.quote.client && resolvedInvoice.quote.clientId) {
-          resolvedInvoice.quote.client = clients.find(c => c.id === resolvedInvoice.quote.clientId) || null;
+        const qView = resolvedInvoice.quote;
+        if (qView && !qView.client && (qView as any).clientId) {
+          qView.client = clients.find(c => c.id === (qView as any).clientId) || null;
         }
 
         setViewingInvoice(resolvedInvoice);
