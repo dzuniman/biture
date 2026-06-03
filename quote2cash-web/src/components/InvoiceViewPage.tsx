@@ -165,15 +165,15 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
 
           <div className="view-section" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
             <div style={{ width: '220px' }}>
-              <div className="summary-row" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+              <div className="summary-row" style={{ lineHeight: '0', display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
                 <span>Sub total</span>
                 <strong>{formatAmount(subTotal)}</strong>
               </div>
-              <div className="summary-row" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+              <div className="summary-row" style={{ lineHeight: '0', display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
                 <span>VAT</span>
                 <strong>{formatAmount(vat)}</strong>
               </div>
-              <div className="summary-row" style={{ display: 'flex', justifyContent: 'space-between', marginTop: '14px', fontSize: '1.05rem', borderTop: '1px solid #000', paddingTop: '10px' }}>
+              <div className="summary-row" style={{ lineHeight: '0', display: 'flex', justifyContent: 'space-between', marginTop: '14px', fontSize: '1.05rem', borderTop: '1px solid #000', paddingTop: '10px' }}>
                 <span>Total</span>
                 <strong>{formatAmount(total)}</strong>
               </div>
