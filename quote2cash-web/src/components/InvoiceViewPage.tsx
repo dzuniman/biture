@@ -1,4 +1,4 @@
-import type { Invoice } from '../types';
+import type { Invoice, Client } from '../types';
 import { formatAmount } from '../../formatters';
 import logo from '../assets/logo.png';
 
@@ -20,7 +20,7 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
     });
   };
 
-  const invoiceDate = formatDate((invoice as any).date || invoice.createdAt);
+  const invoiceDate = formatDate(invoice.createdAt);
   const dueDate = formatDate(invoice.dueDate);
 
   console.log("Invoice object:", invoice);
@@ -36,15 +36,15 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
   console.log("Invoice items:", items);
   // Prioritize pulling full address from quote client, fallback to invoice client
   // Added more explicit checks for nested properties
-  const displayClient: any =
+  const displayClient: Client | null | undefined =
     (quote?.client && quote.client.addressLine1) ? quote.client :
     (invoice.client && invoice.client.addressLine1) ? invoice.client :
     quote?.client || invoice.client;
   console.log("Display Client object:", displayClient);
 
-  const total = Number(quote?.total ?? invoice.amount ?? 0);
-  const vat = Number(quote?.vat ?? (invoice as any).vat ?? 0);
-  const subTotal = Number(quote?.subTotal ?? (total - vat));
+  const vat = Number(quote?.vat ?? 0);
+  const subTotal = Number(quote?.subTotal ?? 0);
+  const total = quote ? (subTotal + vat) : Number(invoice.amount ?? 0);
 
   return (
     <div className="page-section">
@@ -90,29 +90,29 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
 
             <div className="quote-view-right" style={{ textAlign: 'right', fontSize: '0.75rem', lineHeight: '1' }}>
               <div style={{ fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '1px', lineHeight: '1' }}>TAX INVOICE</div>
-              <div className="quote-details-block" style={{ fontSize: '0.75rem', lineHeight: '0', marginBottom: '2px' }}> {/* Parent container with lineHeight 0 */}
-                <div className="view-row" style={{ marginBottom: '1px', lineHeight: '0' }}> {/* Reverted to 0 */}
+              <div className="quote-details-block" style={{ fontSize: '0.75rem', lineHeight: '1.4', marginBottom: '2px' }}>
+                <div className="view-row" style={{ marginBottom: '1px' }}>
                   <span className="view-label">INVOICE:</span>
                   <span className="view-value">{invoice.invoiceNumber}</span>
                 </div>
-                <div className="view-row" style={{ marginBottom: '1px', lineHeight: '0' }}>
+                <div className="view-row" style={{ marginBottom: '1px' }}>
                   <span className="view-label">INVOICE DATE:</span>
                   <span className="view-value">{invoiceDate}</span>
                 </div>
-                <div className="view-row" style={{ marginBottom: '1px', lineHeight: '0' }}>
+                <div className="view-row" style={{ marginBottom: '1px' }}>
                   <span className="view-label">DUE DATE:</span>
                   <span className="view-value">{dueDate}</span>
                 </div>
-                <div className="view-row" style={{ marginBottom: '1px', lineHeight: '0' }}>
+                <div className="view-row" style={{ marginBottom: '1px' }}>
                   <span className="view-label">VENDOR NUMBER:</span>
                   <span className="view-value">{displayClient?.vendorNumber || '—'}</span>
                 </div>
-                <div className="view-row" style={{ marginBottom: '1px', lineHeight: '0' }}>
+                <div className="view-row" style={{ marginBottom: '1px' }}>
                   <span className="view-label">STATUS:</span>
                   <span className="view-value">{invoice.status}</span>
                 </div>
                 {invoice.description && (
-                  <div className="view-row" style={{ marginBottom: '1px', lineHeight: '0' }}>
+                  <div className="view-row" style={{ marginBottom: '1px' }}>
                     <span className="view-label">DESCRIPTION:</span>
                     <span className="view-value">{invoice.description}</span>
                   </div>
@@ -120,16 +120,16 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
               </div>
 
               {displayClient ? (
-                <div className="customer-box" style={{ border: '1px solid #000', padding: '6px', marginTop: '8px', fontSize: '0.75rem', lineHeight: '1.4' }}> {/* Adjusted lineHeight for readability */}
+                <div className="customer-box" style={{ border: '1px solid #000', padding: '8px', marginTop: '8px', fontSize: '0.75rem', lineHeight: '1.4', textAlign: 'left', minHeight: '80px' }}>
                   <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>BILL TO:</div> 
-                  {displayClient.name && <div style={{ marginBottom: '2px' }}>{displayClient.name}</div>}
+                  {displayClient.name && <div style={{ marginBottom: '1px' }}>{displayClient.name}</div>}
                   {displayClient.addressLine1 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine1}</div>}
                   {displayClient.addressLine2 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine2}</div>}
                   {displayClient.addressLine3 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine3}</div>}
                   {displayClient.addressLine4 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine4}</div>}
                   {displayClient.vendorNumber && <div style={{ marginBottom: '2px' }}>Vendor No: {displayClient.vendorNumber}</div>}
-                  <div style={{ marginBottom: '2px' }}>{displayClient.representativeName || '—'}</div>
-                  <div style={{ marginBottom: '2px' }}>{displayClient.representativeNumber || '—'}</div>
+                  <div style={{ marginBottom: '2px' }}>Rep: {displayClient.representativeName || '—'}</div>
+                  <div style={{ marginBottom: '2px' }}>Tel: {displayClient.representativeNumber || '—'}</div>
                 </div>
               ) : (
                 <div className="customer-box" style={{ border: '1px solid #000', padding: '6px', marginTop: '8px', fontSize: '0.75rem' }}>

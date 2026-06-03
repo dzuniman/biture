@@ -263,7 +263,16 @@ export async function getInvoices(): Promise<Invoice[]> {
   return response.data.map(inv => ({
     ...inv,
     amount: Number(inv.amount ?? 0),
-    client: inv.client ? { id: inv.client.id, name: inv.client.name } : null,
+    client: inv.client ? { 
+      id: inv.client.id, 
+      name: inv.client.name,
+      addressLine1: inv.client.addressLine1,
+      addressLine2: inv.client.addressLine2,
+      addressLine3: inv.client.addressLine3,
+      addressLine4: inv.client.addressLine4,
+      representativeName: inv.client.representativeName,
+      representativeNumber: inv.client.representativeNumber
+    } : null,
     quote: inv.quote ? {
       id: inv.quote.id,
       quoteNumber: inv.quote.quoteNumber,

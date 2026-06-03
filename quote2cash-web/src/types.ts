@@ -66,17 +66,7 @@ export interface Quote {
   validityDays: number;
   vendorNumber: string;
   clientId?: string;
-  client?: {
-    id: string;
-    name: string;
-    vendorNumber?: string;
-    addressLine1?: string;
-    addressLine2?: string;
-    addressLine3?: string;
-    addressLine4?: string;
-    representativeName?: string;
-    representativeNumber?: string;
-  } | null;
+  client?: Client | null;
   items: QuoteItem[];
   subTotal: number;
   vat: number;
@@ -118,7 +108,7 @@ export interface UserUpdateRequest {
 
 export interface JobCard {
   id: string;
-  client?: { id: string; name: string } | null;
+  client?: Client | null;
   jobNumber: string;
   description: string;
   status: string;
@@ -132,7 +122,7 @@ export interface JobCard {
 
 export interface Cost {
   id: string;
-  client?: { id: string; name: string } | null;
+  client?: Client | null;
   jobCard?: { id: string; jobNumber: string } | null;
   category: string;
   description: string;
@@ -148,17 +138,7 @@ export interface InvoiceQuote {
   date?: string;
   validityDays?: number;
   clientId?: string;
-  client?: {
-    id: string;
-    name: string;
-    vendorNumber?: string;
-    addressLine1?: string;
-    addressLine2?: string;
-    addressLine3?: string;
-    addressLine4?: string;
-    representativeName?: string;
-    representativeNumber?: string;
-  } | null;
+  client?: Client | null;
   items?: QuoteItem[];
   subTotal?: number;
   vat?: number;
@@ -167,7 +147,7 @@ export interface InvoiceQuote {
 
 export interface Invoice {
   id: string;
-  client?: { id: string; name: string } | null;
+  client?: Client | null;
   invoiceNumber: string;
   amount: number;
   status: string;
@@ -180,7 +160,7 @@ export interface Invoice {
 
 export interface Statement {
   id: string;
-  client?: { id: string; name: string } | null;
+  client?: Client | null;
   period: string;
   balance: number;
   status: string;

@@ -1,4 +1,4 @@
-﻿﻿import { useEffect, useRef, useState } from 'react';
+﻿﻿﻿﻿import { useEffect, useRef, useState } from 'react';
 import { formatAmount } from '../formatters';
 import {
   createClient,
@@ -338,13 +338,13 @@ function App() {
 
         // Enhanced Fallback: Fetch full quote details if items are missing for editing
         const qId = resolvedInvoice.quote?.id;
-        if (qId && (!resolvedInvoice.quote.items || resolvedInvoice.quote.items.length === 0)) {
+        if (qId && (!resolvedInvoice.quote?.items || resolvedInvoice.quote.items.length === 0)) {
           try {
             const fullQuote = await getQuote(qId);
             resolvedInvoice.quote = {
               ...resolvedInvoice.quote,
-              ...fullQuote,
-              items: fullQuote.items,
+              ...(fullQuote || {}),
+              items: fullQuote?.items || [],
               client: resolvedInvoice.quote?.client || fullQuote.client
             };
             // Second pass resolution to link new quote's client details
@@ -384,14 +384,14 @@ function App() {
 
         // Enhanced Fallback: If quote items are missing or the quote itself isn't resolved locally
         const qId = resolvedInvoice.quote?.id || resolvedInvoice.quoteId || resolvedInvoice.QuoteId;
-        if (qId && (!resolvedInvoice.quote?.items || resolvedInvoice.quote.items.length === 0)) {
+        if (qId && (!resolvedInvoice.quote?.items || resolvedInvoice.quote?.items?.length === 0)) {
           try {
             const fullQuote = await getQuote(qId);
             if (fullQuote) {
               resolvedInvoice.quote = {
                 ...(resolvedInvoice.quote || {}),
-                ...fullQuote,
-                items: fullQuote.items,
+                ...(fullQuote || {}),
+                items: fullQuote?.items || [],
                 client: resolvedInvoice.quote?.client || fullQuote.client || resolvedInvoice.client
               };
             }
