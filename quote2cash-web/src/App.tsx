@@ -1,4 +1,4 @@
-﻿﻿import { useEffect, useRef, useState } from 'react';
+﻿﻿﻿﻿import { useEffect, useRef, useState } from 'react';
 import { formatAmount } from '../formatters';
 import {
   createClient,
@@ -278,8 +278,27 @@ function App() {
   const handleEditInvoice = async (invoice: Invoice) => {
     try {
       setIsLoading(true);
-      const fullInvoice = await getInvoice(invoice.id);
-      setEditingInvoice(fullInvoice);
+      if (!invoice || !invoice.id) {
+        setError('Cannot edit invoice: Invoice data or ID is missing.');
+        return;
+      }
+      try {
+        const fullInvoice = await getInvoice(invoice.id).catch(() => null);
+        let resolvedInvoice = fullInvoice || { ...invoice };
+
+        // Reconstruct relationships locally if data is shallow
+        if (!resolvedInvoice.client && (resolvedInvoice as any).clientId) {
+          resolvedInvoice.client = clients.find(c => c.id === (resolvedInvoice as any).clientId) || null;
+        }
+        if (!resolvedInvoice.quote && (resolvedInvoice as any).quoteId) {
+          resolvedInvoice.quote = quotes.find(q => q.id === (resolvedInvoice as any).quoteId) || null;
+        }
+
+        setEditingInvoice(resolvedInvoice);
+      } catch (err) {
+        console.warn('Failed to fetch full invoice details, falling back to summary data:', err);
+        setEditingInvoice(invoice);
+      }
       setViewingInvoice(null);
       setInvoiceView('manage');
       setSection('invoices');
@@ -293,8 +312,27 @@ function App() {
   const handleViewInvoice = async (invoice: Invoice) => {
     try {
       setIsLoading(true);
-      const fullInvoice = await getInvoice(invoice.id);
-      setViewingInvoice(fullInvoice);
+      if (!invoice || !invoice.id) {
+        setError('Cannot view invoice: Invoice data or ID is missing.');
+        return;
+      }
+      try {
+        const fullInvoice = await getInvoice(invoice.id).catch(() => null);
+        let resolvedInvoice = fullInvoice || { ...invoice };
+
+        // Reconstruct relationships locally if data is shallow
+        if (!resolvedInvoice.client && (resolvedInvoice as any).clientId) {
+          resolvedInvoice.client = clients.find(c => c.id === (resolvedInvoice as any).clientId) || null;
+        }
+        if (!resolvedInvoice.quote && (resolvedInvoice as any).quoteId) {
+          resolvedInvoice.quote = quotes.find(q => q.id === (resolvedInvoice as any).quoteId) || null;
+        }
+
+        setViewingInvoice(resolvedInvoice);
+      } catch (err) {
+        console.warn('Failed to fetch full invoice details, falling back to summary data:', err);
+        setViewingInvoice(invoice);
+      }
       setInvoiceView('view');
       setSection('invoices');
     } catch (err: any) {
