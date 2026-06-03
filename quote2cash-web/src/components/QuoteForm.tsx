@@ -189,7 +189,7 @@ export default function QuoteForm({
       } else if (field === 'quantity') {
         item.quantity = Math.max(0, Number(value));
       } else if (field === 'unitPrice') {
-        item.unitPrice = Math.max(0, Number(value));
+        item.unitPrice = Number(value);
       } else if (field === 'code') {
         item.code = value;
         const matched = findDescriptionByCode(value);
@@ -316,6 +316,15 @@ export default function QuoteForm({
   }, [descriptionOptions]);
 
   const lineCount = useMemo(() => items.length, [items]);
+
+  const subTotal = useMemo(
+    () => items.reduce((sum, item) => sum + item.totalPrice, 0),
+    [items]
+  );
+
+  const vat = useMemo(() => parseFloat((subTotal * 0.15).toFixed(2)), [subTotal]);
+
+  const total = useMemo(() => parseFloat((subTotal + vat).toFixed(2)), [subTotal, vat]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -472,7 +481,6 @@ export default function QuoteForm({
                 />
                 <input
                   type="number"
-                  min="0"
                   step="0.01"
                   value={item.unitPrice}
                   onChange={(event) => handleUpdateItem(index, 'unitPrice', event.target.value)}
@@ -493,9 +501,27 @@ export default function QuoteForm({
           </div>
         </div>
 
+        <div className="quote-summary">
+          <div className="summary-row">
+            <span className="summary-label">Subtotal</span>
+            <span className="summary-value">{formatAmount(subTotal)}</span>
+          </div>
+          <div className="summary-row">
+            <span className="summary-label">VAT (15%)</span>
+            <span className="summary-value">{formatAmount(vat)}</span>
+          </div>
+          <div className="summary-row summary-total">
+            <span className="summary-label">Total</span>
+            <span className="summary-value">{formatAmount(total)}</span>
+          </div>
+        </div>
+
         <div className="form-actions">
           <button type="submit" disabled={isSaving || items.length === 0}>
             {isSaving ? 'Saving…' : submitLabel}
+          </button>
+          <button type="button" className="secondary" onClick={handleAddItem}>
+            Add line
           </button>
           {onCancel && (
             <button type="button" className="secondary" onClick={onCancel}>
