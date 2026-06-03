@@ -11,6 +11,7 @@ interface Props {
 
 export default function InvoiceForm({ quotes, initialData, onSubmit, onCancel }: Props) {
   const [quoteId, setQuoteId] = useState('');
+  const [clientId, setClientId] = useState('');
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState('');
@@ -20,6 +21,7 @@ export default function InvoiceForm({ quotes, initialData, onSubmit, onCancel }:
   useEffect(() => {
     if (initialData) {
       setQuoteId(initialData.quote?.id ?? '');
+      setClientId((initialData as any).clientId || initialData.client?.id || '');
       setInvoiceNumber(initialData.invoiceNumber ?? '');
       setDescription(initialData.description ?? '');
 
@@ -38,6 +40,7 @@ export default function InvoiceForm({ quotes, initialData, onSubmit, onCancel }:
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, '0');
       setQuoteId('');
+      setClientId('');
       setInvoiceNumber(`INV${year}${month}0001`);
       setDescription('');
       setDate(now.toISOString().slice(0, 10));
@@ -67,8 +70,9 @@ export default function InvoiceForm({ quotes, initialData, onSubmit, onCancel }:
   const handleQuoteChange = (id: string) => {
     setQuoteId(id);
     const selectedQuote = quotes.find(q => q.id === id);
-    // Inherit description from the client name if a quote is selected and description is currently empty
-    if (selectedQuote && (!description || description === '')) {
+    // Inherit description from the client name if a quote is selected
+    if (selectedQuote) {
+      setClientId(selectedQuote.clientId || '');
       const clientName = selectedQuote.client?.name ?? '';
       setDescription(clientName ? `Invoice for ${clientName}` : '');
     }
@@ -86,6 +90,7 @@ export default function InvoiceForm({ quotes, initialData, onSubmit, onCancel }:
     const submissionDate = date ? new Date(date) : new Date();
     await onSubmit({
       quoteId,
+      clientId,
       invoiceNumber: invoiceNumber.trim(),
       description: description.trim(),
       status,

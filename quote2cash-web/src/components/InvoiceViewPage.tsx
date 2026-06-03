@@ -23,10 +23,25 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
   const invoiceDate = formatDate((invoice as any).date || invoice.createdAt);
   const dueDate = formatDate(invoice.dueDate);
 
+  console.log("Invoice object:", invoice);
+
   const quote = invoice.quote;
-  const items = quote?.items ?? [];
-  const displayClient: any = invoice.client || quote?.client;
-  
+  console.log("Quote object:", quote);
+  // Sort items by itemNumber to ensure consistent display
+  const items = (quote?.items ?? []).slice().sort((a, b) => {
+    const aNum = Number(a.itemNumber);
+    const bNum = Number(b.itemNumber);
+    return aNum - bNum;
+  });
+  console.log("Invoice items:", items);
+  // Prioritize pulling full address from quote client, fallback to invoice client
+  // Added more explicit checks for nested properties
+  const displayClient: any =
+    (quote?.client && quote.client.addressLine1) ? quote.client :
+    (invoice.client && invoice.client.addressLine1) ? invoice.client :
+    quote?.client || invoice.client;
+  console.log("Display Client object:", displayClient);
+
   const total = Number(quote?.total ?? invoice.amount ?? 0);
   const vat = Number(quote?.vat ?? (invoice as any).vat ?? 0);
   const subTotal = Number(quote?.subTotal ?? (total - vat));
@@ -40,7 +55,8 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
           body { background: white !important; margin: 0 !important; padding: 0 !important; }
           .view-container, .view-card, .view-section, .items-table, .items-table-header, .items-table-row, .summary-row { border: none !important; box-shadow: none !important; background: none !important; }
           .view-card { padding: 20px !important; width: 100% !important; margin: 0 !important; font-size: 9pt !important; }
-          .items-table-header, .items-table-row { display: grid !important; grid-template-columns: 50px 45px 1fr 100px 100px !important; gap: 4px !important; }
+          /* Only show Qty, Description, Unit Price, and Total */
+          .items-table-header, .items-table-row { display: grid !important; grid-template-columns: 60px 1fr 120px 120px !important; gap: 4px !important; }
           .items-table-header div, .items-table-row div { border-left: 0.5pt solid #ccc !important; padding: 6px !important; }
           .items-table-header div:last-child, .items-table-row div:last-child { border-right: 0.5pt solid #ccc !important; }
           @page { size: A4; margin: 1.5cm 1cm; }
@@ -74,41 +90,51 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
 
             <div className="quote-view-right" style={{ textAlign: 'right', fontSize: '0.75rem', lineHeight: '1' }}>
               <div style={{ fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '1px', lineHeight: '1' }}>TAX INVOICE</div>
-              <div className="quote-details-block" style={{ fontSize: '0.75rem', lineHeight: '1', marginBottom: '2px' }}>
-                <div className="view-row" style={{ marginBottom: '1px', lineHeight: '1.2' }}>
-                  <span className="view-label">INVOICE #:</span>
+              <div className="quote-details-block" style={{ fontSize: '0.75rem', lineHeight: '0', marginBottom: '2px' }}> {/* Parent container with lineHeight 0 */}
+                <div className="view-row" style={{ marginBottom: '1px', lineHeight: '0' }}> {/* Reverted to 0 */}
+                  <span className="view-label">INVOICE:</span>
                   <span className="view-value">{invoice.invoiceNumber}</span>
                 </div>
-                <div className="view-row" style={{ marginBottom: '1px', lineHeight: '1.2' }}>
+                <div className="view-row" style={{ marginBottom: '1px', lineHeight: '0' }}>
                   <span className="view-label">INVOICE DATE:</span>
                   <span className="view-value">{invoiceDate}</span>
                 </div>
-                <div className="view-row" style={{ marginBottom: '1px', lineHeight: '1.2' }}>
+                <div className="view-row" style={{ marginBottom: '1px', lineHeight: '0' }}>
                   <span className="view-label">DUE DATE:</span>
                   <span className="view-value">{dueDate}</span>
                 </div>
-                <div className="view-row" style={{ marginBottom: '1px', lineHeight: '1.2' }}>
+                <div className="view-row" style={{ marginBottom: '1px', lineHeight: '0' }}>
+                  <span className="view-label">VENDOR NUMBER:</span>
+                  <span className="view-value">{displayClient?.vendorNumber || '—'}</span>
+                </div>
+                <div className="view-row" style={{ marginBottom: '1px', lineHeight: '0' }}>
                   <span className="view-label">STATUS:</span>
                   <span className="view-value">{invoice.status}</span>
                 </div>
                 {invoice.description && (
-                  <div className="view-row" style={{ marginBottom: '1px', lineHeight: '1.2' }}>
+                  <div className="view-row" style={{ marginBottom: '1px', lineHeight: '0' }}>
                     <span className="view-label">DESCRIPTION:</span>
                     <span className="view-value">{invoice.description}</span>
                   </div>
                 )}
               </div>
 
-              {displayClient && (
-                <div className="customer-box" style={{ border: '1px solid #000', padding: '6px', marginTop: '8px', fontSize: '0.75rem', lineHeight: '1.2' }}>
+              {displayClient ? (
+                <div className="customer-box" style={{ border: '1px solid #000', padding: '6px', marginTop: '8px', fontSize: '0.75rem', lineHeight: '1.4' }}> {/* Adjusted lineHeight for readability */}
                   <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>BILL TO:</div> 
-                  <div style={{ marginBottom: '2px' }}>{displayClient.name ?? '—'}</div>
+                  {displayClient.name && <div style={{ marginBottom: '2px' }}>{displayClient.name}</div>}
                   {displayClient.addressLine1 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine1}</div>}
                   {displayClient.addressLine2 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine2}</div>}
                   {displayClient.addressLine3 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine3}</div>}
                   {displayClient.addressLine4 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine4}</div>}
-                  {displayClient.representativeName && <div style={{ marginBottom: '2px' }}>{displayClient.representativeName}</div>}
-                  {displayClient.representativeNumber && <div style={{ marginBottom: '2px' }}>{displayClient.representativeNumber}</div>}
+                  {displayClient.vendorNumber && <div style={{ marginBottom: '2px' }}>Vendor No: {displayClient.vendorNumber}</div>}
+                  <div style={{ marginBottom: '2px' }}>{displayClient.representativeName || '—'}</div>
+                  <div style={{ marginBottom: '2px' }}>{displayClient.representativeNumber || '—'}</div>
+                </div>
+              ) : (
+                <div className="customer-box" style={{ border: '1px solid #000', padding: '6px', marginTop: '8px', fontSize: '0.75rem' }}>
+                  <div style={{ fontWeight: 'bold' }}>BILL TO:</div>
+                  <div>No client information available.</div>
                 </div>
               )}
             </div>
@@ -116,8 +142,7 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
 
           <div className="view-section" style={{ marginTop: '24px' }}>
             <div className="items-table" style={{ border: '1px solid #000', borderRadius: '2px', overflow: 'hidden' }}>
-              <div className="items-table-header" style={{ display: 'grid', gridTemplateColumns: '50px 45px 1fr 100px 100px', gap: '0', background: '#f3f4f6', borderBottom: '1px solid #000', padding: '0' }}>
-                <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>Item</div>
+              <div className="items-table-header" style={{ display: 'grid', gridTemplateColumns: '60px 1fr 120px 120px', gap: '0', background: '#f3f4f6', borderBottom: '1px solid #000', padding: '0' }}>
                 <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>Qty</div>
                 <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>Description</div>
                 <div style={{ padding: '8px 6px', fontWeight: 'bold', textAlign: 'right' }}>Unit Price</div>
@@ -125,8 +150,7 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
               </div>
               {items.length > 0 ? (
                 items.map((item) => (
-                  <div key={item.id} className="items-table-row" style={{ display: 'grid', gridTemplateColumns: '50px 45px 1fr 100px 100px', gap: '0', borderTop: '1px solid #eee' }}>
-                    <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{item.itemNumber}</div>
+                  <div key={item.id} className="items-table-row" style={{ display: 'grid', gridTemplateColumns: '60px 1fr 120px 120px', gap: '0', borderTop: '1px solid #eee' }}>
                     <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{item.quantity}</div>
                     <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{item.description}</div>
                     <div style={{ padding: '8px 6px', textAlign: 'right', lineHeight: '1.2' }}>{formatAmount(item.unitPrice)}</div>

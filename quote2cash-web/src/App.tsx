@@ -1,4 +1,4 @@
-﻿﻿﻿﻿import { useEffect, useRef, useState } from 'react';
+﻿﻿import { useEffect, useRef, useState } from 'react';
 import { formatAmount } from '../formatters';
 import {
   createClient,
@@ -81,7 +81,7 @@ function App() {
   const getErrorMessage = (err: any, fallback: string) => {
     console.error('API Error details:', err);
     if (err.message === 'Network Error' || !err.response) {
-      return 'API Connection Error. Ensure the backend is running and migrations are applied.';
+      return 'API Error: Connection failed. This is often caused by a 500 error on the backend masking itself as a CORS issue. Please check your backend logs on Render.';
     }
     const data = err.response.data;
     if (typeof data === 'string' && (data.includes('<!DOCTYPE html>') || data.includes('<html'))) {
@@ -276,6 +276,52 @@ function App() {
     }
   };
 
+  const resolveInvoiceRelationships = (invoice: Invoice) => {
+    const resolved = { ...invoice } as any;
+    
+    // Reconstruct quote relationship - Don't overwrite if current quote already has items
+    const invoiceQuoteId = resolved.quoteId || resolved.QuoteId || (typeof resolved.quote === 'string' ? resolved.quote : resolved.quote?.id);
+    
+    if (invoiceQuoteId) {
+      const quoteFromState = quotes.find(q => q.id === invoiceQuoteId);
+      const currentHasItems = resolved.quote && typeof resolved.quote !== 'string' && resolved.quote.items && resolved.quote.items.length > 0;
+
+      if (!currentHasItems && quoteFromState) {
+        resolved.quote = { ...quoteFromState };
+      } else if (!resolved.quote || typeof resolved.quote === 'string') {
+        resolved.quote = { id: invoiceQuoteId } as Quote; // Object wrapper for fallback logic
+      }
+    }
+
+    // Reconstruct client relationship - Priority on maintaining address data
+    const invoiceClientId = resolved.clientId || resolved.ClientId || (typeof resolved.client === 'string' ? resolved.client : resolved.client?.id);
+    const quoteClientId = resolved.quote?.clientId || resolved.quote?.client?.id;
+    const finalClientId = invoiceClientId || quoteClientId;
+
+    if (finalClientId) {
+      const stateClient = clients.find(c => c.id === finalClientId);
+      const currentClientIsDeep = resolved.client && typeof resolved.client !== 'string' && resolved.client.addressLine1;
+
+      if (!currentClientIsDeep && stateClient) {
+        resolved.client = { ...stateClient };
+      } else if (!resolved.client || typeof resolved.client === 'string') {
+        resolved.client = { id: finalClientId } as Client;
+      }
+
+      // Sync quote's client as well
+      if (resolved.quote) {
+        const quoteClientIsDeep = resolved.quote.client && typeof resolved.quote.client !== 'string' && resolved.quote.client.addressLine1;
+        if (!quoteClientIsDeep && stateClient) {
+          resolved.quote.client = { ...stateClient };
+        } else if (!resolved.quote.client || typeof resolved.quote.client === 'string') {
+          resolved.quote.client = { id: finalClientId } as Client;
+        }
+      }
+    }
+    
+    return resolved;
+  };
+
   const handleEditInvoice = async (invoice: Invoice) => {
     try {
       setIsLoading(true);
@@ -284,23 +330,29 @@ function App() {
         return;
       }
       try {
-        const fullInvoice = await getInvoice(invoice.id);
-        let resolvedInvoice = fullInvoice || { ...invoice };
+        const apiInvoice = await getInvoice(invoice.id);
+        let resolvedInvoice = apiInvoice || { ...invoice };
 
-        // Reconstruct relationships locally if data is shallow or missing
-        if (!resolvedInvoice.client && (resolvedInvoice as any).clientId) {
-          resolvedInvoice.client = clients.find(c => c.id === (resolvedInvoice as any).clientId) || null;
-        }
-        if (!resolvedInvoice.quote && (resolvedInvoice as any).quoteId) {
-          resolvedInvoice.quote = quotes.find(q => q.id === (resolvedInvoice as any).quoteId) || null;
-        }
+        // First pass resolution
+        resolvedInvoice = resolveInvoiceRelationships(resolvedInvoice);
 
-        // Deep reconstruction: ensure the quote's client is also linked
-        const qEdit = resolvedInvoice.quote;
-        if (qEdit && !qEdit.client && (qEdit as any).clientId) {
-          qEdit.client = clients.find(c => c.id === (qEdit as any).clientId) || null;
+        // Enhanced Fallback: Fetch full quote details if items are missing for editing
+        const qId = resolvedInvoice.quote?.id;
+        if (qId && (!resolvedInvoice.quote.items || resolvedInvoice.quote.items.length === 0)) {
+          try {
+            const fullQuote = await getQuote(qId);
+            resolvedInvoice.quote = {
+              ...resolvedInvoice.quote,
+              ...fullQuote,
+              items: fullQuote.items,
+              client: resolvedInvoice.quote?.client || fullQuote.client
+            };
+            // Second pass resolution to link new quote's client details
+            resolvedInvoice = resolveInvoiceRelationships(resolvedInvoice);
+          } catch (qErr) {
+            console.warn('Fallback quote fetch failed for invoice view:', qErr);
+          }
         }
-
         setEditingInvoice(resolvedInvoice);
       } catch (err) {
         console.warn('Failed to fetch full invoice details, falling back to summary data:', err);
@@ -324,23 +376,31 @@ function App() {
         return;
       }
       try {
-        const fullInvoice = await getInvoice(invoice.id);
-        let resolvedInvoice = fullInvoice || { ...invoice };
+        const apiInvoice = await getInvoice(invoice.id); // Refresh from DB
+        let resolvedInvoice = apiInvoice || { ...invoice };
 
-        // Reconstruct relationships locally if data is shallow or missing
-        if (!resolvedInvoice.client && (resolvedInvoice as any).clientId) {
-          resolvedInvoice.client = clients.find(c => c.id === (resolvedInvoice as any).clientId) || null;
-        }
-        if (!resolvedInvoice.quote && (resolvedInvoice as any).quoteId) {
-          resolvedInvoice.quote = quotes.find(q => q.id === (resolvedInvoice as any).quoteId) || null;
-        }
+        // First pass resolution
+        resolvedInvoice = resolveInvoiceRelationships(resolvedInvoice);
 
-        // Deep reconstruction: ensure the quote's client is also linked
-        const qView = resolvedInvoice.quote;
-        if (qView && !qView.client && (qView as any).clientId) {
-          qView.client = clients.find(c => c.id === (qView as any).clientId) || null;
+        // Enhanced Fallback: If quote items are missing or the quote itself isn't resolved locally
+        const qId = resolvedInvoice.quote?.id || resolvedInvoice.quoteId || resolvedInvoice.QuoteId;
+        if (qId && (!resolvedInvoice.quote?.items || resolvedInvoice.quote.items.length === 0)) {
+          try {
+            const fullQuote = await getQuote(qId);
+            if (fullQuote) {
+              resolvedInvoice.quote = {
+                ...(resolvedInvoice.quote || {}),
+                ...fullQuote,
+                items: fullQuote.items,
+                client: resolvedInvoice.quote?.client || fullQuote.client || resolvedInvoice.client
+              };
+            }
+            // Second pass resolution to link new quote's client details
+            resolvedInvoice = resolveInvoiceRelationships(resolvedInvoice);
+          } catch (qErr) {
+            console.warn('Fallback quote fetch failed for invoice view:', qErr);
+          }
         }
-
         setViewingInvoice(resolvedInvoice);
       } catch (err) {
         console.warn('Failed to fetch full invoice details, falling back to summary data:', err);
@@ -387,14 +447,9 @@ function App() {
 
   const handleDuplicateClient = async (client: Client) => {
     try {
-      setIsLoading(true);
-      const fullClient = await getClients();
-      const clientToDuplicate = fullClient.find((c) => c.id === client.id);
-      if (clientToDuplicate) {
-        setEditingClient(clientToDuplicate);
-        setIsDuplicatingClient(true);
-        setClientView('manage');
-      }
+      setEditingClient(client);
+      setIsDuplicatingClient(true);
+      setClientView('manage');
     } catch (err: any) {
       setError(getErrorMessage(err, 'Unable to load client for duplication.'));
     } finally {
@@ -446,13 +501,13 @@ function App() {
     }
   };
 
-  const totalQuoteValue = quotes.reduce((sum, quote) => sum + quote.total, 0);
+  const totalQuoteValue = quotes.reduce((sum, quote) => sum + (Number(quote.total) || 0), 0);
   const averageQuoteValue = quotes.length ? totalQuoteValue / quotes.length : 0;
-  const largestQuoteValue = quotes.length ? Math.max(...quotes.map((quote) => quote.total)) : 0;
+  const largestQuoteValue = quotes.length ? Math.max(...quotes.map((quote) => Number(quote.total) || 0)) : 0;
   const topClients = clients
     .map((client) => ({
-      name: client.name,
-      total: quotes.filter((quote) => quote.clientId === client.id).reduce((sum, quote) => sum + quote.total, 0)
+      name: client.name || 'Unknown Client',
+      total: quotes.filter((quote) => quote.clientId === client.id).reduce((sum, quote) => sum + (Number(quote.total) || 0), 0)
     }))
     .sort((a, b) => b.total - a.total)
     .slice(0, 5);

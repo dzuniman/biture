@@ -30,10 +30,10 @@ export default function InvoiceListPage({
 
     return invoices.filter(
       (invoice) =>
-        invoice.invoiceNumber.toLowerCase().includes(term) ||
-        invoice.client?.name.toLowerCase().includes(term) ||
-        invoice.quote?.reference.toLowerCase().includes(term) ||
-        invoice.status.toLowerCase().includes(term)
+        (invoice.invoiceNumber?.toLowerCase() || '').includes(term) ||
+        (invoice.client?.name?.toLowerCase() || '').includes(term) ||
+        (invoice.quote?.reference?.toLowerCase() || '').includes(term) ||
+        (invoice.status?.toLowerCase() || '').includes(term)
     );
   }, [invoices, searchTerm]);
 

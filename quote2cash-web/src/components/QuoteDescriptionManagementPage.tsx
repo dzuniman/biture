@@ -22,9 +22,9 @@ export default function QuoteDescriptionManagementPage({ descriptions, onBack, o
     const term = search.trim().toLowerCase();
     if (!term) return descriptions;
     return descriptions.filter((item) =>
-      item.code.toLowerCase().includes(term) ||
-      item.uom.toLowerCase().includes(term) ||
-      item.description.toLowerCase().includes(term)
+      (item.code?.toLowerCase() || '').includes(term) ||
+      (item.uom?.toLowerCase() || '').includes(term) ||
+      (item.description?.toLowerCase() || '').includes(term)
     );
   }, [descriptions, search]);
 

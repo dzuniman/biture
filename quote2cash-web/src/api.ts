@@ -284,7 +284,17 @@ export async function getInvoice(id: string): Promise<Invoice> {
     dueDate: inv.dueDate,
     description: inv.description,
     isOverdue: inv.isOverdue,
-    client: inv.client ? { id: inv.client.id, name: inv.client.name } : null,
+    client: inv.client ? { 
+      id: inv.client.id, 
+      name: inv.client.name,
+      vendorNumber: inv.client.vendorNumber,
+      addressLine1: inv.client.addressLine1,
+      addressLine2: inv.client.addressLine2,
+      addressLine3: inv.client.addressLine3,
+      addressLine4: inv.client.addressLine4,
+      representativeName: inv.client.representativeName,
+      representativeNumber: inv.client.representativeNumber
+    } : null,
     quote: inv.quote ? {
       id: inv.quote.id,
       quoteNumber: inv.quote.quoteNumber,

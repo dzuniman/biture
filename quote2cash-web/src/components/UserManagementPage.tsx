@@ -22,8 +22,8 @@ export default function UserManagementPage({ users, onBack, onRefresh }: Props) 
     const term = search.trim().toLowerCase();
     if (!term) return users;
     return users.filter((item) =>
-      item.username.toLowerCase().includes(term) ||
-      item.role.toLowerCase().includes(term)
+      (item.username?.toLowerCase() || '').includes(term) ||
+      (item.role?.toLowerCase() || '').includes(term)
     );
   }, [users, search]);
 
