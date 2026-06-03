@@ -13,11 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Quote2Cash.Persistence")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-<<<<<<< HEAD
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+edd409d34b87bcfb79af4f85baecbd5f4e05388f")]
-=======
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ff99d7d9b7da32c5b2d931bb6a852639cbe8f2de")]
->>>>>>> invoice
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3242c460d1a07644a065b99bf51daf22afbf57e8")]
 [assembly: System.Reflection.AssemblyProductAttribute("Quote2Cash.Persistence")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Quote2Cash.Persistence")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

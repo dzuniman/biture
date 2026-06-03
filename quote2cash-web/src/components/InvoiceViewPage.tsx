@@ -26,9 +26,10 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
   const quote = invoice.quote;
   const items = quote?.items ?? [];
   const displayClient = invoice.client || quote?.client;
-  const subTotal = quote?.subTotal ?? (Number(invoice.amount || 0)) - (Number(invoice.vat || 0)); 
-  const vat = quote?.vat ?? Number(invoice.vat || 0); 
-  const total = quote?.total ?? Number(invoice.amount || 0); 
+  
+  const total = Number(quote?.total ?? invoice.amount ?? 0);
+  const vat = Number(quote?.vat ?? invoice.vat ?? 0);
+  const subTotal = Number(quote?.subTotal ?? (total - vat));
 
   return (
     <div className="page-section">
@@ -74,24 +75,24 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
             <div className="quote-view-right" style={{ textAlign: 'right', fontSize: '0.75rem', lineHeight: '1' }}>
               <div style={{ fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '1px', lineHeight: '1' }}>TAX INVOICE</div>
               <div className="quote-details-block" style={{ fontSize: '0.75rem', lineHeight: '1', marginBottom: '2px' }}>
-                <div className="view-row" style={{ marginBottom: '1px', lineHeight: '0' }}>
+                <div className="view-row" style={{ marginBottom: '1px', lineHeight: '1.2' }}>
                   <span className="view-label">INVOICE #:</span>
                   <span className="view-value">{invoice.invoiceNumber}</span>
                 </div>
-                <div className="view-row" style={{ marginBottom: '1px', lineHeight: '0' }}>
+                <div className="view-row" style={{ marginBottom: '1px', lineHeight: '1.2' }}>
                   <span className="view-label">INVOICE DATE:</span>
                   <span className="view-value">{invoiceDate}</span>
                 </div>
-                <div className="view-row" style={{ marginBottom: '1px', lineHeight: '0' }}>
+                <div className="view-row" style={{ marginBottom: '1px', lineHeight: '1.2' }}>
                   <span className="view-label">DUE DATE:</span>
                   <span className="view-value">{dueDate}</span>
                 </div>
-                <div className="view-row" style={{ marginBottom: '1px', lineHeight: '0' }}>
+                <div className="view-row" style={{ marginBottom: '1px', lineHeight: '1.2' }}>
                   <span className="view-label">STATUS:</span>
                   <span className="view-value">{invoice.status}</span>
                 </div>
                 {invoice.description && (
-                  <div className="view-row" style={{ marginBottom: '1px', lineHeight: '0' }}>
+                  <div className="view-row" style={{ marginBottom: '1px', lineHeight: '1.2' }}>
                     <span className="view-label">DESCRIPTION:</span>
                     <span className="view-value">{invoice.description}</span>
                   </div>
