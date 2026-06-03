@@ -90,7 +90,7 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
 
             <div className="quote-view-right" style={{ textAlign: 'right', fontSize: '0.75rem', lineHeight: '1' }}>
               <div style={{ fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '1px', lineHeight: '1' }}>TAX INVOICE</div>
-              <div className="quote-details-block" style={{ fontSize: '0.75rem', lineHeight: '1.4', marginBottom: '2px' }}>
+              <div className="quote-details-block" style={{ fontSize: '0.75rem', lineHeight: '0', marginBottom: '2px' }}>
                 <div className="view-row" style={{ marginBottom: '1px' }}>
                   <span className="view-label">INVOICE:</span>
                   <span className="view-value">{invoice.invoiceNumber}</span>
@@ -181,7 +181,7 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
           </div>
 
           <div className="view-section" style={{ marginTop: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-            <div style={{ border: '1px solid #000', borderRadius: '2px', padding: '12px', fontSize: '0.75rem', lineHeight: '1.4' }}>
+            <div style={{ border: '0px solid #000', borderRadius: '2px', padding: '12px', fontSize: '0.75rem', lineHeight: '1.4' }}>
               <div style={{ marginBottom: '4px', fontWeight: 'bold' }}>PAYMENT DETAILS</div>
               <div>Bank: ABSA Bank</div>
               <div>Account Name: EPEC Solutions (Pty) Ltd</div>
