@@ -33,10 +33,10 @@ export default function QuotesListPage({
 
     return quotes.filter(
       (quote) =>
-        quote.reference.toLowerCase().includes(term) ||
-        quote.client?.name.toLowerCase().includes(term) ||
-        quote.quoteNumber.toString().includes(term) ||
-        quote.vendorNumber.toLowerCase().includes(term)
+        (quote.reference?.toLowerCase() || '').includes(term) ||
+        (quote.client?.name?.toLowerCase() || '').includes(term) ||
+        (quote.quoteNumber?.toString() || '').includes(term) ||
+        (quote.vendorNumber?.toLowerCase() || '').includes(term)
     );
   }, [quotes, searchTerm]);
 

@@ -29,10 +29,10 @@ export default function ClientsListPage({
     if (!term) return clients;
 
     return clients.filter((client) =>
-      client.name.toLowerCase().includes(term) ||
+      (client.name?.toLowerCase() || '').includes(term) ||
       client.vendorNumber?.toLowerCase().includes(term) ||
       client.representativeName?.toLowerCase().includes(term) ||
-      client.representativeNumber?.includes(term)
+      (client.representativeNumber || '').includes(term)
     );
   }, [clients, searchTerm]);
 

@@ -123,13 +123,17 @@ export default function QuoteForm({
   onRequestNewClient,
   isDuplicate = false
 }: Props) {
-  const today = new Date().toISOString().slice(0, 10);
+  // Use local date string to avoid UTC day-shift errors
+  const today = useMemo(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  }, []);
   const [clientId, setClientId] = useState(initialData?.clientId ?? selectedClientId ?? '');
   const [quoteNumber, setQuoteNumber] = useState(initialData?.quoteNumber ?? '');
   const [reference, setReference] = useState(initialData?.reference ?? '');
-  const [date, setDate] = useState(initialData ? initialData.date.slice(0, 10) : today);
+  const [date, setDate] = useState(initialData?.date ? initialData.date.slice(0, 10) : today);
   const [validityDays, setValidityDays] = useState(initialData?.validityDays.toString() ?? '30');
-  const [items, setItems] = useState<QuoteItemCreateRequest[]>(initialData?.items.length ? initialData.items : [blankItem]);
+  const [items, setItems] = useState<QuoteItemCreateRequest[]>(initialData?.items?.length ? initialData.items : [blankItem]);
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -138,7 +142,7 @@ export default function QuoteForm({
       setClientId(initialData.clientId ?? '');
       setQuoteNumber(initialData.quoteNumber);
       setReference(initialData.reference);
-      setDate(initialData.date.slice(0, 10));
+      setDate(initialData.date ? initialData.date.slice(0, 10) : today);
       setValidityDays(initialData.validityDays.toString());
       const sorted = [...initialData.items].sort((a, b) => a.itemNumber - b.itemNumber);
       setItems(sorted.length ? sorted : [blankItem]);
@@ -215,18 +219,15 @@ export default function QuoteForm({
   };
 
   const handleAddItem = () => {
-    setItems((current) => [
-      ...current,
-      {
-        itemNumber: current.length + 1,
-        quantity: 1,
-        code: '',
-        uom: '',
-        description: '',
-        unitPrice: 0,
-        totalPrice: 0,
-      }
-    ]);
+    setItems((current) => reindexItems([...current, {
+      itemNumber: current.length + 1,
+      quantity: 1,
+      code: '',
+      uom: '',
+      description: '',
+      unitPrice: 0,
+      totalPrice: 0,
+    }]));
   };
 
   const handleDownloadTemplate = () => {
