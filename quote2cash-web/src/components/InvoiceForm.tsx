@@ -1,57 +1,64 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import type { Client, Invoice, InvoiceCreateRequest, Quote } from '../types';
+import type { Invoice, InvoiceCreateRequest, Quote } from '../types';
+import { getInvoiceNextNumber } from '../api';
 
 interface Props {
-  clients: Client[];
   quotes: Quote[];
   initialData?: Invoice;
   onSubmit: (payload: InvoiceCreateRequest) => Promise<void>;
   onCancel?: () => void;
 }
 
-export default function InvoiceForm({ clients, quotes, initialData, onSubmit, onCancel }: Props) {
-  const [clientId, setClientId] = useState('');
+export default function InvoiceForm({ quotes, initialData, onSubmit, onCancel }: Props) {
   const [quoteId, setQuoteId] = useState('');
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [description, setDescription] = useState('');
-  const [amount, setAmount] = useState('');
-  const [dueDate, setDueDate] = useState('');
+  const [date, setDate] = useState('');
   const [status, setStatus] = useState('Draft');
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (initialData) {
-      setClientId(initialData.client?.id ?? '');
       setQuoteId(initialData.quote?.id ?? '');
       setInvoiceNumber(initialData.invoiceNumber);
       setDescription(initialData.description ?? '');
-      setAmount(initialData.amount.toString());
-      setDueDate(initialData.dueDate ? initialData.dueDate.slice(0, 10) : '');
+      setDate(initialData.createdAt ? initialData.createdAt.slice(0, 10) : '');
       setStatus(initialData.status);
     } else {
-      setClientId('');
       setQuoteId('');
       setInvoiceNumber('');
-      setAmount('');
-      setDueDate('');
+      setDescription('');
+      setDate(new Date().toISOString().slice(0, 10));
       setStatus('Draft');
     }
   }, [initialData]);
 
+  useEffect(() => {
+    if (!initialData && !invoiceNumber) {
+      getInvoiceNextNumber().then((nextNumber) => {
+        setInvoiceNumber(nextNumber);
+      }).catch(() => {
+        // ignore next number failure and allow manual input
+      });
+    }
+  }, [initialData, invoiceNumber]);
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setIsSaving(true);
+    if (!quoteId) {
+      window.alert('Please select a quote before saving the invoice.');
+      setIsSaving(false);
+      return;
+    }
 
+    setIsSaving(true);
     await onSubmit({
-      clientId: clientId || undefined,
-      quoteId: quoteId || undefined,
+      quoteId,
       invoiceNumber: invoiceNumber.trim(),
       description: description.trim(),
-      amount: Number(amount),
-      dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
-      status
+      status,
+      date: new Date(date).toISOString()
     });
-
     setIsSaving(false);
   };
 
@@ -60,42 +67,33 @@ export default function InvoiceForm({ clients, quotes, initialData, onSubmit, on
       <h2>{initialData ? 'Edit Invoice' : 'Add Invoice'}</h2>
       <form onSubmit={handleSubmit}>
         <label>
-          Client
-          <select value={clientId} onChange={(event) => setClientId(event.target.value)}>
-            <option value="">No client selected</option>
-            {clients.map((client) => (
-              <option key={client.id} value={client.id}>
-                {client.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
           Quote
-          <select value={quoteId} onChange={(event) => setQuoteId(event.target.value)}>
-            <option value="">No quote selected</option>
+          <select value={quoteId} onChange={(event) => setQuoteId(event.target.value)} required>
+            <option value="">Select a quote</option>
             {quotes.map((quote) => (
               <option key={quote.id} value={quote.id}>
-                {quote.reference}
+                {quote.reference} — {quote.quoteNumber}
               </option>
             ))}
           </select>
         </label>
         <label>
           Invoice number
-          <input value={invoiceNumber} onChange={(event) => setInvoiceNumber(event.target.value)} required />
+          <input
+            value={invoiceNumber}
+            onChange={(event) => setInvoiceNumber(event.target.value)}
+            required={Boolean(initialData)}
+            readOnly={!initialData}
+            placeholder="Auto-generated when creating a new invoice"
+          />
         </label>
         <label>
           Description
           <input value={description} onChange={(event) => setDescription(event.target.value)} />
         </label>
         <label>
-          Amount
-          <input type="number" step="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} required />
-        </label>
-        <label>
-          Due date
-          <input type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} />
+          Date
+          <input type="date" value={date} onChange={(event) => setDate(event.target.value)} required />
         </label>
         <label>
           Status
@@ -110,7 +108,7 @@ export default function InvoiceForm({ clients, quotes, initialData, onSubmit, on
           <button type="submit" disabled={isSaving}>
             {isSaving ? 'Saving…' : initialData ? 'Update Invoice' : 'Save Invoice'}
           </button>
-          {initialData && onCancel && (
+          {onCancel && (
             <button type="button" className="secondary" onClick={onCancel}>
               Cancel
             </button>

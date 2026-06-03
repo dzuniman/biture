@@ -43,16 +43,16 @@ export default function QuoteCard({ quote, onEdit, onView, onDelete, onDuplicate
         </div>
       </div>
       <div className="card-item-footer">
-        <button onClick={() => onView(quote)} className="btn-secondary">
+        <button type="button" onClick={() => onView(quote)} className="btn-secondary">
           View
         </button>
-        <button onClick={() => onEdit(quote)} className="btn-primary">
+        <button type="button" onClick={() => onEdit(quote)} className="btn-primary">
           Edit
         </button>
-        <button onClick={() => onDuplicate(quote)} className="btn-secondary">
+        <button type="button" onClick={() => onDuplicate(quote)} className="btn-secondary">
           Duplicate
         </button>
-        <button onClick={() => onDelete(quote.id)} className="btn-danger">
+        <button type="button" onClick={() => onDelete(quote.id)} className="btn-danger">
           Delete
         </button>
       </div>

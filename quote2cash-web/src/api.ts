@@ -264,13 +264,77 @@ export async function getInvoices(): Promise<Invoice[]> {
     ...inv,
     amount: Number(inv.amount ?? 0),
     client: inv.client ? { id: inv.client.id, name: inv.client.name } : null,
-    quote: inv.quote ? { id: inv.quote.id, reference: inv.quote.reference } : null
+    quote: inv.quote ? {
+      id: inv.quote.id,
+      quoteNumber: inv.quote.quoteNumber,
+      reference: inv.quote.reference
+    } : null
   }));
+}
+
+export async function getInvoice(id: string): Promise<Invoice> {
+  const response = await api.get<any>(`/invoices/${id}`);
+  const inv = response.data;
+  return {
+    id: inv.id,
+    invoiceNumber: inv.invoiceNumber,
+    amount: Number(inv.amount ?? 0),
+    status: inv.status,
+    createdAt: inv.createdAt,
+    dueDate: inv.dueDate,
+    description: inv.description,
+    isOverdue: inv.isOverdue,
+    client: inv.client ? { id: inv.client.id, name: inv.client.name } : null,
+    quote: inv.quote ? {
+      id: inv.quote.id,
+      quoteNumber: inv.quote.quoteNumber,
+      reference: inv.quote.reference,
+      date: inv.quote.date,
+      validityDays: inv.quote.validityDays,
+      items: (inv.quote.items ?? []).map((item: any) => ({
+        id: item.id,
+        itemNumber: item.itemNumber,
+        quantity: item.quantity,
+        code: item.code,
+        uom: item.uom,
+        description: item.description,
+        unitPrice: item.unitPrice,
+        totalPrice: item.totalPrice
+      })),
+      subTotal: Number(inv.quote.subTotal ?? 0),
+      vat: Number(inv.quote.vat ?? 0),
+      total: Number(inv.quote.total ?? 0),
+      client: inv.quote.client ? {
+        id: inv.quote.client.id,
+        name: inv.quote.client.name,
+        vendorNumber: inv.quote.client.vendorNumber,
+        addressLine1: inv.quote.client.addressLine1,
+        addressLine2: inv.quote.client.addressLine2,
+        addressLine3: inv.quote.client.addressLine3,
+        addressLine4: inv.quote.client.addressLine4,
+        representativeName: inv.quote.client.representativeName,
+        representativeNumber: inv.quote.client.representativeNumber
+      } : null
+    } : null
+  };
+}
+
+export async function getInvoiceNextNumber(): Promise<string> {
+  const response = await api.get<{ nextInvoiceNumber: string }>('/invoices/next-number');
+  return response.data.nextInvoiceNumber;
 }
 
 export async function createInvoice(payload: InvoiceCreateRequest): Promise<Invoice> {
   const response = await api.post<Invoice>('/invoices', payload);
   return response.data;
+}
+
+export async function updateInvoice(id: string, payload: InvoiceCreateRequest): Promise<void> {
+  await api.put(`/invoices/${id}`, payload);
+}
+
+export async function deleteInvoice(id: string): Promise<void> {
+  await api.delete(`/invoices/${id}`);
 }
 
 export async function updateInvoiceStatus(id: string, status: string): Promise<void> {

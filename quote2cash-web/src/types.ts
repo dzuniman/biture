@@ -141,6 +141,30 @@ export interface Cost {
   incurredAt: string;
 }
 
+export interface InvoiceQuote {
+  id: string;
+  quoteNumber?: string;
+  reference: string;
+  date?: string;
+  validityDays?: number;
+  clientId?: string;
+  client?: {
+    id: string;
+    name: string;
+    vendorNumber?: string;
+    addressLine1?: string;
+    addressLine2?: string;
+    addressLine3?: string;
+    addressLine4?: string;
+    representativeName?: string;
+    representativeNumber?: string;
+  } | null;
+  items?: QuoteItem[];
+  subTotal?: number;
+  vat?: number;
+  total?: number;
+}
+
 export interface Invoice {
   id: string;
   client?: { id: string; name: string } | null;
@@ -151,7 +175,7 @@ export interface Invoice {
   dueDate: string;
   description?: string;
   isOverdue?: boolean;
-  quote?: { id: string; reference: string } | null;
+  quote?: InvoiceQuote | null;
 }
 
 export interface Statement {
@@ -186,13 +210,11 @@ export interface CostCreateRequest {
 }
 
 export interface InvoiceCreateRequest {
-  clientId?: string;
-  quoteId?: string;
+  quoteId: string;
   invoiceNumber: string;
   description?: string;
-  amount: number;
   status: string;
-  dueDate?: string;
+  date: string;
 }
 
 export interface StatementCreateRequest {
