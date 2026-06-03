@@ -79,6 +79,7 @@ function App() {
   const { isAuthenticated, user, logout } = useAuth();
 
   const getErrorMessage = (err: any, fallback: string) => {
+    console.error('API Error details:', err);
     if (err.message === 'Network Error' || !err.response) {
       return 'API Connection Error. Ensure the backend is running and migrations are applied.';
     }
