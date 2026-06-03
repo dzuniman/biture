@@ -59,7 +59,7 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins(
             "https://quote2cash.onrender.com", // production frontend
-            "http://localhost:4173"            // your dev frontend port
+            "http://localhost:4173"            // dev frontend
         )
         .AllowAnyHeader()
         .AllowAnyMethod();
@@ -92,6 +92,9 @@ app.Use(async (context, next) =>
     if (context.Request.Method == HttpMethods.Options)
     {
         context.Response.StatusCode = StatusCodes.Status200OK;
+        context.Response.Headers.Add("Access-Control-Allow-Origin", "https://quote2cash.onrender.com");
+        context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
         await context.Response.CompleteAsync();
         return;
     }
