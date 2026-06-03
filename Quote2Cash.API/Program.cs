@@ -62,7 +62,8 @@ builder.Services.AddCors(options =>
             "http://localhost:4173"            // dev frontend
         )
         .AllowAnyHeader()
-        .AllowAnyMethod();
+        .AllowAnyMethod()
+        .AllowCredentials();
     });
 });
 
@@ -92,7 +93,7 @@ app.Use(async (context, next) =>
     if (context.Request.Method == HttpMethods.Options)
     {
         context.Response.StatusCode = StatusCodes.Status200OK;
-        context.Response.Headers.Add("Access-Control-Allow-Origin", "https://quote2cash.onrender.com");
+        context.Response.Headers.Add("Access-Control-Allow-Origin", context.Request.Headers["Origin"]);
         context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Authorization");
         context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
         await context.Response.CompleteAsync();
