@@ -12,10 +12,9 @@ using Quote2Cash.Persistence.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
-// Configure controllers with a default authorization filter (requires authentication)
 builder.Services.AddControllers(options =>
     {
+        // Require authentication by default
         options.Filters.Add(new AuthorizeFilter());
     })
     .AddJsonOptions(options =>
@@ -54,22 +53,28 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 builder.Services.AddPersistenceServices(builder.Configuration);
+
+// Configure CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowLocalhost", policy =>
+    options.AddPolicy("AllowFrontend", policy =>
     {
-        policy
-            .AllowAnyOrigin()
-            .AllowAnyHeader()
-            .AllowAnyMethod();
+        policy.WithOrigins(
+            "https://quote2cash.onrender.com", // production frontend
+            "http://localhost:5173"            // dev frontend
+        )
+        .AllowAnyHeader()
+        .AllowAnyMethod();
     });
 });
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
+// Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+// Apply migrations and seed data
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<Quote2CashDbContext>();
@@ -77,16 +82,14 @@ using (var scope = app.Services.CreateScope())
     await SeedData.EnsureSeedDataAsync(context);
 }
 
-// Configure the HTTP request pipeline.
-// if (app.Environment.IsDevelopment())
-// {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-// }
+// Configure the HTTP request pipeline
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseStaticFiles();
 // app.UseHttpsRedirection();
-app.UseCors("AllowLocalhost");
+
+app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
