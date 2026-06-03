@@ -9,22 +9,26 @@ interface Props {
 }
 
 export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
-  const invoiceDate = invoice.createdAt ? new Date(invoice.createdAt).toLocaleDateString('en-ZA', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  }) : '—';
-  const dueDate = invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString('en-ZA', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  }) : '—';
+  const formatDate = (dateValue?: string | null) => {
+    if (!dateValue) return '—';
+    const d = new Date(dateValue);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString('en-ZA', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const invoiceDate = formatDate(invoice.date || invoice.createdAt);
+  const dueDate = formatDate(invoice.dueDate);
 
   const quote = invoice.quote;
   const items = quote?.items ?? [];
-  const subTotal = quote?.subTotal ?? 0;
-  const vat = quote?.vat ?? 0;
-  const total = quote?.total ?? invoice.amount;
+  const displayClient = invoice.client || quote?.client;
+  const subTotal = quote?.subTotal ?? (Number(invoice.amount || 0)) - (Number(invoice.vat || 0)); 
+  const vat = quote?.vat ?? Number(invoice.vat || 0); 
+  const total = quote?.total ?? Number(invoice.amount || 0); 
 
   return (
     <div className="page-section">
@@ -94,16 +98,16 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
                 )}
               </div>
 
-              {invoice.client && (
+              {displayClient && (
                 <div className="customer-box" style={{ border: '1px solid #000', padding: '6px', marginTop: '8px', fontSize: '0.75rem', lineHeight: '1.2' }}>
-                  <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>BILL TO:</div>
-                  <div style={{ marginBottom: '2px' }}>{invoice.client.name}</div>
-                  {quote?.client?.addressLine1 && <div style={{ marginBottom: '2px' }}>{quote.client.addressLine1}</div>}
-                  {quote?.client?.addressLine2 && <div style={{ marginBottom: '2px' }}>{quote.client.addressLine2}</div>}
-                  {quote?.client?.addressLine3 && <div style={{ marginBottom: '2px' }}>{quote.client.addressLine3}</div>}
-                  {quote?.client?.addressLine4 && <div style={{ marginBottom: '2px' }}>{quote.client.addressLine4}</div>}
-                  {quote?.client?.representativeName && <div style={{ marginBottom: '2px' }}>{quote.client.representativeName}</div>}
-                  {quote?.client?.representativeNumber && <div style={{ marginBottom: '2px' }}>{quote.client.representativeNumber}</div>}
+                  <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>BILL TO:</div> 
+                  <div style={{ marginBottom: '2px' }}>{displayClient.name ?? '—'}</div>
+                  {displayClient.addressLine1 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine1}</div>}
+                  {displayClient.addressLine2 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine2}</div>}
+                  {displayClient.addressLine3 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine3}</div>}
+                  {displayClient.addressLine4 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine4}</div>}
+                  {displayClient.representativeName && <div style={{ marginBottom: '2px' }}>{displayClient.representativeName}</div>}
+                  {displayClient.representativeNumber && <div style={{ marginBottom: '2px' }}>{displayClient.representativeNumber}</div>}
                 </div>
               )}
             </div>
