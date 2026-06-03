@@ -8,6 +8,7 @@ namespace Quote2Cash.Domain.Entities
         public Guid? ClientId { get; set; }
         public Client? Client { get; set; }
         public string InvoiceNumber { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
         public Guid? QuoteId { get; set; }
         public Quote? Quote { get; set; }
         public decimal Amount { get; set; }

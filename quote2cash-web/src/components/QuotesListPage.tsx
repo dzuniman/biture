@@ -60,7 +60,7 @@ export default function QuotesListPage({
           <h2>Quotes</h2>
           <p>Manage and track quotations</p>
         </div>
-        <button onClick={onCreateNew} className="btn-primary-lg">
+        <button type="button" onClick={onCreateNew} className="btn-primary-lg">
           + New Quote
         </button>
       </div>
@@ -91,7 +91,7 @@ export default function QuotesListPage({
               ? 'Try adjusting your search terms'
               : 'Get started by creating your first quote'}
           </p>
-          {!searchTerm && <button onClick={onCreateNew} className="btn-primary">
+          {!searchTerm && <button type="button" onClick={onCreateNew} className="btn-primary">
             Create Quote
           </button>}
         </div>

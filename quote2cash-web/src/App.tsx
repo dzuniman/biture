@@ -2,20 +2,28 @@
 import { formatAmount } from '../formatters';
 import {
   createClient,
+  createInvoice,
   createQuote,
   deleteClient,
+  deleteInvoice,
   deleteQuote,
   getClients,
+  getInvoice,
+  getInvoiceNextNumber,
+  getInvoices,
   getQuote,
   getQuoteDescriptions,
   getQuotes,
   getUsers,
   updateClient,
+  updateInvoice,
   updateQuote
 } from './api';
 import type {
   Client,
   ClientCreateRequest,
+  Invoice,
+  InvoiceCreateRequest,
   Quote,
   QuoteCreateRequest,
   QuoteDescription,
@@ -26,6 +34,9 @@ import { Login } from './components/Login';
 import ClientsListPage from './components/ClientsListPage';
 import ClientManagementPage from './components/ClientManagementPage';
 import ClientViewPage from './components/ClientViewPage';
+import InvoiceForm from './components/InvoiceForm';
+import InvoiceListPage from './components/InvoiceListPage';
+import InvoiceViewPage from './components/InvoiceViewPage';
 import QuotesListPage from './components/QuotesListPage';
 import QuoteManagementPage from './components/QuoteManagementPage';
 import QuoteViewPage from './components/QuoteViewPage';
@@ -35,21 +46,26 @@ import UserManagementPage from './components/UserManagementPage';
 import logo from './assets/logo.png';
 
 
-type Section = 'dashboard' | 'clients' | 'quotes' | 'admin';
+type Section = 'dashboard' | 'clients' | 'quotes' | 'invoices' | 'admin';
 type ClientView = 'list' | 'manage' | 'view';
 type QuoteView = 'list' | 'manage' | 'view';
+type InvoiceView = 'list' | 'manage' | 'view';
 type AdminView = 'home' | 'descriptions' | 'users';
 
 function App() {
   const [section, setSection] = useState<Section>('dashboard');
   const [clientView, setClientView] = useState<ClientView>('list');
   const [quoteView, setQuoteView] = useState<QuoteView>('list');
+  const [invoiceView, setInvoiceView] = useState<InvoiceView>('list');
   const [clients, setClients] = useState<Client[]>([]);
   const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [editingQuote, setEditingQuote] = useState<Quote | null>(null);
+  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [viewingClient, setViewingClient] = useState<Client | null>(null);
   const [viewingQuote, setViewingQuote] = useState<Quote | null>(null);
+  const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null);
   const [quoteDescriptions, setQuoteDescriptions] = useState<QuoteDescription[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [adminView, setAdminView] = useState<AdminView>('home');
@@ -79,16 +95,18 @@ function App() {
     try {
       setError(null);
       setIsLoading(true);
-      const [clientsData, quotesData, descriptionsData, usersData] = await Promise.all([
+      const [clientsData, quotesData, descriptionsData, usersData, invoicesData] = await Promise.all([
         getClients(),
         getQuotes(),
         getQuoteDescriptions(),
-        getUsers()
+        getUsers(),
+        getInvoices()
       ]);
       setClients(clientsData);
       setQuotes(quotesData);
       setQuoteDescriptions(descriptionsData);
       setUsers(usersData);
+      setInvoices(invoicesData);
     } catch (err: any) {
       setError(getErrorMessage(err, 'Unable to load data. Confirm the API is running.'));
     } finally {
@@ -209,6 +227,87 @@ function App() {
         setIsLoading(false);
       }
     }
+  };
+
+  const handleCreateInvoice = async (payload: InvoiceCreateRequest) => {
+    try {
+      setError(null);
+      setIsLoading(true);
+      await createInvoice(payload);
+      clearInvoiceState();
+      await loadAll();
+      setSection('invoices');
+      setInvoiceView('list');
+    } catch (err: any) {
+      setError(getErrorMessage(err, 'Unable to save invoice.'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUpdateInvoice = async (id: string, payload: InvoiceCreateRequest) => {
+    try {
+      setError(null);
+      setIsLoading(true);
+      await updateInvoice(id, payload);
+      clearInvoiceState();
+      await loadAll();
+      setInvoiceView('list');
+    } catch (err: any) {
+      setError(getErrorMessage(err, 'Unable to update invoice.'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteInvoice = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this invoice?')) {
+      try {
+        setError(null);
+        setIsLoading(true);
+        await deleteInvoice(id);
+        await loadAll();
+      } catch (err: any) {
+        setError(getErrorMessage(err, 'Unable to delete invoice.'));
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  const handleEditInvoice = async (invoice: Invoice) => {
+    try {
+      setIsLoading(true);
+      const fullInvoice = await getInvoice(invoice.id);
+      setEditingInvoice(fullInvoice);
+      setViewingInvoice(null);
+      setInvoiceView('manage');
+      setSection('invoices');
+    } catch (err: any) {
+      setError(getErrorMessage(err, 'Unable to load invoice for editing.'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleViewInvoice = async (invoice: Invoice) => {
+    try {
+      setIsLoading(true);
+      const fullInvoice = await getInvoice(invoice.id);
+      setViewingInvoice(fullInvoice);
+      setInvoiceView('view');
+      setSection('invoices');
+    } catch (err: any) {
+      setError(getErrorMessage(err, 'Unable to load invoice.'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const clearInvoiceState = () => {
+    setEditingInvoice(null);
+    setViewingInvoice(null);
+    setInvoiceView('list');
   };
 
   const clearClientState = () => {
@@ -363,6 +462,19 @@ function App() {
                   <button
                     type="button"
                     onClick={() => {
+                      setSection('invoices');
+                      setInvoiceView('list');
+                      clearClientState();
+                      clearQuoteState();
+                      clearInvoiceState();
+                      setQuickActionsOpen(false);
+                    }}
+                  >
+                    View Invoices
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
                       setSection('clients');
                       setClientView('list');
                       clearClientState();
@@ -382,6 +494,17 @@ function App() {
                     }}
                   >
                     Create Quote
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSection('invoices');
+                      clearInvoiceState();
+                      setInvoiceView('manage');
+                      setQuickActionsOpen(false);
+                    }}
+                  >
+                    Create Invoice
                   </button>
                   <button
                     type="button"
@@ -432,6 +555,19 @@ function App() {
               }}
             >
               Quotes
+            </button>
+            <button
+              type="button"
+              className={`nav-button ${section === 'invoices' ? 'active' : ''}`}
+              onClick={() => {
+                setSection('invoices');
+                setInvoiceView('list');
+                clearClientState();
+                clearQuoteState();
+                clearInvoiceState();
+              }}
+            >
+              Invoices
             </button>
             <button
               type="button"
@@ -693,6 +829,46 @@ function App() {
           onBack={() => {
             clearQuoteState();
             setQuoteView('list');
+          }}
+        />
+      )}
+
+      {!isLoading && section === 'invoices' && invoiceView === 'list' && (
+        <InvoiceListPage
+          invoices={invoices}
+          onView={handleViewInvoice}
+          onEdit={handleEditInvoice}
+          onDelete={handleDeleteInvoice}
+          onCreateNew={() => {
+            clearInvoiceState();
+            setInvoiceView('manage');
+          }}
+        />
+      )}
+
+      {!isLoading && section === 'invoices' && invoiceView === 'manage' && (
+        <InvoiceForm
+          quotes={quotes}
+          initialData={editingInvoice ?? undefined}
+          onSubmit={
+            editingInvoice
+              ? (payload) => handleUpdateInvoice(editingInvoice.id, payload)
+              : handleCreateInvoice
+          }
+          onCancel={() => {
+            clearInvoiceState();
+            setInvoiceView('list');
+          }}
+        />
+      )}
+
+      {!isLoading && section === 'invoices' && invoiceView === 'view' && viewingInvoice && (
+        <InvoiceViewPage
+          invoice={viewingInvoice}
+          onEdit={() => viewingInvoice && handleEditInvoice(viewingInvoice)}
+          onBack={() => {
+            clearInvoiceState();
+            setInvoiceView('list');
           }}
         />
       )}

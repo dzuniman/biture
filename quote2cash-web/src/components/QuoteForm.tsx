@@ -501,18 +501,20 @@ export default function QuoteForm({
           </div>
         </div>
 
-        <div className="quote-summary">
-          <div className="summary-row">
-            <span className="summary-label">Subtotal</span>
-            <span className="summary-value">{formatAmount(subTotal)}</span>
-          </div>
-          <div className="summary-row">
-            <span className="summary-label">VAT (15%)</span>
-            <span className="summary-value">{formatAmount(vat)}</span>
-          </div>
-          <div className="summary-row summary-total">
-            <span className="summary-label">Total</span>
-            <span className="summary-value">{formatAmount(total)}</span>
+        <div className="quote-summary" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+          <div style={{ width: '280px' }}>
+            <div className="summary-row" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <span className="summary-label">Subtotal</span>
+              <span className="summary-value">{formatAmount(subTotal)}</span>
+            </div>
+            <div className="summary-row" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <span className="summary-label">VAT (15%)</span>
+              <span className="summary-value">{formatAmount(vat)}</span>
+            </div>
+            <div className="summary-row summary-total" style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px solid #334155', paddingTop: '8px', marginTop: '4px' }}>
+              <span className="summary-label">Total</span>
+              <span className="summary-value">{formatAmount(total)}</span>
+            </div>
           </div>
         </div>
 
