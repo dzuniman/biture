@@ -14,7 +14,6 @@ namespace Quote2Cash.Persistence.Data
         public DbSet<User> Users { get; set; } = null!;
         public DbSet<Quote> Quotes { get; set; } = null!;
         public DbSet<QuoteItem> QuoteItems { get; set; } = null!;
-        public DbSet<QuoteUom> QuoteUoms { get; set; } = null!;
         public DbSet<QuoteDescription> QuoteDescriptions { get; set; } = null!;
         public DbSet<JobCard> JobCards { get; set; } = null!;
         public DbSet<Cost> Costs { get; set; } = null!;
@@ -54,6 +53,7 @@ namespace Quote2Cash.Persistence.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.ItemNumber).IsRequired();
                 entity.Property(e => e.Quantity).HasPrecision(18, 2);
+                entity.Property(e => e.Code).HasMaxLength(150);
                 entity.Property(e => e.Uom).HasMaxLength(80);
                 entity.Property(e => e.Description).HasMaxLength(1000);
                 entity.Property(e => e.UnitPrice).HasPrecision(18, 2);
@@ -61,18 +61,13 @@ namespace Quote2Cash.Persistence.Data
                 entity.HasOne(e => e.Quote).WithMany(q => q.Items).HasForeignKey(e => e.QuoteId).OnDelete(DeleteBehavior.Cascade);
             });
 
-            modelBuilder.Entity<QuoteUom>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-                entity.Property(e => e.Value).IsRequired().HasMaxLength(150);
-                entity.HasIndex(e => e.Value).IsUnique();
-            });
-
             modelBuilder.Entity<QuoteDescription>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Value).IsRequired().HasMaxLength(1000);
-                entity.HasIndex(e => e.Value).IsUnique();
+                entity.Property(e => e.Code).IsRequired().HasMaxLength(150);
+                entity.Property(e => e.Uom).IsRequired().HasMaxLength(150);
+                entity.Property(e => e.Description).IsRequired().HasMaxLength(1000);
+                entity.HasIndex(e => e.Code).IsUnique();
             });
 
             modelBuilder.Entity<JobCard>(entity =>

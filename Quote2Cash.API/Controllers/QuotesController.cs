@@ -5,7 +5,7 @@ using Quote2Cash.Persistence.Data;
 
 namespace Quote2Cash.API.Controllers
 {
-    public record QuoteItemDto(int ItemNumber, decimal Quantity, string Uom, string Description, decimal UnitPrice, decimal TotalPrice);
+    public record QuoteItemDto(int ItemNumber, decimal Quantity, string Code, string Uom, string Description, decimal UnitPrice, decimal TotalPrice);
     public record QuoteCreateDto(Guid? ClientId, string QuoteNumber, string Reference, DateTime Date, int ValidityDays, QuoteItemDto[] Items);
 
     [ApiController]
@@ -97,6 +97,7 @@ namespace Quote2Cash.API.Controllers
                     item.Id,
                     item.ItemNumber,
                     item.Quantity,
+                    item.Code,
                     item.Uom,
                     item.Description,
                     item.UnitPrice,
@@ -127,6 +128,7 @@ namespace Quote2Cash.API.Controllers
                     Id = Guid.NewGuid(),
                     ItemNumber = item.ItemNumber,
                     Quantity = item.Quantity,
+                    Code = item.Code,
                     Uom = item.Uom,
                     Description = item.Description,
                     UnitPrice = item.UnitPrice,
@@ -152,6 +154,7 @@ namespace Quote2Cash.API.Controllers
                     item.Id,
                     item.ItemNumber,
                     item.Quantity,
+                    item.Code,
                     item.Uom,
                     item.Description,
                     item.UnitPrice,
@@ -195,6 +198,7 @@ namespace Quote2Cash.API.Controllers
                 QuoteId = quote.Id,
                 ItemNumber = item.ItemNumber,
                 Quantity = item.Quantity,
+                Code = item.Code,
                 Uom = item.Uom,
                 Description = item.Description,
                 UnitPrice = item.UnitPrice,
@@ -226,28 +230,34 @@ namespace Quote2Cash.API.Controllers
 
         private async Task EnsureQuoteItemDimensionsAsync(IEnumerable<QuoteItemDto> items)
         {
-            var uomValues = items.Select(i => i.Uom.Trim()).Where(v => !string.IsNullOrWhiteSpace(v)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
-            var descriptionValues = items.Select(i => i.Description.Trim()).Where(v => !string.IsNullOrWhiteSpace(v)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
-
-            var existingUoms = await _context.QuoteUoms.AsNoTracking().Where(u => uomValues.Contains(u.Value)).Select(u => u.Value).ToListAsync();
-            var existingDescriptions = await _context.QuoteDescriptions.AsNoTracking().Where(d => descriptionValues.Contains(d.Value)).Select(d => d.Value).ToListAsync();
-
-            var newUoms = uomValues.Except(existingUoms, StringComparer.OrdinalIgnoreCase)
-                .Select(value => new QuoteUom { Id = Guid.NewGuid(), Value = value });
-            var newDescriptions = descriptionValues.Except(existingDescriptions, StringComparer.OrdinalIgnoreCase)
-                .Select(value => new QuoteDescription { Id = Guid.NewGuid(), Value = value });
-
-            if (newUoms.Any())
+            var itemCodes = items.Select(i => i.Code.Trim()).Where(v => !string.IsNullOrWhiteSpace(v)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+            if (!itemCodes.Any())
             {
-                _context.QuoteUoms.AddRange(newUoms);
+                return;
             }
+
+            var existingDescriptions = await _context.QuoteDescriptions.AsNoTracking()
+                .Where(d => itemCodes.Contains(d.Code))
+                .Select(d => d.Code)
+                .ToListAsync();
+
+            var newCodes = itemCodes.Except(existingDescriptions, StringComparer.OrdinalIgnoreCase).ToArray();
+            var newDescriptions = items
+                .Where(i => newCodes.Contains(i.Code.Trim(), StringComparer.OrdinalIgnoreCase))
+                .GroupBy(i => i.Code.Trim(), StringComparer.OrdinalIgnoreCase)
+                .Select(group => group.First())
+                .Select(item => new QuoteDescription
+                {
+                    Id = Guid.NewGuid(),
+                    Code = item.Code.Trim(),
+                    Uom = item.Uom.Trim(),
+                    Description = item.Description.Trim()
+                })
+                .ToList();
+
             if (newDescriptions.Any())
             {
                 _context.QuoteDescriptions.AddRange(newDescriptions);
-            }
-
-            if (newUoms.Any() || newDescriptions.Any())
-            {
                 await _context.SaveChangesAsync();
             }
         }

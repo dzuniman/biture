@@ -8,7 +8,6 @@ import {
   getClients,
   getQuote,
   getQuoteDescriptions,
-  getQuoteUoms,
   getQuotes,
   getUsers,
   updateClient,
@@ -20,7 +19,6 @@ import type {
   Quote,
   QuoteCreateRequest,
   QuoteDescription,
-  QuoteUom,
   User
 } from './types';
 import { useAuth } from './AuthContext';
@@ -32,7 +30,6 @@ import QuotesListPage from './components/QuotesListPage';
 import QuoteManagementPage from './components/QuoteManagementPage';
 import QuoteViewPage from './components/QuoteViewPage';
 import AdminHomePage from './components/AdminHomePage';
-import QuoteUomManagementPage from './components/QuoteUomManagementPage';
 import QuoteDescriptionManagementPage from './components/QuoteDescriptionManagementPage';
 import UserManagementPage from './components/UserManagementPage';
 import logo from './assets/logo.png';
@@ -41,7 +38,7 @@ import logo from './assets/logo.png';
 type Section = 'dashboard' | 'clients' | 'quotes' | 'admin';
 type ClientView = 'list' | 'manage' | 'view';
 type QuoteView = 'list' | 'manage' | 'view';
-type AdminView = 'home' | 'uoms' | 'descriptions' | 'users';
+type AdminView = 'home' | 'descriptions' | 'users';
 
 function App() {
   const [section, setSection] = useState<Section>('dashboard');
@@ -53,7 +50,6 @@ function App() {
   const [editingQuote, setEditingQuote] = useState<Quote | null>(null);
   const [viewingClient, setViewingClient] = useState<Client | null>(null);
   const [viewingQuote, setViewingQuote] = useState<Quote | null>(null);
-  const [quoteUoms, setQuoteUoms] = useState<QuoteUom[]>([]);
   const [quoteDescriptions, setQuoteDescriptions] = useState<QuoteDescription[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [adminView, setAdminView] = useState<AdminView>('home');
@@ -83,16 +79,14 @@ function App() {
     try {
       setError(null);
       setIsLoading(true);
-      const [clientsData, quotesData, uomsData, descriptionsData, usersData] = await Promise.all([
+      const [clientsData, quotesData, descriptionsData, usersData] = await Promise.all([
         getClients(),
         getQuotes(),
-        getQuoteUoms(),
         getQuoteDescriptions(),
         getUsers()
       ]);
       setClients(clientsData);
       setQuotes(quotesData);
-      setQuoteUoms(uomsData);
       setQuoteDescriptions(descriptionsData);
       setUsers(usersData);
     } catch (err: any) {
@@ -293,7 +287,7 @@ function App() {
       const fullQuote = await getQuote(quote.id);
       setEditingQuote(fullQuote);
       setIsDuplicatingQuote(true);
-      setQuoteClientId(fullQuote.clientId ?? '');
+      setQuoteClientId(fullQuote.clientId ?? ''); 
       setQuoteView('manage');
     } catch (err: any) {
       setError(getErrorMessage(err, 'Unable to load quote for duplication.'));
@@ -670,7 +664,6 @@ function App() {
           quote={editingQuote ?? undefined}
           clients={clients}
           selectedClientId={quoteClientId}
-          uomOptions={quoteUoms}
           descriptionOptions={quoteDescriptions}
           onSelectClientId={setQuoteClientId}
           isNew={!editingQuote}
@@ -706,14 +699,9 @@ function App() {
 
       {!isLoading && section === 'admin' && adminView === 'home' && (
         <AdminHomePage
-          onViewUoms={() => setAdminView('uoms')}
           onViewDescriptions={() => setAdminView('descriptions')}
           onViewUsers={() => setAdminView('users')}
         />
-      )}
-
-      {!isLoading && section === 'admin' && adminView === 'uoms' && (
-        <QuoteUomManagementPage uoms={quoteUoms} onBack={() => setAdminView('home')} onRefresh={loadAll} />
       )}
 
       {!isLoading && section === 'admin' && adminView === 'descriptions' && (

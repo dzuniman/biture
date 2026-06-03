@@ -26,8 +26,8 @@ export const generateQuotePDF = async (quote: Quote) => {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 15;
-  const bottomMargin = 15;
+  const margin = 18;
+  const bottomMargin = 18;
   const contentWidth = pageWidth - margin * 2;
 
   let currentY = margin;

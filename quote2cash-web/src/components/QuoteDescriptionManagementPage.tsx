@@ -11,7 +11,9 @@ interface Props {
 export default function QuoteDescriptionManagementPage({ descriptions, onBack, onRefresh }: Props) {
   const [mode, setMode] = useState<'list' | 'manage'>('list');
   const [current, setCurrent] = useState<QuoteDescription | null>(null);
-  const [value, setValue] = useState('');
+  const [code, setCode] = useState('');
+  const [uom, setUom] = useState('');
+  const [description, setDescription] = useState('');
   const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -19,33 +21,51 @@ export default function QuoteDescriptionManagementPage({ descriptions, onBack, o
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
     if (!term) return descriptions;
-    return descriptions.filter((item) => item.value.toLowerCase().includes(term));
+    return descriptions.filter((item) =>
+      item.code.toLowerCase().includes(term) ||
+      item.uom.toLowerCase().includes(term) ||
+      item.description.toLowerCase().includes(term)
+    );
   }, [descriptions, search]);
 
   const startCreate = () => {
     setMode('manage');
     setCurrent(null);
-    setValue('');
+    setCode('');
+    setUom('');
+    setDescription('');
     setError(null);
   };
 
-  const startEdit = (description: QuoteDescription) => {
+  const startEdit = (descriptionItem: QuoteDescription) => {
     setMode('manage');
-    setCurrent(description);
-    setValue(description.value);
+    setCurrent(descriptionItem);
+    setCode(descriptionItem.code);
+    setUom(descriptionItem.uom);
+    setDescription(descriptionItem.description);
     setError(null);
   };
 
   const cancel = () => {
     setMode('list');
     setCurrent(null);
-    setValue('');
+    setCode('');
+    setUom('');
+    setDescription('');
     setError(null);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!value.trim()) {
+    if (!code.trim()) {
+      setError('Please enter a code.');
+      return;
+    }
+    if (!uom.trim()) {
+      setError('Please enter a UOM.');
+      return;
+    }
+    if (!description.trim()) {
       setError('Please enter a description.');
       return;
     }
@@ -55,9 +75,18 @@ export default function QuoteDescriptionManagementPage({ descriptions, onBack, o
 
     try {
       if (current) {
-        await updateQuoteDescription(current.id, { id: current.id, value: value.trim() });
+        await updateQuoteDescription(current.id, {
+          id: current.id,
+          code: code.trim(),
+          uom: uom.trim(),
+          description: description.trim()
+        } as any);
       } else {
-        await createQuoteDescription({ value: value.trim() } as any);
+        await createQuoteDescription({
+          code: code.trim(),
+          uom: uom.trim(),
+          description: description.trim()
+        } as any);
       }
       await onRefresh();
       cancel();
@@ -114,6 +143,8 @@ export default function QuoteDescriptionManagementPage({ descriptions, onBack, o
             <table>
               <thead>
                 <tr>
+                  <th>Code</th>
+                  <th>UOM</th>
                   <th>Description</th>
                   <th className="actions-column">Actions</th>
                 </tr>
@@ -121,19 +152,21 @@ export default function QuoteDescriptionManagementPage({ descriptions, onBack, o
               <tbody>
                 {filtered.length === 0 ? (
                   <tr style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}>
-                    <td colSpan={2} className="empty-row">
+                    <td colSpan={4} className="empty-row">
                       No descriptions found.
                     </td>
                   </tr>
                 ) : (
-                  filtered.map((description) => (
-                    <tr key={description.id} style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }} className="table-row-dark-hover">
-                      <td>{description.value}</td>
+                  filtered.map((descriptionItem) => (
+                    <tr key={descriptionItem.id} style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }} className="table-row-dark-hover">
+                      <td>{descriptionItem.code}</td>
+                      <td>{descriptionItem.uom}</td>
+                      <td>{descriptionItem.description}</td>
                       <td className="actions-column">
-                        <button className="btn-secondary small" onClick={() => startEdit(description)}>
+                        <button className="btn-secondary small" onClick={() => startEdit(descriptionItem)}>
                           Edit
                         </button>
-                        <button className="btn-danger small" onClick={() => handleDelete(description.id)}>
+                        <button className="btn-danger small" onClick={() => handleDelete(descriptionItem.id)}>
                           Delete
                         </button>
                       </td>
@@ -148,13 +181,31 @@ export default function QuoteDescriptionManagementPage({ descriptions, onBack, o
         <div className="management-container">
           <form onSubmit={handleSubmit} className="simple-form">
             <label>
+              Code
+              <input
+                type="text"
+                value={code}
+                onChange={(event) => setCode(event.target.value)}
+                placeholder="Enter a lookup code"
+                autoFocus
+              />
+            </label>
+            <label>
+              UOM
+              <input
+                type="text"
+                value={uom}
+                onChange={(event) => setUom(event.target.value)}
+                placeholder="Enter a unit of measure"
+              />
+            </label>
+            <label>
               Description
               <textarea
-                value={value}
-                onChange={(event) => setValue(event.target.value)}
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
                 placeholder="Enter a description"
                 rows={3}
-                autoFocus
               />
             </label>
             {error && <div className="form-error">{error}</div>}

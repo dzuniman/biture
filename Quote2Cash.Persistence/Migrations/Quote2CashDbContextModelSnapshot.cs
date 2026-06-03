@@ -247,14 +247,24 @@ namespace Quote2Cash.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Value")
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
+                    b.Property<string>("Uom")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("Value")
+                    b.HasIndex("Code")
                         .IsUnique();
 
                     b.ToTable("QuoteDescriptions");
@@ -265,6 +275,11 @@ namespace Quote2Cash.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -299,25 +314,6 @@ namespace Quote2Cash.Persistence.Migrations
                     b.HasIndex("QuoteId");
 
                     b.ToTable("QuoteItems");
-                });
-
-            modelBuilder.Entity("Quote2Cash.Domain.Entities.QuoteUom", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Value")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Value")
-                        .IsUnique();
-
-                    b.ToTable("QuoteUoms");
                 });
 
             modelBuilder.Entity("Quote2Cash.Domain.Entities.Statement", b =>

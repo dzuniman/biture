@@ -36,35 +36,19 @@ namespace Quote2Cash.Persistence.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Value = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false)
+                    Code = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
+                    Uom = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
+                    Description = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_QuoteDescriptions", x => x.Id);
                 });
 
-            migrationBuilder.CreateTable(
-                name: "QuoteUoms",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Value = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_QuoteUoms", x => x.Id);
-                });
-
             migrationBuilder.CreateIndex(
-                name: "IX_QuoteDescriptions_Value",
+                name: "IX_QuoteDescriptions_Code",
                 table: "QuoteDescriptions",
-                column: "Value",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_QuoteUoms_Value",
-                table: "QuoteUoms",
-                column: "Value",
+                column: "Code",
                 unique: true);
         }
 
@@ -73,9 +57,6 @@ namespace Quote2Cash.Persistence.Migrations
         {
             migrationBuilder.DropTable(
                 name: "QuoteDescriptions");
-
-            migrationBuilder.DropTable(
-                name: "QuoteUoms");
 
             migrationBuilder.DropColumn(
                 name: "VendorNumber",
