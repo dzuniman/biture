@@ -59,7 +59,7 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins(
             "https://quote2cash.onrender.com", // production frontend
-            "http://localhost:4173"            // dev frontend
+            "http://localhost:4173"            // your dev frontend port
         )
         .AllowAnyHeader()
         .AllowAnyMethod();
@@ -85,6 +85,18 @@ app.UseSwaggerUI();
 
 app.UseStaticFiles();
 // app.UseHttpsRedirection();
+
+// ✅ Handle OPTIONS preflight explicitly
+app.Use(async (context, next) =>
+{
+    if (context.Request.Method == HttpMethods.Options)
+    {
+        context.Response.StatusCode = StatusCodes.Status200OK;
+        await context.Response.CompleteAsync();
+        return;
+    }
+    await next();
+});
 
 // ✅ CORS must be before auth
 app.UseCors("AllowFrontend");
