@@ -1,6 +1,7 @@
-import { Invoice, Client, Quote, InvoiceQuote } from '../types';
+import type { Invoice, Client, Quote, InvoiceQuote } from '../types';
 import { formatAmount } from '../../formatters';
 import logo from '../assets/logo.png';
+import { generateInvoicePDF } from './InvoicePdfGenerator'; // Import the new generator
 
 interface Props {
   invoice: Invoice;
@@ -46,6 +47,15 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
   const subTotal = Number(quote?.subTotal ?? 0);
   const total = quote ? (subTotal + vat) : Number(invoice.amount ?? 0);
 
+  const handleDownloadPdf = async () => {
+    try {
+      await generateInvoicePDF(invoice);
+    } catch (error) {
+      console.error("Error generating invoice PDF:", error);
+      alert("Failed to generate PDF. Please try again.");
+    }
+  };
+
   return (
     <div className="page-section">
       <style dangerouslySetInnerHTML={{ __html: `
@@ -55,24 +65,26 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
           body { background: white !important; margin: 0 !important; padding: 0 !important; }
           .view-container, .view-card, .view-section, .items-table, .items-table-header, .items-table-row, .summary-row { border: none !important; box-shadow: none !important; background: none !important; }
           .view-card { padding: 20px !important; width: 100% !important; margin: 0 !important; font-size: 9pt !important; }
-          /* Only show Qty, Description, Unit Price, and Total */
           .items-table-header, .items-table-row { display: grid !important; grid-template-columns: 60px 1fr 120px 120px !important; gap: 4px !important; }
           .items-table-header div, .items-table-row div { border-left: 0.5pt solid #ccc !important; padding: 6px !important; }
           .items-table-header div:last-child, .items-table-row div:last-child { border-right: 0.5pt solid #ccc !important; }
           @page { size: A4; margin: 1.5cm 1cm; }
         }
-      ` }} />
-
+      ` }} /> {/* Closing style tag */}
       <div className="section-header no-print">
         <div>
           <h2>{invoice.invoiceNumber}</h2>
           <p>Invoice details for {quote?.reference ?? 'selected quote'}</p>
         </div>
-        <button onClick={onBack} className="btn-secondary no-print">
-          ← Back to Invoices
-        </button>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-start' }}>
+          <button onClick={handleDownloadPdf} className="btn-secondary">
+            Download PDF
+          </button>
+          <button onClick={onBack} className="btn-secondary no-print">
+            ← Back to Invoices
+          </button>
+        </div>
       </div>
-
       <div className="view-container">
         <div className="view-card" style={{ color: '#000' }}>
           <div className="quote-view-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '24px', marginBottom: '18px' }}>
@@ -87,7 +99,6 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
                 <img src={logo} alt="Epec Solutions" className="company-logo" style={{ display: 'block', maxHeight: '130px', width: 'auto', minHeight: '30px' }} />
               </div>
             </div>
-
             <div className="quote-view-right" style={{ textAlign: 'right', fontSize: '0.75rem', lineHeight: '1' }}>
               <div style={{ fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '1px', lineHeight: '1' }}>TAX INVOICE</div>
               <div className="quote-details-block" style={{ fontSize: '0.75rem', lineHeight: '0', marginBottom: '2px' }}>
@@ -107,28 +118,21 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
                   <span className="view-label">VENDOR NUMBER:</span>
                   <span className="view-value">{displayClient?.vendorNumber || '—'}</span>
                 </div>
-                {/*<div className="view-row" style={{ marginBottom: '1px' }}>
-                  <span className="view-label">STATUS:</span>
-                  <span className="view-value">{invoice.status}</span>
-                </div>*/}
                 {invoice.description && (
                   <div className="view-row" style={{ marginBottom: '1px' }}>
                     <span className="view-label">DESCRIPTION:</span>
                     <span className="view-value">{invoice.description}</span>
                   </div>
                 )}
-              </div>
-
               {displayClient ? (
                 <div className="customer-box" style={{ border: '1px solid #000', padding: '8px', marginTop: '8px', fontSize: '0.75rem', lineHeight: '1.4', textAlign: 'left', minHeight: '80px' }}>
-                  <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>BILL TO:</div> 
+                  <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>BILL TO:</div>
                   {displayClient.name && <div style={{ marginBottom: '2px' }}>{displayClient.name}</div>}
                   {displayClient.addressLine1 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine1}</div>}
                   {displayClient.addressLine2 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine2}</div>}
                   {displayClient.addressLine3 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine3}</div>}
                   {displayClient.addressLine4 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine4}</div>}
-                  {displayClient.vendorNumber && <div style={{ marginBottom: '2px' }}>VAT No: </div>}
-                  {/*{displayClient.vendorNumber && <div style={{ marginBottom: '2px' }}>VAT No.: {displayClient.vendorNumber}</div>}*/}
+                  {displayClient.vendorNumber && <div style={{ marginBottom: '2px' }}>VAT No: {displayClient.vendorNumber}</div>}
                   <div style={{ marginBottom: '2px' }}>Rep: {displayClient.representativeName || '—'}</div>
                   <div style={{ marginBottom: '2px' }}>Tel: {displayClient.representativeNumber || '—'}</div>
                 </div>
@@ -138,8 +142,9 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
                   <div>No client information available.</div>
                 </div>
               )}
+              </div>
             </div>
-          </div>
+          </div> {/* Correctly closed quote-view-header div */}
 
           <div className="view-section" style={{ marginTop: '24px' }}>
             <div className="items-table" style={{ border: '1px solid #000', borderRadius: '2px', overflow: 'hidden' }}>
@@ -163,7 +168,6 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
               )}
             </div>
           </div>
-
           <div className="view-section" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
             <div style={{ width: '220px' }}>
               <div className="summary-row" style={{ lineHeight: '0', display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
@@ -180,7 +184,6 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
               </div>
             </div>
           </div>
-
           <div className="view-section" style={{ marginTop: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
             <div style={{ border: '0px solid #000', borderRadius: '2px', padding: '12px', fontSize: '0.75rem', lineHeight: '1.4' }}>
               <div style={{ marginBottom: '4px', fontWeight: 'bold' }}>PAYMENT DETAILS</div>
@@ -190,11 +193,13 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
               <div>Account Type: Cheque</div>
               <div>Branch Code: 198765</div>
             </div>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+          </div> {/* Correctly closed view-section div */}
+          <div className="view-actions no-print" style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '20px', gap: '10px' }}>
             <button type="button" onClick={onEdit} className="btn-primary">
               Edit Invoice
+            </button>
+            <button type="button" onClick={handleDownloadPdf} className="btn-secondary">
+              Download PDF
             </button>
           </div>
         </div>

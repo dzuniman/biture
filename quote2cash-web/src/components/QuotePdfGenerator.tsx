@@ -11,7 +11,7 @@ export const generateQuotePDF = async (quote: Quote) => {
     format: 'a4'
   });
 
-  const margin = 15;
+  const margin = 5;
   const pageWidth = doc.internal.pageSize.getWidth();
   const contentWidth = pageWidth - (margin * 2);
   let currentY = margin; // Unified Y cursor for sequential content flow
@@ -174,7 +174,7 @@ export const generateQuotePDF = async (quote: Quote) => {
       0: { cellWidth: 12 }, 1: { cellWidth: 12 }, 2: { cellWidth: 18 }, 3: { cellWidth: 15 },
       4: { cellWidth: 'auto' }, 5: { cellWidth: 25, halign: 'right' }, 6: { cellWidth: 25, halign: 'right' },
     },
-    margin: { left: margin, right: margin },
+    margin: margin,
   });
 
   currentY = (doc as any).lastAutoTable.finalY + 8;
