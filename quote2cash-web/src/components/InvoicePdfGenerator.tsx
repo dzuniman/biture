@@ -119,7 +119,7 @@ export const generateInvoicePDF = async (invoice: Invoice) => {
   if (invoice.description) {
     addInvoiceDetailRow('DESCRIPTION:', invoice.description);
   }
-
+ 
   // --- Customer Box (Right) ---
   const spaceAfterQuoteDetailsBeforeCustomerBox = 5;
   let customerBoxY = quoteDetailsY + spaceAfterQuoteDetailsBeforeCustomerBox;
