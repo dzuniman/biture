@@ -49,7 +49,7 @@ export const generateInvoicePDF = async (invoice: Invoice) => {
       };
       // If logo is a data URL, it might already be loaded.
       if (logoImg.src.startsWith('data:')) {
-         logoImg.onload?.(); // Trigger load if it's already a data URL
+         logoImg.onload?.(new Event("load")); // Trigger load if it's already a data URL
       }
     });
   } catch (error) {
