@@ -107,10 +107,10 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
                   <span className="view-label">VENDOR NUMBER:</span>
                   <span className="view-value">{displayClient?.vendorNumber || '—'}</span>
                 </div>
-                <div className="view-row" style={{ marginBottom: '1px' }}>
+                {/*<div className="view-row" style={{ marginBottom: '1px' }}>
                   <span className="view-label">STATUS:</span>
                   <span className="view-value">{invoice.status}</span>
-                </div>
+                </div>*/}
                 {invoice.description && (
                   <div className="view-row" style={{ marginBottom: '1px' }}>
                     <span className="view-label">DESCRIPTION:</span>
@@ -127,7 +127,8 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
                   {displayClient.addressLine2 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine2}</div>}
                   {displayClient.addressLine3 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine3}</div>}
                   {displayClient.addressLine4 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine4}</div>}
-                  {displayClient.vendorNumber && <div style={{ marginBottom: '2px' }}>Vendor No: {displayClient.vendorNumber}</div>}
+                  {displayClient.vendorNumber && <div style={{ marginBottom: '2px' }}>VAT No: </div>}
+                  {/*{displayClient.vendorNumber && <div style={{ marginBottom: '2px' }}>VAT No.: {displayClient.vendorNumber}</div>}*/}
                   <div style={{ marginBottom: '2px' }}>Rep: {displayClient.representativeName || '—'}</div>
                   <div style={{ marginBottom: '2px' }}>Tel: {displayClient.representativeNumber || '—'}</div>
                 </div>
@@ -183,11 +184,11 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
           <div className="view-section" style={{ marginTop: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
             <div style={{ border: '0px solid #000', borderRadius: '2px', padding: '12px', fontSize: '0.75rem', lineHeight: '1.4' }}>
               <div style={{ marginBottom: '4px', fontWeight: 'bold' }}>PAYMENT DETAILS</div>
-              <div>Bank: ABSA Bank</div>
-              <div>Account Name: EPEC Solutions (Pty) Ltd</div>
-              <div>Account No: 1234567890</div>
-              <div>Branch Code: 632005</div>
-              <div>SWIFT: ABSAZAJJ</div>
+              <div>Bank: Nedbank</div>
+              <div>Account Name: EPEC SOLUTIONS (PTY) LTD</div>
+              <div>Account No: 1223326799</div>
+              <div>Account Type: Cheque</div>
+              <div>Branch Code: 198765</div>
             </div>
           </div>
 
