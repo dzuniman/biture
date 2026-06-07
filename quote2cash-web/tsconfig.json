@@ -14,12 +14,10 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
+    "noEmitOnError": false,
     "jsx": "react-jsx",
-    "types": ["vite/client"]   // ✅ removed "node"
+    "types": ["vite/client"]
   },
   "include": ["src"],
-  "exclude": ["node_modules", "dist"],
-  "references": [
-    { "path": "./tsconfig.node.json" }
-  ]
+  "exclude": ["node_modules", "dist"]
 }
