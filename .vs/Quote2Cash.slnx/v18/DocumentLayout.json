@@ -3,32 +3,24 @@
   "WorkspaceRootPath": "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{13F0048B-5DA3-CDA4-4175-40900B707439}|Quote2Cash.API\\Quote2Cash.API.csproj|c:\\staff\\documents\\other\\vutivi\\quote2cash\\code\\quote2cash\\quote2cash.api\\controllers\\invoicescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{13F0048B-5DA3-CDA4-4175-40900B707439}|Quote2Cash.API\\Quote2Cash.API.csproj|solutionrelative:quote2cash.api\\controllers\\invoicescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{1461682B-4F3C-4AE5-92DF-EB93DD43B142}|Quote2Cash.Domain\\Quote2Cash.Domain.csproj|c:\\staff\\documents\\other\\vutivi\\quote2cash\\code\\quote2cash\\quote2cash.domain\\quote2cash.domain.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{1461682B-4F3C-4AE5-92DF-EB93DD43B142}|Quote2Cash.Domain\\Quote2Cash.Domain.csproj|solutionrelative:quote2cash.domain\\quote2cash.domain.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{13F0048B-5DA3-CDA4-4175-40900B707439}|Quote2Cash.API\\Quote2Cash.API.csproj|c:\\staff\\documents\\other\\vutivi\\quote2cash\\code\\quote2cash\\quote2cash.api\\controllers\\clientscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{13F0048B-5DA3-CDA4-4175-40900B707439}|Quote2Cash.API\\Quote2Cash.API.csproj|solutionrelative:quote2cash.api\\controllers\\clientscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{7B94177E-1692-4400-BBC2-61F1A3A516A9}|Quote2Cash.Persistence\\Quote2Cash.Persistence.csproj|c:\\staff\\documents\\other\\vutivi\\quote2cash\\code\\quote2cash\\quote2cash.persistence\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7B94177E-1692-4400-BBC2-61F1A3A516A9}|Quote2Cash.Persistence\\Quote2Cash.Persistence.csproj|solutionrelative:quote2cash.persistence\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{F4F4C95E-B36B-DF39-AECB-13649D801DFF}|Quote2Cash.Domain\\Quote2Cash.Domain.csproj|c:\\staff\\documents\\other\\vutivi\\quote2cash\\code\\quote2cash\\quote2cash.domain\\quote2cash.domain.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
-      "RelativeMoniker": "D:0:0:{F4F4C95E-B36B-DF39-AECB-13649D801DFF}|Quote2Cash.Domain\\Quote2Cash.Domain.csproj|solutionrelative:quote2cash.domain\\quote2cash.domain.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+      "AbsoluteMoniker": "D:0:0:{70ED96EA-2966-4A28-BFC7-CF8A48BB70C6}|Quote2Cash.Infrastructure\\Quote2Cash.Infrastructure.csproj|c:\\staff\\documents\\other\\vutivi\\quote2cash\\code\\quote2cash\\quote2cash.infrastructure\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{70ED96EA-2966-4A28-BFC7-CF8A48BB70C6}|Quote2Cash.Infrastructure\\Quote2Cash.Infrastructure.csproj|solutionrelative:quote2cash.infrastructure\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A643B6E2-E366-0B9F-34EA-E0900A798AE8}|Quote2Cash.Persistence\\Quote2Cash.Persistence.csproj|c:\\staff\\documents\\other\\vutivi\\quote2cash\\code\\quote2cash\\quote2cash.persistence\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A643B6E2-E366-0B9F-34EA-E0900A798AE8}|Quote2Cash.Persistence\\Quote2Cash.Persistence.csproj|solutionrelative:quote2cash.persistence\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{1461682B-4F3C-4AE5-92DF-EB93DD43B142}|Quote2Cash.Domain\\Quote2Cash.Domain.csproj|c:\\staff\\documents\\other\\vutivi\\quote2cash\\code\\quote2cash\\quote2cash.domain\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1461682B-4F3C-4AE5-92DF-EB93DD43B142}|Quote2Cash.Domain\\Quote2Cash.Domain.csproj|solutionrelative:quote2cash.domain\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{7D8AFB60-C250-5931-F709-1A9044623C44}|Quote2Cash.Infrastructure\\Quote2Cash.Infrastructure.csproj|c:\\staff\\documents\\other\\vutivi\\quote2cash\\code\\quote2cash\\quote2cash.infrastructure\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{7D8AFB60-C250-5931-F709-1A9044623C44}|Quote2Cash.Infrastructure\\Quote2Cash.Infrastructure.csproj|solutionrelative:quote2cash.infrastructure\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{F4F4C95E-B36B-DF39-AECB-13649D801DFF}|Quote2Cash.Domain\\Quote2Cash.Domain.csproj|c:\\staff\\documents\\other\\vutivi\\quote2cash\\code\\quote2cash\\quote2cash.domain\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{F4F4C95E-B36B-DF39-AECB-13649D801DFF}|Quote2Cash.Domain\\Quote2Cash.Domain.csproj|solutionrelative:quote2cash.domain\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{674C3C33-8600-426F-2299-FEB9E0990B7B}|Quote2Cash.Application\\Quote2Cash.Application.csproj|c:\\staff\\documents\\other\\vutivi\\quote2cash\\code\\quote2cash\\quote2cash.application\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{674C3C33-8600-426F-2299-FEB9E0990B7B}|Quote2Cash.Application\\Quote2Cash.Application.csproj|solutionrelative:quote2cash.application\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{D22DD245-6B6F-44F4-B7DF-96ECD7A85C0A}|Quote2Cash.Application\\Quote2Cash.Application.csproj|c:\\staff\\documents\\other\\vutivi\\quote2cash\\code\\quote2cash\\quote2cash.application\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D22DD245-6B6F-44F4-B7DF-96ECD7A85C0A}|Quote2Cash.Application\\Quote2Cash.Application.csproj|solutionrelative:quote2cash.application\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -43,37 +35,7 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "InvoicesController.cs",
-              "DocumentMoniker": "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.API\\Controllers\\InvoicesController.cs",
-              "RelativeDocumentMoniker": "Quote2Cash.API\\Controllers\\InvoicesController.cs",
-              "ToolTip": "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.API\\Controllers\\InvoicesController.cs",
-              "RelativeToolTip": "Quote2Cash.API\\Controllers\\InvoicesController.cs",
-              "ViewState": "AgIAAGsAAAAAAAAAAAAwwH8AAAAOAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-08T10:19:24.078Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "ClientsController.cs",
-              "DocumentMoniker": "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.API\\Controllers\\ClientsController.cs",
-              "RelativeDocumentMoniker": "Quote2Cash.API\\Controllers\\ClientsController.cs",
-              "ToolTip": "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.API\\Controllers\\ClientsController.cs",
-              "RelativeToolTip": "Quote2Cash.API\\Controllers\\ClientsController.cs",
-              "ViewState": "AgIAAA0AAAAAAAAAAAAAAEwAAABIAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-08T10:18:59.52Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{40ea2e6b-2121-4bb8-a43e-c83c04b51041}"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "Quote2Cash.Domain.csproj",
+              "Title": "Quote2Cash.Domain",
               "DocumentMoniker": "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.Domain\\Quote2Cash.Domain.csproj",
               "RelativeDocumentMoniker": "Quote2Cash.Domain\\Quote2Cash.Domain.csproj",
               "ToolTip": "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.Domain\\Quote2Cash.Domain.csproj",
@@ -85,7 +47,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 1,
               "Title": "Class1.cs",
               "DocumentMoniker": "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.Persistence\\Class1.cs",
               "RelativeDocumentMoniker": "Quote2Cash.Persistence\\Class1.cs",
@@ -93,11 +55,12 @@
               "RelativeToolTip": "Quote2Cash.Persistence\\Class1.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-18T10:07:58.773Z"
+              "WhenOpened": "2026-05-18T10:07:58.773Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 2,
               "Title": "Class1.cs",
               "DocumentMoniker": "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.Infrastructure\\Class1.cs",
               "RelativeDocumentMoniker": "Quote2Cash.Infrastructure\\Class1.cs",
@@ -105,11 +68,12 @@
               "RelativeToolTip": "Quote2Cash.Infrastructure\\Class1.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-18T10:07:36.064Z"
+              "WhenOpened": "2026-05-18T10:07:36.064Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 3,
               "Title": "Class1.cs",
               "DocumentMoniker": "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.Domain\\Class1.cs",
               "RelativeDocumentMoniker": "Quote2Cash.Domain\\Class1.cs",
@@ -117,11 +81,12 @@
               "RelativeToolTip": "Quote2Cash.Domain\\Class1.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-18T10:07:14.111Z"
+              "WhenOpened": "2026-05-18T10:07:14.111Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 4,
               "Title": "Class1.cs",
               "DocumentMoniker": "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.Application\\Class1.cs",
               "RelativeDocumentMoniker": "Quote2Cash.Application\\Class1.cs",
@@ -129,7 +94,12 @@
               "RelativeToolTip": "Quote2Cash.Application\\Class1.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-18T10:06:43.071Z"
+              "WhenOpened": "2026-05-18T10:06:43.071Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{40ea2e6b-2121-4bb8-a43e-c83c04b51041}"
             }
           ]
         },
