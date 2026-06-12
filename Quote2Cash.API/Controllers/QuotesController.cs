@@ -61,7 +61,7 @@ namespace Quote2Cash.API.Controllers
                 q.ValidityDays,
                 VendorNumber = q.Client?.VendorNumber ?? string.Empty,
                 q.ClientId,
-                Client = q.Client != null ? new { q.Client.Id, q.Client.Name } : null,
+                Client = q.Client != null ? new { q.Client.Id, q.Client.Name, q.Client.VatNumber } : null,
                 SubTotal = q.SubTotal,
                 Vat = q.Vat,
                 Total = q.Total,
@@ -91,7 +91,7 @@ namespace Quote2Cash.API.Controllers
                 quote.ValidityDays,
                 VendorNumber = quote.Client?.VendorNumber ?? string.Empty,
                 quote.ClientId,
-                Client = quote.Client != null ? new { quote.Client.Id, quote.Client.Name, quote.Client.AddressLine1, quote.Client.AddressLine2, quote.Client.AddressLine3, quote.Client.AddressLine4, quote.Client.RepresentativeName, quote.Client.RepresentativeNumber, quote.Client.VendorNumber } : null,
+                Client = quote.Client != null ? new { quote.Client.Id, quote.Client.Name, quote.Client.AddressLine1, quote.Client.AddressLine2, quote.Client.AddressLine3, quote.Client.AddressLine4, quote.Client.RepresentativeName, quote.Client.RepresentativeNumber, quote.Client.VendorNumber, quote.Client.VatNumber } : null,
                 Items = quote.Items.Select(item => new
                 {
                     item.Id,
