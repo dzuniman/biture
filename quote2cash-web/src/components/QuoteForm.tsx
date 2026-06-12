@@ -451,6 +451,7 @@ export default function QuoteForm({
                   value={item.itemNumber}
                   onChange={(event) => handleUpdateItem(index, 'itemNumber', event.target.value)}
                   required
+                  disabled
                 />
                 <input
                   type="number"
