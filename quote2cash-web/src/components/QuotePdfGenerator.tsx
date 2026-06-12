@@ -225,10 +225,9 @@ export const generateQuotePDF = async (quote: Quote) => {
   const terms = [
     '1) This quote automatically expires after thirty (30) days irrespective of the valid date above.',
     '2) The standard terms and conditions of sale of EPEC (Pty) Ltd shall apply (such terms and conditions available on request)',
-    '3) Foreign Exchange: The price quoted is subject of an ROE of ZAR 19.10 to the USD. In the event that Rand devalues against US Dollar, EPEC reserves the right to increase the amount payable.',
-    '4) Delivery will be confirmed upon receipt of a purchase order.',
-    '5) Errors and omissions are excluded. 6) Upon placing of order, please quote this quote number.',
-    '7) Payment terms must be adhered to. 8) This quotation is conditional upon your signed acceptance and return within 30 days.'
+    '3) Delivery will be confirmed upon receipt of a purchase order.',
+    '4) Errors and omissions are excluded. 5) Upon placing of order, please quote this quote number.',
+    '6) Payment terms must be adhered to. 7) This quotation is conditional upon your signed acceptance and return within 30 days.'
   ];
   terms.forEach(term => {
     const wrappedTerm = doc.splitTextToSize(term, contentWidth);

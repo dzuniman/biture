@@ -281,12 +281,11 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
                 <div style={{ marginTop: '4px' }}>
                   <div>1) This quote automatically expires after thirty (30) days irrespective of the valid date above.</div>
                   <div>2) The standard terms and conditions of sale of EPEC (Pty) Ltd shall apply (such terms and conditions available on request)</div>
-                  <div>3) Foreign Exchange: The price quoted is subject of an ROE of ZAR 19.10 to the USD. In the event that the Rand devalues against the US Dollar from date of this quotation, until the goods are received by EPEC (Pty) Ltd. EPEC (Pty) Ltd reserves the right to increase the amount payable by the customer in respect of such goods by the percentage of such change.</div>
-                  <div>4) Delivery will be confirmed upon receipt of a purchase order.</div>
-                  <div>5) Errors and omissions are excluded</div>
-                  <div>6) Upon placing of order, please quote this quote number</div>
-                  <div>7) Payment terms must be adhered to - Upon default, customer will be re-invoiced at standard pricing.</div>
-                  <div>8) This quotation is conditional upon your signed acceptance thereof, including the terms and conditions referred above and that it is returned to EPEC (Pty) Ltd within thirty (30) working days.</div>
+                  <div>3) Delivery will be confirmed upon receipt of a purchase order.</div>
+                  <div>4) Errors and omissions are excluded</div>
+                  <div>5) Upon placing of order, please quote this quote number</div>
+                  <div>6) Payment terms must be adhered to - Upon default, customer will be re-invoiced at standard pricing.</div>
+                  <div>7) This quotation is conditional upon your signed acceptance thereof, including the terms and conditions referred above and that it is returned to EPEC (Pty) Ltd within thirty (30) working days.</div>
                 </div>
               </div>
             </div>
