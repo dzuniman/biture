@@ -97,7 +97,9 @@ export async function getQuotes(): Promise<Quote[]> {
     clientId: quote.clientId,
     client: quote.client ? {
       id: quote.client.id,
-      name: quote.client.name
+      name: quote.client.name,
+      vatNumber: quote.client.vatNumber,
+      email: quote.client.email
     } : null,
     items: quote.items ?? [],
     subTotal: Number(quote.subTotal ?? 0),
@@ -268,6 +270,9 @@ export async function getInvoices(): Promise<Invoice[]> {
     client: inv.client ? { 
       id: inv.client.id, 
       name: inv.client.name,
+      vendorNumber: inv.client.vendorNumber,
+      vatNumber: inv.client.vatNumber,
+      email: inv.client.email,
       addressLine1: inv.client.addressLine1,
       addressLine2: inv.client.addressLine2,
       addressLine3: inv.client.addressLine3,
@@ -369,7 +374,10 @@ export async function getStatements(): Promise<Statement[]> {
     balance: Number(stmt.balance ?? 0),
     invoiceTotal: stmt.invoiceTotal ? Number(stmt.invoiceTotal) : undefined,
     unpaidAmount: stmt.unpaidAmount ? Number(stmt.unpaidAmount) : undefined,
-    client: stmt.client ? { id: stmt.client.id, name: stmt.client.name } : null
+    client: stmt.client ? { 
+      id: stmt.client.id, 
+      name: stmt.client.name 
+    } : null
   }));
 }
 

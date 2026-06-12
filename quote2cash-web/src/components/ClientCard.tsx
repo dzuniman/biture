@@ -15,6 +15,14 @@ export default function ClientCard({ client, onEdit, onView, onDelete }: Props) 
       </div>
       <div className="card-item-body">
         <div className="card-item-detail">
+          <span className="label">VAT Number:</span>
+          <span>{client.vatNumber || '—'}</span>
+        </div>
+        <div className="card-item-detail">
+          <span className="label">Email:</span>
+          <span>{client.email || '—'}</span>
+        </div>
+        <div className="card-item-detail">
           <span className="label">Vendor:</span>
           <span>{client.vendorNumber || '—'}</span>
         </div>

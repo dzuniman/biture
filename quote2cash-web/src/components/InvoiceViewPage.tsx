@@ -134,7 +134,7 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
                   {displayClient.addressLine2 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine2}</div>}
                   {displayClient.addressLine3 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine3}</div>}
                   {displayClient.addressLine4 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine4}</div>}
-                  {displayClient.vendorNumber && <div style={{ marginBottom: '2px' }}>VAT No: {displayClient.vendorNumber}</div>}
+                  {(displayClient.vatNumber || displayClient.vendorNumber) && <div style={{ marginBottom: '2px' }}>VAT No: {displayClient.vatNumber || displayClient.vendorNumber}</div>}
                   {displayClient.email && <div style={{ marginBottom: '2px' }}>Email: {displayClient.email}</div>}
                   <div style={{ marginBottom: '2px' }}>Rep: {displayClient.representativeName || '—'}</div>
                   <div style={{ marginBottom: '2px' }}>Tel: {displayClient.representativeNumber || '—'}</div>

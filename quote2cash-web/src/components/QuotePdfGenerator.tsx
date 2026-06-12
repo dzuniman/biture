@@ -115,9 +115,10 @@ export const generateQuotePDF = async (quote: Quote) => {
       quote.client.addressLine2,
       quote.client.addressLine3,
       quote.client.addressLine4,
-      `VAT No: ${quote.client.vatNumber || '-'}`,
-      `${quote.client.representativeName || '-'}`,
-      `${quote.client.representativeNumber || '-'}`,
+      (quote.client.vatNumber || quote.client.vendorNumber) ? `VAT No: ${quote.client.vatNumber || quote.client.vendorNumber}` : null,
+      quote.client.email ? `Email: ${quote.client.email}` : null,
+      `Rep: ${quote.client.representativeName || '-'}`,
+      `Tel: ${quote.client.representativeNumber || '-'}`,
       ``
     ].filter(Boolean);
 
