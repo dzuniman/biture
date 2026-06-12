@@ -88,7 +88,7 @@ namespace Quote2Cash.API.Controllers
             var jwtAudience = _configuration.GetValue<string>("Jwt:Audience");
             var expireMinutes = _configuration.GetValue<int>("Jwt:ExpireMinutes");
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey ?? throw new InvalidOperationException("Jwt:Key not configured")));
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var claims = new[]
