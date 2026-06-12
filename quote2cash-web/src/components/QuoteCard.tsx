@@ -21,7 +21,7 @@ export default function QuoteCard({ quote, onEdit, onView, onDelete, onDuplicate
       <div className="card-item-header">
         <div>
           <h3 className="card-item-ref">{quote.reference}</h3>
-          <p>Quote #{quote.quoteNumber}</p>
+          <p>Quote: {quote.quoteNumber}</p>
         </div>
       </div>
       <div className="card-item-body">

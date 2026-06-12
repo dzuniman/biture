@@ -1317,12 +1317,15 @@ button.small {
 
 .item-row {
   display: grid;
-  grid-template-columns: minmax(60px, 1fr) minmax(70px, 1fr) minmax(90px, 1.4fr) minmax(90px, 1.4fr) minmax(180px, 2.2fr) minmax(100px, 1fr) minmax(100px, 1fr) minmax(44px, auto);
+  grid-template-columns: 0.8fr 0.8fr 1.2fr 1.2fr 4fr 1.2fr 1.2fr auto;
   gap: 12px;
   align-items: center;
+  padding: 12px 14px;
 }
 
 .item-row.header {
+  display: grid;
+  grid-template-columns: 0.8fr 0.8fr 1.2fr 1.2fr 4fr 1.2fr 1.2fr auto;
   font-weight: 700;
   color: #334155;
   background: #f8fafc;
@@ -1482,19 +1485,21 @@ tbody tr:nth-child(even) {
   }
 
   .item-row {
-    grid-template-columns: minmax(60px, 85px) minmax(70px, 85px) minmax(70px, 85px) minmax(160px, 2fr) minmax(120px, 1fr) minmax(120px, 1fr) minmax(80px, 1fr);
+    grid-template-columns: 0.8fr 0.8fr 1.2fr 1.2fr 4fr 1.2fr 1.2fr auto;
     gap: 12px;
     min-width: 760px;
+    padding: 12px 14px;
   }
 
   .item-row.header {
     display: grid;
-    grid-template-columns: minmax(60px, 85px) minmax(70px, 85px) minmax(70px, 85px) minmax(160px, 2fr) minmax(120px, 1fr) minmax(120px, 1fr) minmax(80px, 1fr);
+    grid-template-columns: 0.8fr 0.8fr 1.2fr 1.2fr 4fr 1.2fr 1.2fr auto;
+    padding: 12px 14px;
   }
 
   .item-row.header span {
     padding: 10px 0;
-    white-space: nowrap;
+    white-space: nowrap; /* Keep this for header text wrapping */
   }
 
   .hero {
@@ -1985,14 +1990,20 @@ tbody tr:last-child td {
 
 .item-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 2.5fr 1.2fr 1.2fr auto;
+  grid-template-columns: 0.8fr 0.8fr 1.2fr 1.2fr 4fr 1.2fr 1.2fr auto;
   gap: 12px;
   align-items: center;
+  padding: 12px 14px;
 }
 
 .item-row.header {
+  display: grid;
+  grid-template-columns: 0.8fr 0.8fr 1.2fr 1.2fr 4fr 1.2fr 1.2fr auto;
   font-weight: 700;
   color: #334155;
+  background: #f8fafc;
+  padding: 12px 14px;
+  border-radius: 18px;
 }
 
 .item-row input {
@@ -2091,15 +2102,15 @@ button.small {
   }
 
   .item-row {
-    grid-template-columns: minmax(60px, 85px) minmax(70px, 85px) minmax(70px, 85px) minmax(160px, 2fr) minmax(120px, 140px) minmax(120px, 140px) minmax(80px, 1fr) minmax(44px, auto);
-    gap: 10px;
-    padding: 12px 10px;
-    min-width: 800px;
+    grid-template-columns: 0.8fr 0.8fr 1.2fr 1.2fr 4fr 1.2fr 1.2fr auto;
+    gap: 12px;
+    padding: 12px 14px;
+    min-width: 860px;
   }
 
   .item-row.header {
     display: grid;
-    grid-template-columns: minmax(60px, 85px) minmax(70px, 85px) minmax(70px, 85px) minmax(160px, 2fr) minmax(120px, 140px) minmax(120px, 140px) minmax(80px, 1fr) minmax(44px, auto);
+    grid-template-columns: 0.8fr 0.8fr 1.2fr 1.2fr 4fr 1.2fr 1.2fr auto;
     background: #eef2ff;
     border-radius: 16px;
     padding: 12px 14px;
