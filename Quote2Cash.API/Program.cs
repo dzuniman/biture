@@ -76,8 +76,21 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<Quote2CashDbContext>();
-    await context.Database.MigrateAsync();
-    await SeedData.EnsureSeedDataAsync(context);
+    try
+    {
+        Console.WriteLine("🚀 Applying migrations...");
+        await context.Database.MigrateAsync();
+        Console.WriteLine("✅ Migrations applied successfully.");
+
+        Console.WriteLine("🌱 Seeding data...");
+        await SeedData.EnsureSeedDataAsync(context);
+        Console.WriteLine("✅ Seeding complete.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Migration/Seeding failed: {ex}");
+        throw; // rethrow so you see the error in Render logs
+    }
 }
 
 // Middleware order matters
