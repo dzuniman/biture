@@ -34,8 +34,10 @@ export default function QuoteReport({ quote, onClose }: Props) {
           <h3>Client</h3>
           <p>{quote.client?.name ?? 'Unknown client'}</p>
           {clientAddress && <p>{clientAddress}</p>}
-          {quote.client?.representativeName && <p>{quote.client.representativeName}</p>}
-          {quote.client?.representativeNumber && <p>{quote.client.representativeNumber}</p>}
+          {(quote.client?.vatNumber || quote.client?.vendorNumber) && <p>VAT No: {quote.client.vatNumber || quote.client.vendorNumber}</p>}
+          {quote.client?.email && <p>Email: {quote.client.email}</p>}
+          {quote.client?.representativeName && <p>Rep: {quote.client.representativeName}</p>}
+          {quote.client?.representativeNumber && <p>Tel: {quote.client.representativeNumber}</p>}
         </div>
         <div>
           <h3>Quote details</h3>

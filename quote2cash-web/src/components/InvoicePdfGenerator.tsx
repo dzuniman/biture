@@ -145,7 +145,8 @@ export const generateInvoicePDF = async (invoice: Invoice) => {
       invoice.client.addressLine2,
       invoice.client.addressLine3,
       invoice.client.addressLine4,
-      'VAT No:',
+      (invoice.client.vatNumber || invoice.client.vendorNumber) ? `VAT No: ${invoice.client.vatNumber || invoice.client.vendorNumber}` : null,
+      invoice.client.email ? `Email: ${invoice.client.email}` : null,
       `Rep: ${invoice.client.representativeName || '-'}`,
       `Tel: ${invoice.client.representativeNumber || '-'}`
     ].filter(Boolean);

@@ -52,21 +52,26 @@ export default function ClientForm({ initialData, onSubmit, onCancel }: Props) {
     event.preventDefault();
     setIsSaving(true);
 
-    await onSubmit({
-      name: name.trim(),
-      vendorNumber: vendorNumber.trim() || undefined,
-      addressLine1: addressLine1.trim() || undefined,
-      addressLine2: addressLine2.trim() || undefined,
-      addressLine3: addressLine3.trim() || undefined,
-      addressLine4: addressLine4.trim() || undefined,
-      representativeName: representativeName.trim() || undefined,
-      representativeNumber: representativeNumber.trim() || undefined,
-      // Include new fields in payload
-      vatNumber: vatNumber.trim() || undefined,
-      email: email.trim() || undefined,
-    });
-
-    setIsSaving(false);
+    try {
+      await onSubmit({
+        name: name.trim(),
+        vendorNumber: vendorNumber.trim() || undefined,
+        addressLine1: addressLine1.trim() || undefined,
+        addressLine2: addressLine2.trim() || undefined,
+        addressLine3: addressLine3.trim() || undefined,
+        addressLine4: addressLine4.trim() || undefined,
+        representativeName: representativeName.trim() || undefined,
+        representativeNumber: representativeNumber.trim() || undefined,
+        // Include new fields in payload
+        vatNumber: vatNumber.trim(),
+        email: email.trim(),
+      });
+    } catch (error) {
+      console.error("Client Update failed:", error);
+      alert("Failed to update client. Please check if all fields are valid.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -129,4 +134,3 @@ export default function ClientForm({ initialData, onSubmit, onCancel }: Props) {
     </div>
   );
 }
-

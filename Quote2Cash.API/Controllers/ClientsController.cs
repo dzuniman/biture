@@ -50,8 +50,11 @@ namespace Quote2Cash.API.Controllers
             client.AddressLine2 = request.AddressLine2;
             client.AddressLine3 = request.AddressLine3;
             client.AddressLine4 = request.AddressLine4;
+            client.VatNumber = request.VatNumber; 
+            client.Email = request.Email;
             client.RepresentativeName = request.RepresentativeName;
             client.RepresentativeNumber = request.RepresentativeNumber;
+            client.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
             return NoContent();
