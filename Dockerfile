@@ -13,4 +13,6 @@ RUN dotnet publish Quote2Cash.API/Quote2Cash.API.csproj -c Release -o /app/publi
 FROM base AS final
 WORKDIR /app
 COPY --from=build /app/publish .
-ENTRYPOINT ["dotnet", "Quote2Cash.API.dll"]
+
+# Run migrations from Persistence project, then start the API
+ENTRYPOINT ["bash", "-c", "dotnet ef database update --project Quote2Cash.Persistence --startup-project Quote2Cash.API && dotnet Quote2Cash.API.dll"]
