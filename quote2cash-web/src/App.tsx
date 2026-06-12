@@ -280,7 +280,7 @@ function App() {
     const resolved = { ...invoice } as any;
     
     // Reconstruct quote relationship - Don't overwrite if current quote already has items
-    const invoiceQuoteId = resolved.quoteId || resolved.QuoteId || (typeof resolved.quote === 'string' ? resolved.quote : resolved.quote?.id);
+    const invoiceQuoteId = resolved.quoteId || (typeof resolved.quote === 'string' ? resolved.quote : resolved.quote?.id);
     
     if (invoiceQuoteId) {
       const quoteFromState = quotes.find(q => q.id === invoiceQuoteId);
@@ -383,7 +383,7 @@ function App() {
         resolvedInvoice = resolveInvoiceRelationships(resolvedInvoice);
 
         // Enhanced Fallback: If quote items are missing or the quote itself isn't resolved locally
-        const qId = resolvedInvoice.quote?.id || resolvedInvoice.quoteId || resolvedInvoice.QuoteId;
+        const qId = resolvedInvoice.quote?.id || resolvedInvoice.quoteId;
         if (qId && (!resolvedInvoice.quote?.items || resolvedInvoice.quote?.items?.length === 0)) {
           try {
             const fullQuote = await getQuote(qId);

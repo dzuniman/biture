@@ -1,3 +1,4 @@
+import { getInvoice } from '../api';
 import type { Invoice, Client, Quote, InvoiceQuote } from '../types';
 import { formatAmount } from '../../formatters';
 import logo from '../assets/logo.png';
@@ -49,8 +50,7 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
 
   const handleDownloadPdf = async () => {
     try {
-      const response = await api.get<Invoice>(`/invoices/${invoice.id}`);
-      const fullInvoiceData = response.data;
+      const fullInvoiceData = await getInvoice(invoice.id);
       generateInvoicePDF(fullInvoiceData);
     } catch (error) {
       console.error("Error fetching invoice data for PDF:", error);
@@ -209,4 +209,3 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
     </div>
   );
 }
-
