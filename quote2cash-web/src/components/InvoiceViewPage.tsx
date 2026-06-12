@@ -49,10 +49,12 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
 
   const handleDownloadPdf = async () => {
     try {
-      await generateInvoicePDF(invoice);
+      const response = await api.get<Invoice>(`/invoices/${invoice.id}`);
+      const fullInvoiceData = response.data;
+      generateInvoicePDF(fullInvoiceData);
     } catch (error) {
-      console.error("Error generating invoice PDF:", error);
-      alert("Failed to generate PDF. Please try again.");
+      console.error("Error fetching invoice data for PDF:", error);
+      alert("Failed to fetch invoice data for PDF generation. Please try again.");
     }
   };
 
@@ -70,7 +72,7 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
           .items-table-header div:last-child, .items-table-row div:last-child { border-right: 0.5pt solid #ccc !important; }
           @page { size: A4; margin: 1.5cm 1cm; }
         }
-      ` }} /> {/* Closing style tag */}
+      ` }} />
       <div className="section-header no-print">
         <div>
           <h2>{invoice.invoiceNumber}</h2>
@@ -133,6 +135,7 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
                   {displayClient.addressLine3 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine3}</div>}
                   {displayClient.addressLine4 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine4}</div>}
                   {displayClient.vendorNumber && <div style={{ marginBottom: '2px' }}>VAT No: {displayClient.vendorNumber}</div>}
+                  {displayClient.email && <div style={{ marginBottom: '2px' }}>Email: {displayClient.email}</div>}
                   <div style={{ marginBottom: '2px' }}>Rep: {displayClient.representativeName || '—'}</div>
                   <div style={{ marginBottom: '2px' }}>Tel: {displayClient.representativeNumber || '—'}</div>
                 </div>
@@ -144,7 +147,7 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
               )}
               </div>
             </div>
-          </div> {/* Correctly closed quote-view-header div */}
+          </div>
 
           <div className="view-section" style={{ marginTop: '24px' }}>
             <div className="items-table" style={{ border: '1px solid #000', borderRadius: '2px', overflow: 'hidden' }}>
@@ -184,6 +187,7 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
               </div>
             </div>
           </div>
+
           <div className="view-section" style={{ marginTop: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
             <div style={{ border: '0px solid #000', borderRadius: '2px', padding: '12px', fontSize: '0.75rem', lineHeight: '1.4' }}>
               <div style={{ marginBottom: '4px', fontWeight: 'bold' }}>PAYMENT DETAILS</div>
@@ -193,13 +197,11 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
               <div>Account Type: Cheque</div>
               <div>Branch Code: 198765</div>
             </div>
-          </div> {/* Correctly closed view-section div */}
-          <div className="view-actions no-print" style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '20px', gap: '10px' }}>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
             <button type="button" onClick={onEdit} className="btn-primary">
               Edit Invoice
-            </button>
-            <button type="button" onClick={handleDownloadPdf} className="btn-secondary">
-              Download PDF
             </button>
           </div>
         </div>
@@ -207,3 +209,4 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
     </div>
   );
 }
+

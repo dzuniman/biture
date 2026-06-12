@@ -1,8 +1,8 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import React, { useState, useEffect, type FormEvent } from 'react';
 import type { Client, ClientCreateRequest } from '../types';
 
 interface Props {
-  initialData?: Client;
+  initialData?: Client | null; // Allow null for initialData
   onSubmit: (payload: ClientCreateRequest) => Promise<void>;
   onCancel?: () => void;
 }
@@ -16,11 +16,14 @@ export default function ClientForm({ initialData, onSubmit, onCancel }: Props) {
   const [addressLine4, setAddressLine4] = useState('');
   const [representativeName, setRepresentativeName] = useState('');
   const [representativeNumber, setRepresentativeNumber] = useState('');
+  // New state for VAT Number and Email
+  const [vatNumber, setVatNumber] = useState('');
+  const [email, setEmail] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (initialData) {
-      setName(initialData.name);
+      setName(initialData.name ?? '');
       setVendorNumber(initialData.vendorNumber ?? '');
       setAddressLine1(initialData.addressLine1 ?? '');
       setAddressLine2(initialData.addressLine2 ?? '');
@@ -28,6 +31,9 @@ export default function ClientForm({ initialData, onSubmit, onCancel }: Props) {
       setAddressLine4(initialData.addressLine4 ?? '');
       setRepresentativeName(initialData.representativeName ?? '');
       setRepresentativeNumber(initialData.representativeNumber ?? '');
+      // Set new fields
+      setVatNumber(initialData.vatNumber ?? '');
+      setEmail(initialData.email ?? '');
     } else {
       setName('');
       setVendorNumber('');
@@ -37,6 +43,8 @@ export default function ClientForm({ initialData, onSubmit, onCancel }: Props) {
       setAddressLine4('');
       setRepresentativeName('');
       setRepresentativeNumber('');
+      setVatNumber('');
+      setEmail('');
     }
   }, [initialData]);
 
@@ -52,7 +60,10 @@ export default function ClientForm({ initialData, onSubmit, onCancel }: Props) {
       addressLine3: addressLine3.trim() || undefined,
       addressLine4: addressLine4.trim() || undefined,
       representativeName: representativeName.trim() || undefined,
-      representativeNumber: representativeNumber.trim() || undefined
+      representativeNumber: representativeNumber.trim() || undefined,
+      // Include new fields in payload
+      vatNumber: vatNumber.trim() || undefined,
+      email: email.trim() || undefined,
     });
 
     setIsSaving(false);
@@ -64,35 +75,45 @@ export default function ClientForm({ initialData, onSubmit, onCancel }: Props) {
       <form onSubmit={handleSubmit}>
         <label>
           Client name
-          <input value={name} onChange={(event) => setName(event.target.value)} required />
+          <input type="text" value={name} onChange={(event) => setName(event.target.value)} required />
         </label>
         <label>
           Address line 1
-          <input value={addressLine1} onChange={(event) => setAddressLine1(event.target.value)} />
+          <input type="text" value={addressLine1} onChange={(event) => setAddressLine1(event.target.value)} />
         </label>
         <label>
           Address line 2
-          <input value={addressLine2} onChange={(event) => setAddressLine2(event.target.value)} />
+          <input type="text" value={addressLine2} onChange={(event) => setAddressLine2(event.target.value)} />
         </label>
         <label>
           Address line 3
-          <input value={addressLine3} onChange={(event) => setAddressLine3(event.target.value)} />
+          <input type="text" value={addressLine3} onChange={(event) => setAddressLine3(event.target.value)} />
         </label>
         <label>
           Address line 4
-          <input value={addressLine4} onChange={(event) => setAddressLine4(event.target.value)} />
+          <input type="text" value={addressLine4} onChange={(event) => setAddressLine4(event.target.value)} />
         </label>
         <label>
           Vendor number
-          <input value={vendorNumber} onChange={(event) => setVendorNumber(event.target.value)} />
+          <input type="text" value={vendorNumber} onChange={(event) => setVendorNumber(event.target.value)} />
+        </label>
+        {/* New VAT Number and Email fields */}
+        <label>
+          VAT Number
+          <input type="text" value={vatNumber} onChange={(event) => setVatNumber(event.target.value)} />
         </label>
         <label>
+          Email
+          <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} />
+        </label>
+        {/* End of new fields */}
+        <label>
           Representative name
-          <input value={representativeName} onChange={(event) => setRepresentativeName(event.target.value)} />
+          <input type="text" value={representativeName} onChange={(event) => setRepresentativeName(event.target.value)} />
         </label>
         <label>
           Representative number
-          <input value={representativeNumber} onChange={(event) => setRepresentativeNumber(event.target.value)} />
+          <input type="text" value={representativeNumber} onChange={(event) => setRepresentativeNumber(event.target.value)} />
         </label>
         <div className="form-actions">
           <button type="submit" disabled={isSaving}>
@@ -108,3 +129,4 @@ export default function ClientForm({ initialData, onSubmit, onCancel }: Props) {
     </div>
   );
 }
+
