@@ -35,6 +35,10 @@ namespace Quote2Cash.Persistence.Data
                 entity.Property(e => e.AddressLine4).HasMaxLength(300);
                 entity.Property(e => e.RepresentativeName).HasMaxLength(200);
                 entity.Property(e => e.RepresentativeNumber).HasMaxLength(100);
+                // New properties configuration
+                entity.Property(e => e.VatNumber).HasMaxLength(50);
+                entity.Property(e => e.Email).HasMaxLength(200);
+                // ... other configurations
             });
 
             modelBuilder.Entity<Quote>(entity =>
@@ -127,3 +131,4 @@ namespace Quote2Cash.Persistence.Data
         }
     }
 }
+

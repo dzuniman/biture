@@ -2,11 +2,16 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Quote2Cash.Domain.Entities;
 using Quote2Cash.Persistence.Data;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Quote2Cash.API.Controllers
 {
     public record QuoteItemDto(int ItemNumber, decimal Quantity, string Code, string Uom, string Description, decimal UnitPrice, decimal TotalPrice);
-    public record QuoteCreateDto(Guid? ClientId, string QuoteNumber, string Reference, DateTime Date, int ValidityDays, QuoteItemDto[] Items);
+    // CORRECTED: Added SubTotal, Vat, Total to QuoteCreateDto
+    public record QuoteCreateDto(Guid? ClientId, string QuoteNumber, string Reference, DateTime Date, int ValidityDays, QuoteItemDto[] Items, decimal SubTotal, decimal Vat, decimal Total);
 
     [ApiController]
     [Route("api/[controller]")]
@@ -61,7 +66,14 @@ namespace Quote2Cash.API.Controllers
                 q.ValidityDays,
                 VendorNumber = q.Client?.VendorNumber ?? string.Empty,
                 q.ClientId,
-                Client = q.Client != null ? new { q.Client.Id, q.Client.Name } : null,
+                Client = q.Client != null ? new // CORRECTED: Include VatNumber and Email
+                {
+                    q.Client.Id,
+                    q.Client.Name,
+                    q.Client.VendorNumber,
+                    q.Client.VatNumber, // Included
+                    q.Client.Email      // Included
+                } : null,
                 SubTotal = q.SubTotal,
                 Vat = q.Vat,
                 Total = q.Total,
@@ -76,7 +88,6 @@ namespace Quote2Cash.API.Controllers
                 .Include(q => q.Client)
                 .Include(q => q.Items)
                 .FirstOrDefaultAsync(q => q.Id == id);
-
             if (quote == null)
             {
                 return NotFound();
@@ -91,7 +102,20 @@ namespace Quote2Cash.API.Controllers
                 quote.ValidityDays,
                 VendorNumber = quote.Client?.VendorNumber ?? string.Empty,
                 quote.ClientId,
-                Client = quote.Client != null ? new { quote.Client.Id, quote.Client.Name, quote.Client.AddressLine1, quote.Client.AddressLine2, quote.Client.AddressLine3, quote.Client.AddressLine4, quote.Client.RepresentativeName, quote.Client.RepresentativeNumber, quote.Client.VendorNumber } : null,
+                Client = quote.Client != null ? new // CORRECTED: Include VatNumber and Email
+                {
+                    quote.Client.Id,
+                    quote.Client.Name,
+                    quote.Client.AddressLine1,
+                    quote.Client.AddressLine2,
+                    quote.Client.AddressLine3,
+                    quote.Client.AddressLine4,
+                    quote.Client.RepresentativeName,
+                    quote.Client.RepresentativeNumber,
+                    quote.Client.VendorNumber,
+                    quote.Client.VatNumber, // Included
+                    quote.Client.Email      // Included
+                } : null,
                 Items = quote.Items.Select(item => new
                 {
                     item.Id,
@@ -136,19 +160,40 @@ namespace Quote2Cash.API.Controllers
                 }).ToList()
             };
 
-            _context.Quotes.Add(quote);
-            await _context.SaveChangesAsync();
 
-            var result = new
+            _context.Quotes.Add(quote);
+                await _context.SaveChangesAsync();
+
+            // Fetch the client again if ClientId is set, to include full client details in the response
+            Client? client = null;
+            if (quote.ClientId.HasValue)
+            {
+                client = await _context.Clients.AsNoTracking().FirstOrDefaultAsync(c => c.Id == quote.ClientId.Value);
+        }
+
+            var result = new // CORRECTED: Properly project Client object
             {
                 quote.Id,
                 quote.QuoteNumber,
                 quote.Reference,
                 quote.Date,
                 quote.ValidityDays,
-                VendorNumber = quote.Client?.VendorNumber ?? string.Empty,
+                VendorNumber = client?.VendorNumber ?? string.Empty, // Use fetched client
                 quote.ClientId,
-                Client = (object?)null,
+                Client = client != null ? new // Project client details
+                {
+                    client.Id,
+                    client.Name,
+                    client.AddressLine1,
+                    client.AddressLine2,
+                    client.AddressLine3,
+                    client.AddressLine4,
+                    client.RepresentativeName,
+                    client.RepresentativeNumber,
+                    client.VendorNumber,
+                    client.VatNumber, // Included
+                    client.Email      // Included
+                } : null,
                 Items = quote.Items.Select(item => new
                 {
                     item.Id,
@@ -166,7 +211,7 @@ namespace Quote2Cash.API.Controllers
             };
 
             return CreatedAtAction(nameof(GetQuote), new { id = quote.Id }, result);
-        }
+    }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateQuote(Guid id, [FromBody] QuoteCreateDto request)
@@ -175,7 +220,7 @@ namespace Quote2Cash.API.Controllers
             if (quote == null)
             {
                 return NotFound();
-            }
+}
 
             await EnsureQuoteItemDimensionsAsync(request.Items);
 
@@ -211,6 +256,7 @@ namespace Quote2Cash.API.Controllers
                 await _context.SaveChangesAsync();
             }
 
+            await _context.SaveChangesAsync(); // Save changes to quote totals and client ID
             return NoContent();
         }
 
@@ -230,7 +276,7 @@ namespace Quote2Cash.API.Controllers
 
         private async Task EnsureQuoteItemDimensionsAsync(IEnumerable<QuoteItemDto> items)
         {
-            var itemCodes = items.Select(i => i.Code.Trim()).Where(v => !string.IsNullOrWhiteSpace(v)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+            var itemCodes = items.Select(i => i.Code?.Trim()).Where(v => !string.IsNullOrWhiteSpace(v)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
             if (!itemCodes.Any())
             {
                 return;
@@ -243,13 +289,13 @@ namespace Quote2Cash.API.Controllers
 
             var newCodes = itemCodes.Except(existingDescriptions, StringComparer.OrdinalIgnoreCase).ToArray();
             var newDescriptions = items
-                .Where(i => newCodes.Contains(i.Code.Trim(), StringComparer.OrdinalIgnoreCase))
+                .Where(i => i.Code != null && newCodes.Contains(i.Code.Trim(), StringComparer.OrdinalIgnoreCase))
                 .GroupBy(i => i.Code.Trim(), StringComparer.OrdinalIgnoreCase)
                 .Select(group => group.First())
                 .Select(item => new QuoteDescription
                 {
                     Id = Guid.NewGuid(),
-                    Code = item.Code.Trim(),
+                    Code = item.Code!.Trim(), // Null-forgiving operator as it's checked above
                     Uom = item.Uom.Trim(),
                     Description = item.Description.Trim()
                 })

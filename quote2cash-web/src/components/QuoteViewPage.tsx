@@ -1,14 +1,14 @@
-import type { Quote } from '../types';
+import type { Quote, Client } from '../types'; // Ensure Client type is imported
 import { formatAmount } from '../../formatters';
 import logo from '../assets/logo.png';
-import { generateQuotePDF } from './QuotePdfGenerator';
+import { generateQuotePDF } from './QuotePdfGenerator'; // Import the Quote generator
 
 interface Props {
   quote: Quote;
   onEdit: () => void;
   onDuplicate: () => void;
   onBack: () => void;
-}
+} 
 
 export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Props) {
   const formattedDate = new Date(quote.date).toLocaleDateString('en-ZA', {
@@ -25,6 +25,16 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
     day: 'numeric'
   });
 
+  const handleDownloadQuotePdf = async () => {
+    try {
+      // Correctly call the generateQuotePDF function with the 'quote' prop
+      await generateQuotePDF(quote);
+    } catch (err) {
+      console.error("Quote PDF Generation failed:", err);
+      alert("Could not generate Quote PDF. Please check the console for errors.");
+    }
+  };
+
   return (
     <div className="page-section">
       <style dangerouslySetInnerHTML={{ __html: `
@@ -33,14 +43,11 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
           .no-print, .section-header { display: none !important; }
           .print-only { display: block !important; }
           body { background: white !important; margin: 0 !important; padding: 0 !important; }
-
-          /* Completely suppress UI-originated borders, shadows, and backgrounds */
           .page-section, .view-container, .view-card, .view-section, .items-table, .items-table-header, .items-table-row, .summary-row, .summary-total {
             border: none !important;
             box-shadow: none !important;
             background: none !important;
           }
-
           .page-section { padding: 0 !important; margin: 0 !important; }
           .view-container { padding: 0 !important; margin: 0 !important; width: 100% !important; }
           .view-card { 
@@ -49,8 +56,6 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
             margin: 0 !important;
             font-size: 9pt !important;
           }
-
-          /* Re-apply clean, professional dividers specifically for print document */
           .company-lines { font-size: 7.5pt !important; line-height: 1.1 !important; }
           .company-logo { max-height: 60px !important; }
           .quote-view-header { border-bottom: 0.5pt solid #ccc !important; padding-bottom: 12px !important; margin-bottom: 15px !important; }
@@ -58,15 +63,12 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
           .quote-view-right h3 { font-size: 7.5pt !important; margin-bottom: 1px !important; }
           .view-row .view-label, .view-row .view-value { font-size: 6.5pt !important; }
           .view-section h3 { font-size: 8pt !important; margin-bottom: 4px !important; }
-          
-          /* Overriding UI line-height: 0 and spacing for print legibility */
           .view-row, .company-lines, .view-section div, .summary-row, .items-table-row div { 
             line-height: 1.2 !important; 
             margin-bottom: 0 !important; 
             padding-top: 1px !important;
             padding-bottom: 1px !important;
           }
-          
           .items-table div { font-size: 7.5pt !important; }
           .summary-row span, .summary-row strong { font-size: 8.5pt !important; }
           .summary-total { 
@@ -75,14 +77,11 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
             border-top: 1.5pt solid #333 !important; 
             padding-top: 4px !important; 
           }
-          
-          /* Add a separator below the summary section for print, targeting the second view-section within quote-view-main */
           .quote-view-main > .view-section:nth-of-type(2) {
             border-bottom: 0.5pt solid #ccc !important;
             padding-bottom: 10px !important;
             margin-bottom: 10px !important;
           }
-
           .items-table-header, .items-table-row {
             display: grid !important;
             grid-template-columns: 25px 40px 55px 45px 1fr 100px 100px !important;
@@ -130,9 +129,6 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
           .items-table-row {
             border-bottom: none !important;
           }
-
-          /* Terms and conditions section */
-          /* Target the approval section by its unique inline border and replace with professional divider */
           .view-section[style*="border-top"] { 
             border-top: none !important; /* Explicitly remove the UI border */
             margin-top: 10px !important; 
@@ -140,10 +136,7 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
             font-size: 6.5pt !important; 
           }
           .view-section[style*="border-top"] div { font-size: 6.5pt !important; }
-
           @page { size: A4; margin: 1.5cm 1cm; }
-
-          /* Adjust grid columns for print to be more flexible */
           .items-table-header, .items-table-row {
             grid-template-columns: 0.5fr 0.5fr 0.7fr 0.7fr 3fr 1fr 1fr !important; /* More flexible widths */
             gap: 4px !important; /* Reduce gap for tighter fit */
@@ -211,6 +204,7 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
                   {quote.client.addressLine2 && <div style={{ marginBottom: '2px' }}>{quote.client.addressLine2}</div>}
                   {quote.client.addressLine3 && <div style={{ marginBottom: '2px' }}>{quote.client.addressLine3}</div>}
                   {quote.client.addressLine4 && <div style={{ marginBottom: '2px' }}>{quote.client.addressLine4}</div>}
+                  {quote.client.vatNumber && <div style={{ marginBottom: '2px' }}>VAT No: {quote.client.vatNumber}</div>}
                   <div style={{ marginBottom: '2px' }}>{quote.client.representativeName || '—'}</div>
                   <div style={{ marginBottom: '2px' }}>{quote.client.representativeNumber || '—'}</div>
                 </div>
@@ -305,15 +299,8 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
                 Duplicate Quote
               </button>
               <button 
-                onClick={async () => {
-                  try {
-                    await generateQuotePDF(quote);
-                  } catch (err) {
-                    console.error("PDF Generation failed:", err);
-                    alert("Could not generate PDF. Please check the console for errors.");
-                  }
-                }} 
-                className="btn-secondary" 
+                onClick={handleDownloadQuotePdf} // Call the corrected handler
+                className="btn-secondary"
                 type="button"
               >
                 Download PDF
@@ -325,3 +312,5 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
     </div>
   );
 }
+
+

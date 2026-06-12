@@ -40,6 +40,15 @@ export default function ClientViewPage({ client, onEdit, onDuplicate, onBack }: 
               <span className="view-label">Phone Number:</span>
               <span className="view-value">{client.representativeNumber || '—'}</span>
             </div>
+            {/* Display new fields */}
+            <div className="view-row">
+              <span className="view-label">VAT Number:</span>
+              <span className="view-value">{client.vatNumber || '—'}</span>
+            </div>
+            <div className="view-row">
+              <span className="view-label">Email:</span>
+              <span className="view-value">{client.email || '—'}</span>
+            </div>
           </div>
 
           <div className="view-section">
@@ -75,3 +84,4 @@ export default function ClientViewPage({ client, onEdit, onDuplicate, onBack }: 
     </div>
   );
 }
+

@@ -83,7 +83,7 @@ export const generateQuotePDF = async (quote: Quote) => {
     });
   };
 
-  addQuoteDetailRow('QUOTE NUMBER:', `#${quote.quoteNumber}`);
+  addQuoteDetailRow('QUOTE NUMBER:', `${quote.quoteNumber}`);
   addQuoteDetailRow('REFERENCE:', quote.reference); // This will now wrap
   addQuoteDetailRow('DATE:', new Date(quote.date).toLocaleDateString('en-ZA', { year: 'numeric', month: 'long', day: 'numeric' }));
   addQuoteDetailRow('VALIDITY:', `${quote.validityDays} Days`);
@@ -96,7 +96,7 @@ export const generateQuotePDF = async (quote: Quote) => {
   
   if (quote.client) {
     const boxWidth = 70;
-    const boxHeight = 26;
+    const boxHeight = 30;
     const boxX = pageWidth - margin - boxWidth;
 
     doc.setLineWidth(0.2);
@@ -104,7 +104,7 @@ export const generateQuotePDF = async (quote: Quote) => {
     
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7.5);
-    doc.text('CUSTOMER', boxX + 2, customerBoxY + 4);
+    doc.text('BILL TO:', boxX + 2, customerBoxY + 4);
     
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
@@ -115,8 +115,9 @@ export const generateQuotePDF = async (quote: Quote) => {
       quote.client.addressLine2,
       quote.client.addressLine3,
       quote.client.addressLine4,
-      `Representative: ${quote.client.representativeName || '-'}`,
-      `Contact Number: ${quote.client.representativeNumber || '-'}`,
+      `VAT No: ${quote.client.vatNumber || '-'}`,
+      `${quote.client.representativeName || '-'}`,
+      `${quote.client.representativeNumber || '-'}`,
       ``
     ].filter(Boolean);
 

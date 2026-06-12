@@ -9,3 +9,4 @@ C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Applicatio
 C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Application\obj\Debug\net8.0\refint\Quote2Cash.Application.dll
 C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Application\obj\Debug\net8.0\Quote2Cash.Application.pdb
 C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Application\obj\Debug\net8.0\ref\Quote2Cash.Application.dll
+C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Application\obj\Debug\net8.0\Quote2Cash.Application.sourcelink.json

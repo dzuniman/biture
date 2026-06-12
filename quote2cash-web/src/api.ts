@@ -125,6 +125,8 @@ export async function getQuote(id: string): Promise<Quote> {
       addressLine2: quote.client.addressLine2,
       addressLine3: quote.client.addressLine3,
       addressLine4: quote.client.addressLine4,
+      vatNumber: quote.client.vatNumber,
+      email: quote.client.email,
       representativeName: quote.client.representativeName,
       representativeNumber: quote.client.representativeNumber
     } : null,

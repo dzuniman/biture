@@ -1,3 +1,4 @@
+// Quote2Cash.Domain/Entities/Client.cs
 using System;
 using System.Collections.Generic;
 
@@ -14,6 +15,12 @@ namespace Quote2Cash.Domain.Entities
         public string? AddressLine4 { get; set; }
         public string? RepresentativeName { get; set; }
         public string? RepresentativeNumber { get; set; }
+        // New properties
+        public string? VatNumber { get; set; }
+        public string? Email { get; set; }
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? UpdatedAt { get; set; }
 
         public ICollection<Quote> Quotes { get; set; } = new List<Quote>();
         public ICollection<JobCard> JobCards { get; set; } = new List<JobCard>();
