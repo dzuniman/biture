@@ -94,7 +94,7 @@ export default function InvoiceForm({ quotes, initialData, onSubmit, onCancel }:
       invoiceNumber: invoiceNumber.trim(),
       description: description.trim(),
       status,
-      date: isNaN(submissionDate.getTime()) ? new Date().toISOString() : submissionDate.toISOString()
+      dueDate: isNaN(submissionDate.getTime()) ? new Date().toISOString() : submissionDate.toISOString()
     });
     setIsSaving(false);
   };
