@@ -4,6 +4,11 @@ export interface User {
   role: string;
 }
 
+export interface LoginResponse {
+  token: string;
+  user: User;
+}
+
 export interface AuthResponse {
   token: string;
   user: User;
@@ -95,8 +100,28 @@ export interface QuoteUom {
   value: string;
 }
 
+export interface QuoteUomCreateRequest {
+  value: string;
+}
+
+export interface QuoteUomUpdateRequest {
+  value: string;
+}
+
 export interface QuoteDescription {
   id: string;
+  code: string;
+  uom: string;
+  description: string;
+}
+
+export interface QuoteDescriptionCreateRequest {
+  code: string;
+  uom: string;
+  description: string;
+}
+
+export interface QuoteDescriptionUpdateRequest {
   code: string;
   uom: string;
   description: string;
@@ -168,15 +193,20 @@ export interface Invoice {
   quote?: InvoiceQuote | null;
 }
 
+export interface StatementItem {
+  id: string;
+  invoiceId: string;
+  paymentAmount: number;
+  description: string;
+  paymentDate: string;
+}
+
 export interface Statement {
   id: string;
+  statementNumber: string;
   client?: Client | null;
-  period: string;
-  balance: number;
-  status: string;
   createdAt: string;
-  invoiceTotal?: number;
-  unpaidAmount?: number;
+  items: StatementItem[];
 }
 
 export interface JobCardCreateRequest {
@@ -211,8 +241,6 @@ export interface InvoiceCreateRequest {
 
 export interface StatementCreateRequest {
   clientId?: string | null;
-  period: string;
-  balance: number;
-  status: string;
+  statementNumber: string;
+  items: StatementItem[];
 }
-

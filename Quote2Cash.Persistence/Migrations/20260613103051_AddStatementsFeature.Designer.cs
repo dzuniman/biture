@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Quote2Cash.Persistence.Data;
@@ -11,9 +12,11 @@ using Quote2Cash.Persistence.Data;
 namespace Quote2Cash.Persistence.Migrations
 {
     [DbContext(typeof(Quote2CashDbContext))]
-    partial class Quote2CashDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260613103051_AddStatementsFeature")]
+    partial class AddStatementsFeature
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -340,37 +343,23 @@ namespace Quote2Cash.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("ClientId")
+                    b.Property<Guid?>("ClientId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("StatementNumber")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ClientId");
-
-                    b.ToTable("Statements");
-                });
-
-            modelBuilder.Entity("Quote2Cash.Domain.Entities.StatementItem", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
                     b.Property<Guid>("InvoiceId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("InvoiceNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<decimal>("PaymentAmount")
                         .HasPrecision(18, 2)
@@ -379,16 +368,13 @@ namespace Quote2Cash.Persistence.Migrations
                     b.Property<DateTime>("PaymentDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("StatementId")
-                        .HasColumnType("uuid");
-
                     b.HasKey("Id");
+
+                    b.HasIndex("ClientId");
 
                     b.HasIndex("InvoiceId");
 
-                    b.HasIndex("StatementId");
-
-                    b.ToTable("StatementItems");
+                    b.ToTable("Statements");
                 });
 
             modelBuilder.Entity("Quote2Cash.Domain.Entities.User", b =>
@@ -483,32 +469,17 @@ namespace Quote2Cash.Persistence.Migrations
 
             modelBuilder.Entity("Quote2Cash.Domain.Entities.Statement", b =>
                 {
-                    b.HasOne("Quote2Cash.Domain.Entities.Client", "Client")
+                    b.HasOne("Quote2Cash.Domain.Entities.Client", null)
                         .WithMany("Statements")
-                        .HasForeignKey("ClientId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .HasForeignKey("ClientId");
 
-                    b.Navigation("Client");
-                });
-
-            modelBuilder.Entity("Quote2Cash.Domain.Entities.StatementItem", b =>
-                {
                     b.HasOne("Quote2Cash.Domain.Entities.Invoice", "Invoice")
                         .WithMany()
                         .HasForeignKey("InvoiceId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Quote2Cash.Domain.Entities.Statement", "Statement")
-                        .WithMany("Items")
-                        .HasForeignKey("StatementId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Invoice");
-
-                    b.Navigation("Statement");
                 });
 
             modelBuilder.Entity("Quote2Cash.Domain.Entities.Client", b =>
@@ -530,11 +501,6 @@ namespace Quote2Cash.Persistence.Migrations
                 });
 
             modelBuilder.Entity("Quote2Cash.Domain.Entities.Quote", b =>
-                {
-                    b.Navigation("Items");
-                });
-
-            modelBuilder.Entity("Quote2Cash.Domain.Entities.Statement", b =>
                 {
                     b.Navigation("Items");
                 });
