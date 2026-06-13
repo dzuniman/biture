@@ -205,7 +205,7 @@ export interface Statement {
   id: string;
   statementNumber: string;
   client?: Client | null;
-  createdAt: string;
+  createdAt: string; 
   items: StatementItem[];
 }
 

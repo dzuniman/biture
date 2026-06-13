@@ -5,7 +5,6 @@ using Quote2Cash.Persistence.Data;
 
 namespace Quote2Cash.API.Controllers
 {
-    // DTOs to ensure clean API contracts and avoid ModelBinder validation issues with Entities
     public record StatementItemDto(Guid InvoiceId, decimal PaymentAmount, string Description, DateTime PaymentDate);
     public record StatementRequestDto(string StatementNumber, Guid ClientId, StatementItemDto[] Items);
 
@@ -77,9 +76,7 @@ namespace Quote2Cash.API.Controllers
         [HttpGet("nextNumber")]
         public async Task<ActionResult<string>> GetNextStatementNumber()
         {
-            var currentYearMonth = DateTime.UtcNow.ToString("yyyyMM");
-            var prefix = $"ST{currentYearMonth}";
-
+            var prefix = $"ST{DateTime.UtcNow:yyyyMM}";
             var lastStatement = await _context.Statements
                 .Where(s => s.StatementNumber.StartsWith(prefix))
                 .OrderByDescending(s => s.StatementNumber)
@@ -87,16 +84,15 @@ namespace Quote2Cash.API.Controllers
                 .FirstOrDefaultAsync();
 
             int nextSequence = 1;
-            if (lastStatement != null)
+            if (lastStatement != null && lastStatement.Length >= prefix.Length + 4)
             {
-                var lastSequenceStr = lastStatement.Substring(prefix.Length);
-                if (int.TryParse(lastSequenceStr, out int lastSequence))
+                if (int.TryParse(lastStatement.Substring(prefix.Length), out int lastSequence))
                 {
                     nextSequence = lastSequence + 1;
                 }
             }
 
-            return $"{prefix}{nextSequence.ToString("D4")}";
+            return $"{prefix}{nextSequence:D4}";
         }
 
         [HttpPost]
@@ -135,31 +131,26 @@ namespace Quote2Cash.API.Controllers
         {
             try
             {
-                var existing = await _context.Statements
-                    .Include(s => s.Items)
-                    .FirstOrDefaultAsync(s => s.Id == id);
-
+                var existing = await _context.Statements.Include(s => s.Items).FirstOrDefaultAsync(s => s.Id == id);
                 if (existing == null) return NotFound();
 
                 existing.StatementNumber = request.StatementNumber;
                 existing.ClientId = request.ClientId;
-                existing.Client = null; // Force EF to use the ClientId FK to avoid tracking conflicts
+                existing.Client = null;
 
+                // Mark existing items for removal
                 _context.StatementItems.RemoveRange(existing.Items);
-                existing.Items.Clear();
 
-                foreach (var item in request.Items)
+                // Add new items
+                existing.Items = request.Items.Select(item => new StatementItem
                 {
-                    existing.Items.Add(new StatementItem
-                    {
-                        Id = Guid.NewGuid(),
-                        StatementId = id,
-                        InvoiceId = item.InvoiceId,
-                        PaymentAmount = item.PaymentAmount,
-                        Description = item.Description,
-                        PaymentDate = DateTime.SpecifyKind(item.PaymentDate, DateTimeKind.Utc)
-                    });
-                }
+                    Id = Guid.NewGuid(),
+                    StatementId = id,
+                    InvoiceId = item.InvoiceId,
+                    PaymentAmount = item.PaymentAmount,
+                    Description = item.Description,
+                    PaymentDate = DateTime.SpecifyKind(item.PaymentDate, DateTimeKind.Utc)
+                }).ToList();
 
                 await _context.SaveChangesAsync();
                 return NoContent();
