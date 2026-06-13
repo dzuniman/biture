@@ -5,6 +5,10 @@ using Quote2Cash.Persistence.Data;
 
 namespace Quote2Cash.API.Controllers
 {
+    // DTOs to ensure clean API contracts and avoid ModelBinder validation issues with Entities
+    public record StatementItemDto(Guid InvoiceId, decimal PaymentAmount, string Description, DateTime PaymentDate);
+    public record StatementRequestDto(string StatementNumber, Guid ClientId, StatementItemDto[] Items);
+
     [ApiController]
     [Route("api/[controller]")]
     public class StatementsController : ControllerBase
@@ -19,88 +23,158 @@ namespace Quote2Cash.API.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<object>>> GetStatements()
         {
-            var invoiceSummaries = await _context.Invoices.AsNoTracking()
-                .Where(i => i.ClientId != null)
-                .GroupBy(i => i.ClientId)
-                .Select(g => new
-                {
-                    ClientId = g.Key!.Value,
-                    Total = g.Sum(i => i.Amount),
-                    Unpaid = g.Where(i => i.Status != "Paid").Sum(i => i.Amount)
-                })
+            var statements = await _context.Statements.AsNoTracking()
+                .Include(s => s.Client)
+                .Include(s => s.Items)
+                    .ThenInclude(i => i.Invoice)
                 .ToListAsync();
 
-            var invoiceLookup = invoiceSummaries.ToDictionary(x => x.ClientId, x => x);
-            var statements = await _context.Statements.AsNoTracking().Include(s => s.Client).ToListAsync();
-
-            return Ok(statements.Select(s =>
+            return Ok(statements.Select(s => new
             {
-                if (s.ClientId.HasValue && invoiceLookup.TryGetValue(s.ClientId.Value, out var summary))
-                {
-                    return new
-                    {
-                        s.Id,
-                        s.Period,
-                        s.Balance,
-                        s.Status,
-                        s.CreatedAt,
-                        InvoiceTotal = summary.Total,
-                        UnpaidAmount = summary.Unpaid,
-                        Client = s.Client != null ? new { s.Client.Id, s.Client.Name } : null
-                    };
-                }
-
-                return new
-                {
-                    s.Id,
-                    s.Period,
-                    s.Balance,
-                    s.Status,
-                    s.CreatedAt,
-                    InvoiceTotal = 0m,
-                    UnpaidAmount = 0m,
-                    Client = s.Client != null ? new { s.Client.Id, s.Client.Name } : null
-                };
+                s.Id,
+                s.StatementNumber,
+                s.ClientId,
+                s.CreatedAt,
+                Client = s.Client != null ? new { s.Client.Id, s.Client.Name } : null,
+                Items = s.Items.Select(item => new {
+                    item.Id,
+                    item.InvoiceId,
+                    InvoiceNumber = item.Invoice?.InvoiceNumber ?? "N/A",
+                    item.PaymentAmount,
+                    item.Description,
+                    item.PaymentDate
+                })
             }));
         }
 
-        [HttpPost]
-        public async Task<ActionResult<Statement>> CreateStatement([FromBody] Statement request)
+        [HttpGet("{id}")]
+        public async Task<ActionResult<object>> GetStatement(Guid id)
         {
-            request.Id = Guid.NewGuid();
-            request.CreatedAt = DateTime.UtcNow;
-            _context.Statements.Add(request);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetStatements), new { id = request.Id }, request);
+            var s = await _context.Statements.AsNoTracking()
+                .Include(s => s.Client)
+                .Include(s => s.Items).ThenInclude(i => i.Invoice)
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (s == null) return NotFound();
+
+            return Ok(new {
+                s.Id,
+                s.StatementNumber,
+                s.ClientId,
+                s.CreatedAt,
+                Client = s.Client,
+                Items = s.Items.Select(item => new {
+                    item.Id,
+                    item.InvoiceId,
+                    InvoiceNumber = item.Invoice?.InvoiceNumber ?? "N/A",
+                    item.PaymentAmount,
+                    item.Description,
+                    item.PaymentDate
+                })
+            });
+        }
+
+        [HttpGet("nextNumber")]
+        public async Task<ActionResult<string>> GetNextStatementNumber()
+        {
+            var currentYearMonth = DateTime.UtcNow.ToString("yyyyMM");
+            var prefix = $"ST{currentYearMonth}";
+
+            var lastStatement = await _context.Statements
+                .Where(s => s.StatementNumber.StartsWith(prefix))
+                .OrderByDescending(s => s.StatementNumber)
+                .Select(s => s.StatementNumber)
+                .FirstOrDefaultAsync();
+
+            int nextSequence = 1;
+            if (lastStatement != null)
+            {
+                var lastSequenceStr = lastStatement.Substring(prefix.Length);
+                if (int.TryParse(lastSequenceStr, out int lastSequence))
+                {
+                    nextSequence = lastSequence + 1;
+                }
+            }
+
+            return $"{prefix}{nextSequence.ToString("D4")}";
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<Statement>> CreateStatement([FromBody] StatementRequestDto request)
+        {
+            try
+            {
+                var statement = new Statement
+                {
+                    Id = Guid.NewGuid(),
+                    StatementNumber = request.StatementNumber,
+                    ClientId = request.ClientId,
+                    CreatedAt = DateTime.UtcNow,
+                    Items = request.Items.Select(item => new StatementItem
+                    {
+                        Id = Guid.NewGuid(),
+                        InvoiceId = item.InvoiceId,
+                        PaymentAmount = item.PaymentAmount,
+                        Description = item.Description,
+                        PaymentDate = DateTime.SpecifyKind(item.PaymentDate, DateTimeKind.Utc)
+                    }).ToList()
+                };
+
+                _context.Statements.Add(statement);
+                await _context.SaveChangesAsync();
+                return CreatedAtAction(nameof(GetStatement), new { id = statement.Id }, statement);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Failed to create statement: " + (ex.InnerException?.Message ?? ex.Message) });
+            }
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateStatement(Guid id, [FromBody] Statement request)
+        public async Task<IActionResult> UpdateStatement(Guid id, [FromBody] StatementRequestDto request)
         {
-            var statement = await _context.Statements.FindAsync(id);
-            if (statement == null)
+            try
             {
-                return NotFound();
+                var existing = await _context.Statements
+                    .Include(s => s.Items)
+                    .FirstOrDefaultAsync(s => s.Id == id);
+
+                if (existing == null) return NotFound();
+
+                existing.StatementNumber = request.StatementNumber;
+                existing.ClientId = request.ClientId;
+                existing.Client = null; // Force EF to use the ClientId FK to avoid tracking conflicts
+
+                _context.StatementItems.RemoveRange(existing.Items);
+                existing.Items.Clear();
+
+                foreach (var item in request.Items)
+                {
+                    existing.Items.Add(new StatementItem
+                    {
+                        Id = Guid.NewGuid(),
+                        StatementId = id,
+                        InvoiceId = item.InvoiceId,
+                        PaymentAmount = item.PaymentAmount,
+                        Description = item.Description,
+                        PaymentDate = DateTime.SpecifyKind(item.PaymentDate, DateTimeKind.Utc)
+                    });
+                }
+
+                await _context.SaveChangesAsync();
+                return NoContent();
             }
-
-            statement.ClientId = request.ClientId;
-            statement.Period = request.Period;
-            statement.Balance = request.Balance;
-            statement.Status = request.Status;
-
-            await _context.SaveChangesAsync();
-            return NoContent();
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Failed to update statement: " + (ex.InnerException?.Message ?? ex.Message) });
+            }
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteStatement(Guid id)
         {
             var statement = await _context.Statements.FindAsync(id);
-            if (statement == null)
-            {
-                return NotFound();
-            }
-
+            if (statement == null) return NotFound();
             _context.Statements.Remove(statement);
             await _context.SaveChangesAsync();
             return NoContent();

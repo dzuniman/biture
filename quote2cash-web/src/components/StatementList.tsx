@@ -1,4 +1,4 @@
-import type { Statement } from '../types';
+import type { Statement, StatementItem } from '../types';
 import { formatAmount } from '../../formatters';
 
 interface Props {
@@ -14,26 +14,20 @@ export default function StatementList({ statements, onEdit, onDelete }: Props) {
       <table>
         <thead>
           <tr>
-            <th>Period</th>
+            <th>Statement #</th>
             <th>Client</th>
-            <th>Balance</th>
-            <th>Invoice total</th>
-            <th>Open unpaid</th>
-            <th>Status</th>
-            <th>Created</th>
+            <th>Total Payments</th>
+            <th>Item Count</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {statements.map((statement) => (
             <tr key={statement.id}>
-              <td>{statement.period}</td>
+              <td>{statement.statementNumber}</td>
               <td>{statement.client?.name ?? '—'}</td>
-              <td>{formatAmount(statement.balance)}</td>
-              <td>{formatAmount(statement.invoiceTotal ?? 0)}</td>
-              <td>{formatAmount(statement.unpaidAmount ?? 0)}</td>
-              <td>{statement.status}</td>
-              <td>{statement.createdAt ? new Date(statement.createdAt).toLocaleDateString() : '—'}</td>
+              <td>{formatAmount(statement.items?.reduce((sum: number, item: StatementItem) => sum + item.paymentAmount, 0) ?? 0)}</td>
+              <td>{statement.items?.length ?? 0}</td>
               <td className="actions-row">
                 <button type="button" onClick={() => onEdit(statement)}>
                   Edit
