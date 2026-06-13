@@ -195,7 +195,7 @@ namespace Quote2Cash.API.Controllers
             invoice.Amount = request.Amount;
             invoice.Status = request.Status;
             invoice.DueDate = request.DueDate;
-            // Consider adding Description if it's part of the updateable fields
+            invoice.Description = request.Description;
 
             await _context.SaveChangesAsync();
             return NoContent();
