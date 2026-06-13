@@ -124,7 +124,7 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
                   </div>
                 )}
               {displayClient ? (
-                <div className="customer-box" style={{ border: '1px solid #000', padding: '8px', marginTop: '8px', fontSize: '0.75rem', lineHeight: '1.4', textAlign: 'left', minHeight: '80px' }}>
+                <div className="customer-box" style={{ border: '1px solid #000', padding: '8px', marginTop: '8px', fontSize: '0.75rem', lineHeight: '1.4', minHeight: '80px' }}>
                   <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>BILL TO:</div>
                   {displayClient.name && <div style={{ marginBottom: '2px' }}>{displayClient.name}</div>}
                   {displayClient.addressLine1 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine1}</div>}

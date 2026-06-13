@@ -38,10 +38,9 @@ export default function InvoiceForm({ quotes, initialData, onSubmit, onCancel }:
     } else {
       const now = new Date();
       const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
       setQuoteId('');
       setClientId('');
-      setInvoiceNumber(`INV${year}${month}0001`);
+      setInvoiceNumber('');
       setDescription('');
       setDate(now.toISOString().slice(0, 10));
       setStatus('Draft');
@@ -49,23 +48,22 @@ export default function InvoiceForm({ quotes, initialData, onSubmit, onCancel }:
   }, [initialData]);
 
   useEffect(() => {
-    const now = new Date();
-    const prefix = `INV${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`;
-    const defaultWithSequence = `${prefix}0001`;
+    if (initialData || invoiceNumber !== '' || !date) return;
 
-    if (!initialData && (invoiceNumber === '' || invoiceNumber === prefix || invoiceNumber === defaultWithSequence)) {
-      getInvoiceNextNumber().then((nextNumber) => {
-        // Ensure the number matches the sequence pattern if the API returns a raw digit
-        let formatted = nextNumber;
-        if (nextNumber && !nextNumber.startsWith('INV')) {
-          formatted = `${prefix}${nextNumber.padStart(4, '0')}`;
-        }
-        setInvoiceNumber(prev => (prev === '' || prev === prefix || prev === defaultWithSequence ? formatted : prev));
-      }).catch(() => {
-        // ignore next number failure and allow manual input
-      });
-    }
-  }, [initialData, invoiceNumber]);
+    // Extract year and month directly from the YYYY-MM-DD string
+    const [year, month] = date.split('-');
+    const prefix = `INV${year}${month}`;
+
+    getInvoiceNextNumber(prefix).then((nextNumber) => {
+      if (nextNumber !== undefined && nextNumber !== null) {
+        const raw = String(nextNumber);
+        const formatted = raw.startsWith('INV') ? raw : `${prefix}${raw.padStart(4, '0')}`;
+        setInvoiceNumber(formatted);
+      }
+    }).catch(() => {
+      // ignore failure and allow manual input
+    });
+  }, [initialData, invoiceNumber, date]);
 
   const handleQuoteChange = (id: string) => {
     setQuoteId(id);
@@ -120,7 +118,7 @@ export default function InvoiceForm({ quotes, initialData, onSubmit, onCancel }:
             value={invoiceNumber}
             onChange={(event) => setInvoiceNumber(event.target.value)}
             required
-            placeholder={`e.g., INV${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}0001`}
+            placeholder={`e.g., INV${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}0000`}
           />
         </label>
         <label>
