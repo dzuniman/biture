@@ -78,10 +78,7 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
           <h2>{invoice.invoiceNumber}</h2>
           <p>Invoice details for {quote?.reference ?? 'selected quote'}</p>
         </div>
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-start' }}>
-          <button onClick={handleDownloadPdf} className="btn-secondary">
-            Download PDF
-          </button>
+        <div>
           <button onClick={onBack} className="btn-secondary no-print">
             ← Back to Invoices
           </button>
@@ -199,9 +196,12 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
             </div>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+          <div className="no-print" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-start', marginTop: '20px' }}>
             <button type="button" onClick={onEdit} className="btn-primary">
               Edit Invoice
+            </button>
+            <button type="button" onClick={handleDownloadPdf} className="btn-secondary">
+              Download PDF
             </button>
           </div>
         </div>
