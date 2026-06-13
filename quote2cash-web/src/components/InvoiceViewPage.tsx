@@ -115,7 +115,7 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
                 </div>
                 <div className="view-row" style={{ marginBottom: '1px' }}>
                   <span className="view-label">VENDOR NUMBER:</span>
-                  <span className="view-value">{displayClient?.vendorNumber || '—'}</span>
+                  <span className="view-value">{invoice.client?.vendorNumber || '—'}</span>
                 </div>
                 {invoice.description && (
                   <div className="view-row" style={{ marginBottom: '1px' }}>
@@ -131,7 +131,7 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
                   {displayClient.addressLine2 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine2}</div>}
                   {displayClient.addressLine3 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine3}</div>}
                   {displayClient.addressLine4 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine4}</div>}
-                  {(displayClient.vatNumber || displayClient.vendorNumber) && <div style={{ marginBottom: '2px' }}>VAT No: {displayClient.vatNumber || displayClient.vendorNumber}</div>}
+                  {displayClient.vatNumber && <div style={{ marginBottom: '2px' }}>VAT No: {displayClient.vatNumber}</div>}
                   {displayClient.email && <div style={{ marginBottom: '2px' }}>Email: {displayClient.email}</div>}
                   <div style={{ marginBottom: '2px' }}>Rep: {displayClient.representativeName || '—'}</div>
                   <div style={{ marginBottom: '2px' }}>Tel: {displayClient.representativeNumber || '—'}</div>
