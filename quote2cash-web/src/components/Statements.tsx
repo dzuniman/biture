@@ -6,8 +6,9 @@ import type { Statement, Invoice, Client } from '../types';
 
 export const Statements: React.FC<{ invoices: Invoice[], clients: Client[] }> = ({ invoices, clients }) => {
   const [statements, setStatements] = useState<Statement[]>([]);
-  const [view, setView] = useState<'list' | 'manage'>('list');
+  const [view, setView] = useState<'list' | 'manage' | 'view'>('list');
   const [editingStatement, setEditingStatement] = useState<Statement | null>(null);
+  const [viewingStatement, setViewingStatement] = useState<Statement | null>(null);
 
   const fetchStatements = async () => {
     try {
@@ -39,6 +40,11 @@ export const Statements: React.FC<{ invoices: Invoice[], clients: Client[] }> = 
     setView('manage');
   };
 
+  const handleView = (statement: Statement) => {
+    setViewingStatement(statement);
+    setView('view');
+  };
+
   const handleCreate = () => {
     setEditingStatement(null);
     setView('manage');
@@ -65,15 +71,25 @@ export const Statements: React.FC<{ invoices: Invoice[], clients: Client[] }> = 
       {view === 'list' ? (
         <StatementList 
           statements={statements} 
+          invoices={invoices}
           onEdit={handleEdit} 
+          onView={handleView}
           onDelete={handleDelete} 
         />
-      ) : (
+      ) : view === 'manage' ? (
         <StatementForm 
           invoices={invoices}
           clients={clients}
           initialData={editingStatement}
           onSuccess={() => { setView('list'); fetchStatements(); }} 
+          onCancel={() => setView('list')} 
+        />
+      ) : (
+        <StatementForm 
+          invoices={invoices}
+          clients={clients}
+          initialData={viewingStatement}
+          onSuccess={() => setView('list')} 
           onCancel={() => setView('list')} 
         />
       )}
