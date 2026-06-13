@@ -6,6 +6,10 @@ using System.Linq; // Required for Select and ToList
 
 namespace Quote2Cash.API.Controllers
 {
+    // DTOs for better Swagger documentation and reliable serialization
+    public record NextNumberResponse(string NextInvoiceNumber);
+    public record InvoiceStatusUpdate(string Status);
+
     [ApiController]
     [Route("api/[controller]")]
     public class InvoicesController : ControllerBase
@@ -49,6 +53,34 @@ namespace Quote2Cash.API.Controllers
                 } : null,
                 Quote = i.Quote != null ? new { i.Quote.Id, i.Quote.QuoteNumber, i.Quote.Reference } : null // Ensure QuoteNumber is included here
             }));
+        }
+
+        [HttpGet("next-number")]
+        public async Task<ActionResult<NextNumberResponse>> GetNextInvoiceNumber([FromQuery] string? prefix)
+        {
+            if (string.IsNullOrEmpty(prefix))
+            {
+                return BadRequest(new { message = "Prefix is required." });
+            }
+
+            // Fetch existing invoice numbers starting with the prefix to find gaps or the next sequence
+            var existingNumbers = await _context.Invoices
+                .AsNoTracking()
+                .Where(i => i.InvoiceNumber.StartsWith(prefix))
+                .Select(i => i.InvoiceNumber)
+                .ToListAsync();
+
+            var suffixes = existingNumbers
+                .Select(n => n.Length > prefix.Length ? n.Substring(prefix.Length) : "")
+                .Select(s => int.TryParse(s, out int val) ? (int?)val : null)
+                .Where(v => v.HasValue)
+                .Select(v => v!.Value)
+                .ToHashSet();
+
+            int nextSuffix = 0;
+            while (suffixes.Contains(nextSuffix)) nextSuffix++;
+
+            return Ok(new NextNumberResponse($"{prefix}{nextSuffix:D4}"));
         }
 
         [HttpGet("{id}")]
@@ -184,7 +216,7 @@ namespace Quote2Cash.API.Controllers
         }
 
         [HttpPatch("{id}/status")]
-        public async Task<IActionResult> UpdateInvoiceStatus(Guid id, [FromBody] string status)
+        public async Task<IActionResult> UpdateInvoiceStatus(Guid id, [FromBody] InvoiceStatusUpdate request)
         {
             var invoice = await _context.Invoices.FindAsync(id);
             if (invoice == null)
@@ -192,7 +224,7 @@ namespace Quote2Cash.API.Controllers
                 return NotFound();
             }
 
-            invoice.Status = status;
+            invoice.Status = request.Status;
             await _context.SaveChangesAsync();
             return NoContent();
         }

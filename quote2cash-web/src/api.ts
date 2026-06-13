@@ -345,8 +345,10 @@ export async function getInvoice(id: string): Promise<Invoice> {
   };
 }
 
-export async function getInvoiceNextNumber(): Promise<string> {
-  const response = await api.get<{ nextInvoiceNumber: string }>('/invoices/next-number');
+export async function getInvoiceNextNumber(prefix?: string): Promise<string> {
+  const response = await api.get<{ nextInvoiceNumber: string }>('/invoices/next-number', {
+    params: { prefix }
+  });
   return response.data.nextInvoiceNumber;
 }
 
