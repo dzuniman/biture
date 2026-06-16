@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import axios from 'axios';
-import type { DocumentResponse } from './DocumentManagementPage';
+import { createDocument, updateDocument } from '../api';
+import { DocumentResponse } from '../types';
 
 interface Props {
   document?: DocumentResponse;
@@ -20,13 +20,10 @@ export default function DocumentForm({ document, onSuccess, onCancel }: Props) {
 
     try {
       if (document) {
-        const token = localStorage.getItem('token');
         // Update existing metadata
-        await axios.put(`/api/documents/${document.id}`, {
+        await updateDocument(document.id, {
           documentName: name,
           description: description
-        }, {
-          headers: { Authorization: `Bearer ${token}` }
         });
       } else {
         // Upload new document
@@ -35,18 +32,11 @@ export default function DocumentForm({ document, onSuccess, onCancel }: Props) {
           setSaving(false);
           return;
         }
-        const token = localStorage.getItem('token');
         const formData = new FormData();
         formData.append('DocumentName', name);
         formData.append('Description', description);
         formData.append('File', file);
-
-        await axios.post('/api/documents', formData, {
-          headers: { 
-            'Content-Type': 'multipart/form-data',
-            Authorization: `Bearer ${token}`
-          }
-        });
+        await createDocument(formData);
       }
       onSuccess();
     } catch (error) {

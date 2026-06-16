@@ -1,15 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import DocumentForm from './DocumentForm';
-
-export interface DocumentResponse {
-  id: string;
-  documentName: string;
-  description?: string;
-  fileName: string;
-  contentType: string;
-  uploadedAt: string;
-}
+import { getDocuments, deleteDocument, downloadDocument } from '../api';
+import { DocumentResponse } from '../types';
 
 export default function DocumentManagementPage() {
   const [documents, setDocuments] = useState<DocumentResponse[]>([]);
@@ -19,11 +11,8 @@ export default function DocumentManagementPage() {
 
   const fetchDocuments = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('/api/documents', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setDocuments(response.data);
+      const data = await getDocuments();
+      setDocuments(data);
     } catch (error) {
       console.error('Error fetching documents:', error);
     } finally {
@@ -38,11 +27,8 @@ export default function DocumentManagementPage() {
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this document?')) {
       try {
-        const token = localStorage.getItem('token');
-        await axios.delete(`/api/documents/${id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        fetchDocuments();
+        await deleteDocument(id);
+        await fetchDocuments();
       } catch (error) {
         console.error('Error deleting document:', error);
       }
@@ -51,12 +37,8 @@ export default function DocumentManagementPage() {
 
   const handleDownload = async (id: string, name: string) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`/api/documents/${id}/download`, {
-        headers: { Authorization: `Bearer ${token}` },
-        responseType: 'blob'
-      });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const data = await downloadDocument(id);
+      const url = window.URL.createObjectURL(new Blob([data]));
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', name);
