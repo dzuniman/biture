@@ -206,6 +206,34 @@ export const deleteUser = async (id: string): Promise<void> => {
   await api.delete(`/users/${id}`);
 };
 
+// Documents
+// Add these to c:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\quote2cash-web\src\api.ts
+
+export const getDocuments = async () => {
+  const response = await api.get<DocumentResponse[]>('/documents');
+  return response.data;
+};
+
+export const deleteDocument = async (id: string) => {
+  await api.delete(`/documents/${id}`);
+};
+
+export const downloadDocument = async (id: string) => {
+  const response = await api.get(`/documents/${id}/download`, { responseType: 'blob' });
+  return response.data;
+};
+
+export const createDocument = async (formData: FormData) => {
+  const response = await api.post<DocumentResponse>('/documents', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+  return response.data;
+};
+
+export const updateDocument = async (id: string, payload: { documentName: string; description?: string }) => {
+  await api.put(`/documents/${id}`, payload);
+};
+
 // Statements
 export const getStatementNextNumber = async (): Promise<string> => {
   const response = await api.get('/statements/nextNumber');

@@ -19,7 +19,7 @@ namespace Quote2Cash.API.Controllers
     public record DocumentResponse(Guid Id, string DocumentName, string? Description, string FileName, string ContentType, DateTime UploadedAt);
 
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/documents")]
     public class DocumentsController : ControllerBase
     {
         private readonly Quote2CashDbContext _context;

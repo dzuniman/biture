@@ -244,3 +244,12 @@ export interface StatementCreateRequest {
   statementNumber: string;
   items: StatementItem[];
 }
+
+export interface DocumentResponse {
+  id: string;
+  documentName: string;
+  description?: string;
+  fileName: string;
+  contentType: string;
+  uploadedAt: string;
+}
