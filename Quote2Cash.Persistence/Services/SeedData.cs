@@ -87,6 +87,7 @@ namespace Quote2Cash.Persistence.Services
             context.Invoices.RemoveRange(context.Invoices);
             context.Costs.RemoveRange(context.Costs);
             context.Statements.RemoveRange(context.Statements);
+            context.Documents.RemoveRange(context.Documents); // Added for new feature
             context.JobCards.RemoveRange(context.JobCards);
             context.Quotes.RemoveRange(context.Quotes);
             context.Clients.RemoveRange(context.Clients);

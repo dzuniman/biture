@@ -21,6 +21,7 @@ namespace Quote2Cash.Persistence.Data
         public DbSet<Invoice> Invoices { get; set; } = null!;
         public DbSet<Statement> Statements { get; set; } = null!;
         public DbSet<StatementItem> StatementItems { get; set; } = null!;
+        public DbSet<Document> Documents { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -155,6 +156,17 @@ namespace Quote2Cash.Persistence.Data
                 entity.Property(e => e.PasswordHash).IsRequired();
                 entity.Property(e => e.Role).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.CreatedAt).IsRequired();
+            });
+
+            modelBuilder.Entity<Document>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.DocumentName).IsRequired().HasMaxLength(250);
+                entity.Property(e => e.FileName).IsRequired().HasMaxLength(500);
+                entity.Property(e => e.FilePath).IsRequired().HasMaxLength(1000);
+                entity.Property(e => e.Description).HasMaxLength(1000);
+                entity.Property(e => e.ContentType).IsRequired().HasMaxLength(100);
+                entity.HasIndex(e => e.DocumentName).IsUnique();
             });
         }
     }
