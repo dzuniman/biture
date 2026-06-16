@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Quote2Cash.Domain.Entities;
 
 namespace Quote2Cash.Persistence.Data
@@ -19,6 +20,13 @@ namespace Quote2Cash.Persistence.Data
         public DbSet<Cost> Costs { get; set; } = null!;
         public DbSet<Invoice> Invoices { get; set; } = null!;
         public DbSet<Statement> Statements { get; set; } = null!;
+        public DbSet<StatementItem> StatementItems { get; set; } = null!;
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            // Suppress the exception for pending model changes (EF Core 9 feature)
+            optionsBuilder.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
+        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -112,11 +120,31 @@ namespace Quote2Cash.Persistence.Data
             modelBuilder.Entity<Statement>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Period).IsRequired().HasMaxLength(100);
-                entity.Property(e => e.Balance).HasPrecision(18, 2);
-                entity.Property(e => e.Status).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.StatementNumber).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.CreatedAt).IsRequired();
-                entity.HasOne(e => e.Client).WithMany(c => c.Statements).HasForeignKey(e => e.ClientId);
+
+                entity.HasOne(e => e.Client)
+                      .WithMany(c => c.Statements)
+                      .HasForeignKey(e => e.ClientId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasMany(e => e.Items)
+                      .WithOne(i => i.Statement)
+                      .HasForeignKey(i => i.StatementId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<StatementItem>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.PaymentAmount).HasPrecision(18, 2);
+                entity.Property(e => e.Description).HasMaxLength(1000);
+                entity.Property(e => e.PaymentDate).IsRequired();
+
+                entity.HasOne(e => e.Invoice)
+                      .WithMany()
+                      .HasForeignKey(e => e.InvoiceId)
+                      .OnDelete(DeleteBehavior.Restrict);
             });
 
             modelBuilder.Entity<User>(entity =>
@@ -131,4 +159,3 @@ namespace Quote2Cash.Persistence.Data
         }
     }
 }
-

@@ -55,7 +55,7 @@ export default function QuoteUomManagementPage({ uoms, onBack, onRefresh }: Prop
 
     try {
       if (current) {
-        await updateQuoteUom(current.id, { id: current.id, value: value.trim() });
+        await updateQuoteUom(current.id, { value: value.trim() });
       } else {
         await createQuoteUom({ value: value.trim() } as any);
       }
