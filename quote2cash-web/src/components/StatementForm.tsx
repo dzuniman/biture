@@ -23,19 +23,22 @@ interface Props {
 
 export const StatementForm: React.FC<Props> = ({ invoices, clients, initialData, onSuccess, onCancel }) => {
   const [formData, setFormData] = useState({
-    statementNumber: initialData?.statementNumber ?? '',
+    statementNumber: initialData?.statementNumber || initialData?.StatementNumber || '',
     clientId: initialData?.clientId || initialData?.ClientId || '',
   });
 
   const [items, setItems] = useState<StatementItem[]>(() => {
-    if (initialData?.items) {
-      return initialData.items.map((item: any) => ({
+    const rawItems = initialData?.items || initialData?.Items;
+    if (rawItems) {
+      return rawItems.map((item: any) => ({
         id: item.id || item.Id,
         invoiceId: item.invoiceId || item.InvoiceId || '',
         invoiceNumber: item.invoiceNumber || item.InvoiceNumber || '',
         paymentAmount: item.paymentAmount || item.PaymentAmount || 0,
         description: item.description || item.Description || '',
-        paymentDate: item.paymentDate ? item.paymentDate.slice(0, 10) : new Date().toISOString().split('T')[0]
+        paymentDate: (item.paymentDate || item.PaymentDate) 
+          ? (item.paymentDate || item.PaymentDate).slice(0, 10) 
+          : new Date().toISOString().split('T')[0]
       }));
     }
     return [{ invoiceId: '', invoiceNumber: '', paymentAmount: 0, description: '', paymentDate: new Date().toISOString().split('T')[0] }];
@@ -48,8 +51,9 @@ export const StatementForm: React.FC<Props> = ({ invoices, clients, initialData,
   }, [initialData]);
 
   const filteredInvoices = useMemo(() => {
-    if (!formData.clientId) return [];
-    return invoices.filter(inv => (inv as any).clientId === formData.clientId || inv.client?.id === formData.clientId);
+    const cid = formData.clientId;
+    if (!cid) return [];
+    return invoices.filter(inv => (inv as any).clientId === cid || inv.client?.id === cid);
   }, [invoices, formData.clientId]);
 
   const invoiceMap = useMemo(() => {
@@ -58,8 +62,7 @@ export const StatementForm: React.FC<Props> = ({ invoices, clients, initialData,
     return map;
   }, [invoices]);
 
-  // Calculate totals per invoice within this form
-  const totalsByInvoice = useMemo(() => {
+  const paymentsByInvoice = useMemo(() => {
     const totals: Record<string, number> = {};
     items.forEach(item => {
       if (item.invoiceId) {
@@ -73,10 +76,10 @@ export const StatementForm: React.FC<Props> = ({ invoices, clients, initialData,
     const uniqueInvoiceIds = Array.from(new Set(items.map(i => i.invoiceId).filter(id => !!id)));
     return uniqueInvoiceIds.reduce((sum, id) => {
       const invAmount = invoiceMap[id]?.amount ?? 0;
-      const paidInForm = totalsByInvoice[id] || 0;
-      return sum + (invAmount - paidInForm);
+      const totalPaid = paymentsByInvoice[id] || 0;
+      return sum + (invAmount - totalPaid);
     }, 0);
-  }, [items, invoiceMap, totalsByInvoice]);
+  }, [items, invoiceMap, paymentsByInvoice]);
 
   const handleAddItem = () => {
     setItems([...items, { invoiceId: '', invoiceNumber: '', paymentAmount: 0, description: '', paymentDate: new Date().toISOString().split('T')[0] }]);
@@ -118,8 +121,9 @@ export const StatementForm: React.FC<Props> = ({ invoices, clients, initialData,
       const token = localStorage.getItem('token');
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
-      if (initialData?.id || initialData?.Id) {
-        await axios.put(`/api/statements/${initialData.id || initialData.Id}`, payload, config);
+      const id = initialData?.id || initialData?.Id;
+      if (id) {
+        await axios.put(`/api/statements/${id}`, payload, config);
       } else {
         await axios.post('/api/statements', payload, config);
       }
@@ -165,7 +169,7 @@ export const StatementForm: React.FC<Props> = ({ invoices, clients, initialData,
             </div>
             {items.map((item, index) => {
               const invAmount = invoiceMap[item.invoiceId]?.amount ?? 0;
-              const oustandingForInv = invAmount - (totalsByInvoice[item.invoiceId] || 0);
+              const currentOutstanding = invAmount - (paymentsByInvoice[item.invoiceId] || 0);
               
               return (
                 <div key={index} className="item-row" style={{ gridTemplateColumns: '150px 160px 110px 1fr 100px 110px 40px' }}>
@@ -177,8 +181,8 @@ export const StatementForm: React.FC<Props> = ({ invoices, clients, initialData,
                   <span style={{ textAlign: 'right' }}>{formatAmount(invAmount)}</span>
                   <input type="text" required value={item.description} onChange={e => updateItem(index, 'description', e.target.value)} />
                   <input type="number" step="0.01" value={item.paymentAmount} onChange={e => updateItem(index, 'paymentAmount', e.target.value)} />
-                  <span style={{ textAlign: 'right', fontWeight: 'bold', color: oustandingForInv > 0 ? '#dc2626' : '#22c55e' }}>
-                    {formatAmount(oustandingForInv)}
+                  <span style={{ textAlign: 'right', fontWeight: 'bold', color: currentOutstanding > 0 ? '#dc2626' : '#22c55e' }}>
+                    {formatAmount(currentOutstanding)}
                   </span>
                   <button type="button" className="danger small" onClick={() => handleRemoveItem(index)}>−</button>
                 </div>

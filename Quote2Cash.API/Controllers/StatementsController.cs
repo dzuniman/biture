@@ -84,15 +84,16 @@ namespace Quote2Cash.API.Controllers
                 .FirstOrDefaultAsync();
 
             int nextSequence = 1;
-            if (lastStatement != null && lastStatement.Length >= prefix.Length + 4)
+            if (lastStatement != null && lastStatement.Length >= prefix.Length)
             {
-                if (int.TryParse(lastStatement.Substring(prefix.Length), out int lastSequence))
+                var seqStr = lastStatement.Substring(prefix.Length);
+                if (int.TryParse(seqStr, out int lastSequence))
                 {
                     nextSequence = lastSequence + 1;
                 }
             }
 
-            return $"{prefix}{nextSequence:D4}";
+            return Ok($"{prefix}{nextSequence:D4}");
         }
 
         [HttpPost]
@@ -138,19 +139,23 @@ namespace Quote2Cash.API.Controllers
                 existing.ClientId = request.ClientId;
                 existing.Client = null;
 
-                // Mark existing items for removal
+                // Atomic Update: Remove old items and clear navigation
                 _context.StatementItems.RemoveRange(existing.Items);
+                existing.Items.Clear();
 
                 // Add new items
-                existing.Items = request.Items.Select(item => new StatementItem
+                foreach (var item in request.Items)
                 {
-                    Id = Guid.NewGuid(),
-                    StatementId = id,
-                    InvoiceId = item.InvoiceId,
-                    PaymentAmount = item.PaymentAmount,
-                    Description = item.Description,
-                    PaymentDate = DateTime.SpecifyKind(item.PaymentDate, DateTimeKind.Utc)
-                }).ToList();
+                    existing.Items.Add(new StatementItem
+                    {
+                        Id = Guid.NewGuid(),
+                        StatementId = id,
+                        InvoiceId = item.InvoiceId,
+                        PaymentAmount = item.PaymentAmount,
+                        Description = item.Description,
+                        PaymentDate = DateTime.SpecifyKind(item.PaymentDate, DateTimeKind.Utc)
+                    });
+                }
 
                 await _context.SaveChangesAsync();
                 return NoContent();

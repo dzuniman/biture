@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { StatementForm } from './StatementForm';
 import StatementList from './StatementList';
+import { StatementViewPage } from './StatementViewPage';
 import type { Statement, Invoice, Client } from '../types';
 
 export const Statements: React.FC<{ invoices: Invoice[], clients: Client[] }> = ({ invoices, clients }) => {
@@ -85,12 +86,11 @@ export const Statements: React.FC<{ invoices: Invoice[], clients: Client[] }> = 
           onCancel={() => setView('list')} 
         />
       ) : (
-        <StatementForm 
+        <StatementViewPage 
+          statement={viewingStatement!} 
           invoices={invoices}
-          clients={clients}
-          initialData={viewingStatement}
-          onSuccess={() => setView('list')} 
-          onCancel={() => setView('list')} 
+          onEdit={() => handleEdit(viewingStatement!)}
+          onBack={() => setView('list')} 
         />
       )}
     </div>
