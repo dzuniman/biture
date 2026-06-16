@@ -10,13 +10,18 @@ interface Props {
 }
 
 export default function StatementList({ statements, invoices, onEdit, onView, onDelete }: Props) {
-  const getTotals = (items: StatementItem[] = []) => {
-    const totalPayments = items.reduce((sum, item) => sum + item.paymentAmount, 0);
-    const uniqueInvoiced = Array.from(new Set(items.map(i => i.invoiceId))).reduce((sum, id) => {
+  const getTotals = (rawItems: any[] = []) => {
+    const totalPayments = rawItems.reduce((sum, item) => sum + (item.paymentAmount || item.PaymentAmount || 0), 0);
+    const uniqueInvoiceIds = Array.from(new Set(rawItems.map(i => i.invoiceId || i.InvoiceId).filter(id => !!id)));
+    const totalInvoiced = uniqueInvoiceIds.reduce((sum, id) => {
       const inv = invoices.find(i => i.id === id);
       return sum + (inv?.amount ?? 0);
     }, 0);
-    return { totalPayments, totalOutstanding: uniqueInvoiced - totalPayments };
+
+    return { 
+      totalPayments, 
+      totalOutstanding: Math.max(0, totalInvoiced - totalPayments) 
+    };
   };
 
   return (
@@ -33,12 +38,15 @@ export default function StatementList({ statements, invoices, onEdit, onView, on
           </tr>
         </thead>
         <tbody>
-          {statements.map((statement) => {
-            const { totalPayments, totalOutstanding } = getTotals(statement.items);
+          {statements.map((statement: any) => {
+            const items = statement.items || statement.Items || [];
+            const { totalPayments, totalOutstanding } = getTotals(items);
+            const clientName = statement.client?.name || statement.Client?.Name || '—';
+            
             return (
               <tr key={statement.id}>
-                <td>{statement.statementNumber}</td>
-                <td>{statement.client?.name ?? '—'}</td>
+                <td>{statement.statementNumber || statement.StatementNumber}</td>
+                <td>{clientName}</td>
                 <td>{formatAmount(totalPayments)}</td>
                 <td style={{ color: totalOutstanding > 0 ? '#dc2626' : '#22c55e', fontWeight: 'bold' }}>
                   {formatAmount(totalOutstanding)}
