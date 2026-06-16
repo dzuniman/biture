@@ -340,22 +340,13 @@ namespace Quote2Cash.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<decimal>("Balance")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<Guid?>("ClientId")
+                    b.Property<Guid>("ClientId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Period")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("Status")
+                    b.Property<string>("StatementNumber")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
@@ -365,6 +356,39 @@ namespace Quote2Cash.Persistence.Migrations
                     b.HasIndex("ClientId");
 
                     b.ToTable("Statements");
+                });
+
+            modelBuilder.Entity("Quote2Cash.Domain.Entities.StatementItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<Guid>("InvoiceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("PaymentAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<DateTime>("PaymentDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("StatementId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InvoiceId");
+
+                    b.HasIndex("StatementId");
+
+                    b.ToTable("StatementItems");
                 });
 
             modelBuilder.Entity("Quote2Cash.Domain.Entities.User", b =>
@@ -461,9 +485,30 @@ namespace Quote2Cash.Persistence.Migrations
                 {
                     b.HasOne("Quote2Cash.Domain.Entities.Client", "Client")
                         .WithMany("Statements")
-                        .HasForeignKey("ClientId");
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Client");
+                });
+
+            modelBuilder.Entity("Quote2Cash.Domain.Entities.StatementItem", b =>
+                {
+                    b.HasOne("Quote2Cash.Domain.Entities.Invoice", "Invoice")
+                        .WithMany()
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Quote2Cash.Domain.Entities.Statement", "Statement")
+                        .WithMany("Items")
+                        .HasForeignKey("StatementId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Invoice");
+
+                    b.Navigation("Statement");
                 });
 
             modelBuilder.Entity("Quote2Cash.Domain.Entities.Client", b =>
@@ -485,6 +530,11 @@ namespace Quote2Cash.Persistence.Migrations
                 });
 
             modelBuilder.Entity("Quote2Cash.Domain.Entities.Quote", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("Quote2Cash.Domain.Entities.Statement", b =>
                 {
                     b.Navigation("Items");
                 });

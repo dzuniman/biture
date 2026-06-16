@@ -1,4 +1,4 @@
-﻿﻿﻿﻿import { useEffect, useRef, useState } from 'react';
+﻿﻿﻿import { useEffect, useRef, useState } from 'react';
 import { formatAmount } from '../formatters';
 import {
   createClient,
@@ -43,13 +43,15 @@ import QuoteViewPage from './components/QuoteViewPage';
 import AdminHomePage from './components/AdminHomePage';
 import QuoteDescriptionManagementPage from './components/QuoteDescriptionManagementPage';
 import UserManagementPage from './components/UserManagementPage';
+import { Statements } from './components/Statements';
 import logo from './assets/logo.png';
 
 
-type Section = 'dashboard' | 'clients' | 'quotes' | 'invoices' | 'admin';
+type Section = 'dashboard' | 'clients' | 'quotes' | 'invoices' | 'admin' | 'statements';
 type ClientView = 'list' | 'manage' | 'view';
 type QuoteView = 'list' | 'manage' | 'view';
 type InvoiceView = 'list' | 'manage' | 'view';
+type StatementView = 'list' | 'manage' | 'view';
 type AdminView = 'home' | 'descriptions' | 'users';
 
 function App() {
@@ -57,6 +59,7 @@ function App() {
   const [clientView, setClientView] = useState<ClientView>('list');
   const [quoteView, setQuoteView] = useState<QuoteView>('list');
   const [invoiceView, setInvoiceView] = useState<InvoiceView>('list');
+  const [statementView, setStatementView] = useState<StatementView>('list');
   const [clients, setClients] = useState<Client[]>([]);
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -421,6 +424,10 @@ function App() {
     setInvoiceView('list');
   };
 
+  const clearStatementState = () => {
+    setStatementView('list');
+  };
+
   const clearClientState = () => {
     setEditingClient(null);
     setViewingClient(null);
@@ -524,9 +531,12 @@ function App() {
           <div 
             className="brand-block" 
             onClick={() => {
-              setSection('dashboard');
+              setSection('statements');
+              setStatementView('list');
               clearClientState();
               clearQuoteState();
+              clearInvoiceState();
+              clearStatementState();
             }}
             style={{ cursor: 'pointer' }}
           >
@@ -581,6 +591,20 @@ function App() {
                   <button
                     type="button"
                     onClick={() => {
+                      setSection('statements');
+                      setStatementView('list');
+                      clearClientState();
+                      clearQuoteState();
+                      clearInvoiceState();
+                      clearStatementState();
+                      setQuickActionsOpen(false);
+                    }}
+                  >
+                    View Statements
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
                       setSection('clients');
                       setClientView('list');
                       clearClientState();
@@ -615,6 +639,20 @@ function App() {
                   <button
                     type="button"
                     onClick={() => {
+                      setSection('statements');
+                      setStatementView('manage');
+                      clearClientState();
+                      clearQuoteState();
+                      clearInvoiceState();
+                      clearStatementState();
+                      setQuickActionsOpen(false);
+                    }}
+                  >
+                    Create Statement
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
                       setSection('clients');
                       clearClientState();
                       setClientView('manage');
@@ -629,14 +667,17 @@ function App() {
 
             <button
               type="button"
-              className={`nav-button ${section === 'dashboard' ? 'active' : ''}`}
+              className={`nav-button ${section === 'statements' ? 'active' : ''}`}
               onClick={() => {
-                setSection('dashboard');
+                setSection('statements');
+                setStatementView('list');
                 clearClientState();
                 clearQuoteState();
+                clearInvoiceState();
+                clearStatementState();
               }}
             >
-              Dashboard
+              Statements
             </button>
             <button
               type="button"
@@ -671,6 +712,7 @@ function App() {
                 clearClientState();
                 clearQuoteState();
                 clearInvoiceState();
+                clearStatementState();
               }}
             >
               Invoices
@@ -729,6 +771,8 @@ function App() {
           </button>
         </div>
       )}
+
+      {!isLoading && section === 'statements' && <Statements invoices={invoices} clients={clients} />}
 
       {isLoading && section !== 'dashboard' && (
         <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
