@@ -1,4 +1,4 @@
-﻿﻿﻿import { useEffect, useRef, useState } from 'react';
+﻿﻿﻿﻿﻿import { useEffect, useRef, useState } from 'react';
 import { formatAmount } from '../formatters';
 import {
   createClient,
@@ -35,6 +35,7 @@ import ClientsListPage from './components/ClientsListPage';
 import ClientManagementPage from './components/ClientManagementPage';
 import ClientViewPage from './components/ClientViewPage';
 import InvoiceForm from './components/InvoiceForm';
+import DocumentManagementPage from './components/DocumentManagementPage';
 import InvoiceListPage from './components/InvoiceListPage';
 import InvoiceViewPage from './components/InvoiceViewPage';
 import QuotesListPage from './components/QuotesListPage';
@@ -52,7 +53,7 @@ type ClientView = 'list' | 'manage' | 'view';
 type QuoteView = 'list' | 'manage' | 'view';
 type InvoiceView = 'list' | 'manage' | 'view';
 type StatementView = 'list' | 'manage' | 'view';
-type AdminView = 'home' | 'descriptions' | 'users';
+type AdminView = 'home' | 'descriptions' | 'users' | 'documents';
 
 function App() {
   const [section, setSection] = useState<Section>('dashboard');
@@ -531,7 +532,7 @@ function App() {
           <div 
             className="brand-block" 
             onClick={() => {
-              setSection('statements');
+              setSection('dashboard');
               setStatementView('list');
               clearClientState();
               clearQuoteState();
@@ -1027,6 +1028,7 @@ function App() {
         <AdminHomePage
           onViewDescriptions={() => setAdminView('descriptions')}
           onViewUsers={() => setAdminView('users')}
+          onViewDocuments={() => setAdminView('documents')}
         />
       )}
 
@@ -1036,6 +1038,10 @@ function App() {
 
       {!isLoading && section === 'admin' && adminView === 'users' && (
         <UserManagementPage users={users} onBack={() => setAdminView('home')} onRefresh={loadAll} />
+      )}
+
+      {!isLoading && section === 'admin' && adminView === 'documents' && (
+        <DocumentManagementPage />
       )}
     </div>
   );

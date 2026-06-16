@@ -1,9 +1,10 @@
 interface Props {
   onViewDescriptions: () => void;
   onViewUsers: () => void;
+  onViewDocuments: () => void;
 }
 
-export default function AdminHomePage({ onViewDescriptions, onViewUsers }: Props) {
+export default function AdminHomePage({ onViewDescriptions, onViewUsers, onViewDocuments }: Props) {
   return (
     <div className="page-section">
       <div className="section-header">
@@ -26,6 +27,13 @@ export default function AdminHomePage({ onViewDescriptions, onViewUsers }: Props
           <p>Manage API users and roles.</p>
           <button className="btn-primary" onClick={onViewUsers}>
             Manage Users
+          </button>
+        </div>
+        <div className="card">
+          <h3>Documents</h3>
+          <p>Manage business documents and templates.</p>
+          <button className="btn-primary" onClick={onViewDocuments}>
+            Manage Documents
           </button>
         </div>
       </div>

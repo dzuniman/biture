@@ -1,0 +1,248 @@
+{
+  "format": 1,
+  "restore": {
+    "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.API\\Quote2Cash.API.csproj": {}
+  },
+  "projects": {
+    "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.API\\Quote2Cash.API.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.API\\Quote2Cash.API.csproj",
+        "projectName": "Quote2Cash.API",
+        "projectPath": "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.API\\Quote2Cash.API.csproj",
+        "packagesPath": "C:\\Users\\DZUNI\\.nuget\\packages\\",
+        "outputPath": "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.API\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\DZUNI\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {
+              "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.Persistence\\Quote2Cash.Persistence.csproj": {
+                "projectPath": "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.Persistence\\Quote2Cash.Persistence.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.200"
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "dependencies": {
+            "Microsoft.AspNetCore.Authentication.JwtBearer": {
+              "target": "Package",
+              "version": "[8.0.0, )"
+            },
+            "Microsoft.EntityFrameworkCore.Design": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[9.0.0, )"
+            },
+            "Swashbuckle.AspNetCore": {
+              "target": "Package",
+              "version": "[6.6.2, )"
+            },
+            "System.IdentityModel.Tokens.Jwt": {
+              "target": "Package",
+              "version": "[7.0.3, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.AspNetCore.App": {
+              "privateAssets": "none"
+            },
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.Domain\\Quote2Cash.Domain.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.Domain\\Quote2Cash.Domain.csproj",
+        "projectName": "Quote2Cash.Domain",
+        "projectPath": "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.Domain\\Quote2Cash.Domain.csproj",
+        "packagesPath": "C:\\Users\\DZUNI\\.nuget\\packages\\",
+        "outputPath": "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.Domain\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\DZUNI\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.200"
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.Persistence\\Quote2Cash.Persistence.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.Persistence\\Quote2Cash.Persistence.csproj",
+        "projectName": "Quote2Cash.Persistence",
+        "projectPath": "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.Persistence\\Quote2Cash.Persistence.csproj",
+        "packagesPath": "C:\\Users\\DZUNI\\.nuget\\packages\\",
+        "outputPath": "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.Persistence\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\DZUNI\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {
+              "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.Domain\\Quote2Cash.Domain.csproj": {
+                "projectPath": "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.Domain\\Quote2Cash.Domain.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.200"
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "dependencies": {
+            "Microsoft.EntityFrameworkCore": {
+              "target": "Package",
+              "version": "[9.0.0, )"
+            },
+            "Microsoft.EntityFrameworkCore.Design": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[9.0.0, )"
+            },
+            "Npgsql.EntityFrameworkCore.PostgreSQL": {
+              "target": "Package",
+              "version": "[9.0.0, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

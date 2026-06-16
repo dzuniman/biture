@@ -1,0 +1,12 @@
+C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Domain\bin\Debug\net8.0\Quote2Cash.Domain.deps.json
+C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Domain\bin\Debug\net8.0\Quote2Cash.Domain.dll
+C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Domain\bin\Debug\net8.0\Quote2Cash.Domain.pdb
+C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Domain\obj\Debug\net8.0\Quote2Cash.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Domain\obj\Debug\net8.0\Quote2Cash.Domain.AssemblyInfoInputs.cache
+C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Domain\obj\Debug\net8.0\Quote2Cash.Domain.AssemblyInfo.cs
+C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Domain\obj\Debug\net8.0\Quote2Cash.Domain.csproj.CoreCompileInputs.cache
+C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Domain\obj\Debug\net8.0\Quote2Cash.Domain.sourcelink.json
+C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Domain\obj\Debug\net8.0\Quote2Cash.Domain.dll
+C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Domain\obj\Debug\net8.0\refint\Quote2Cash.Domain.dll
+C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Domain\obj\Debug\net8.0\Quote2Cash.Domain.pdb
+C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Domain\obj\Debug\net8.0\ref\Quote2Cash.Domain.dll
