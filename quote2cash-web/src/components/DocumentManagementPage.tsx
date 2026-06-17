@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import DocumentForm from './DocumentForm';
 import { getDocuments, deleteDocument, downloadDocument } from '../api';
 import { DocumentResponse } from '../types';
@@ -8,6 +8,7 @@ export default function DocumentManagementPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState<DocumentResponse | undefined>();
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const fetchDocuments = async () => {
     try {
@@ -50,6 +51,15 @@ export default function DocumentManagementPage() {
     }
   };
 
+  const filteredDocuments = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return documents;
+    return documents.filter((doc) =>
+      (doc.documentName?.toLowerCase() || '').includes(term) ||
+      (doc.description?.toLowerCase() || '').includes(term)
+    );
+  }, [documents, searchTerm]);
+
   if (isEditing) {
     return (
       <div className="page-section">
@@ -79,41 +89,59 @@ export default function DocumentManagementPage() {
         {loading ? (
           <p>Loading documents...</p>
         ) : (
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Description</th>
-                <th>Uploaded</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {documents.map(doc => (
-                <tr key={doc.id}>
-                  <td>{doc.documentName}</td>
-                  <td>{doc.description || '-'}</td>
-                  <td>{new Date(doc.uploadedAt).toLocaleDateString()}</td>
-                  <td>
-                    <div className="action-buttons">
-                      <button onClick={() => handleDownload(doc.id, doc.documentName)} className="btn-small">
-                        Download
-                      </button>
-                      <button onClick={() => { setSelectedDoc(doc); setIsEditing(true); }} className="btn-small">
-                        Edit
-                      </button>
-                      <button onClick={() => handleDelete(doc.id)} className="btn-small btn-danger">
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {documents.length === 0 && (
-                <tr><td colSpan={4} style={{textAlign: 'center'}}>No documents found.</td></tr>
-              )}
-            </tbody>
-          </table>
+          <>
+            <div className="table-toolbar">
+              <input
+                type="search"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Search documents by name or description..."
+                className="search-input"
+              />
+            </div>
+            <div className="table-card">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Uploaded</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredDocuments.length === 0 ? (
+                    <tr style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}>
+                      <td colSpan={4} className="empty-row" style={{textAlign: 'center'}}>
+                        No documents found.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredDocuments.map(doc => (
+                      <tr key={doc.id} style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }} className="table-row-dark-hover">
+                        <td>{doc.documentName}</td>
+                        <td>{doc.description || '-'}</td>
+                        <td>{new Date(doc.uploadedAt).toLocaleDateString()}</td>
+                        <td>
+                          <div className="action-buttons">
+                            <button onClick={() => handleDownload(doc.id, doc.documentName)} className="btn-small">
+                              Download
+                            </button>
+                            <button onClick={() => { setSelectedDoc(doc); setIsEditing(true); }} className="btn-small">
+                              Edit
+                            </button>
+                            <button onClick={() => handleDelete(doc.id)} className="btn-small btn-danger">
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </div>
