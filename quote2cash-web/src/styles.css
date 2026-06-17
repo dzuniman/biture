@@ -885,7 +885,7 @@ button:disabled {
 
 /* Management Container */
 .management-container {
-  background: rgb(24, 20, 37);
+  background:  #0f172a;
   border-radius: 12px;
   border: 1px solid var(--gray-200);
   padding: 32px;
