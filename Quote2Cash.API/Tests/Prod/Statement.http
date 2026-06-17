@@ -1,4 +1,4 @@
-POST http://192.168.8.103:5227/api/Auth/login
+POST https://quote2cash-api.onrender.com/api/Auth/login
 Content-Type: application/json
 
 {
@@ -7,6 +7,6 @@ Content-Type: application/json
 }
 
 ###
-POST http://192.168.8.103:5227/api/statements/nextNumber
+GET https://quote2cash-api.onrender.com/api/statements/nextNumber
 Content-Type: application/json
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6ImNhOTUyYzIyLTc4MDYtNGRlMC1hZDAzLTE3ZmYwNjY2OWE1ZSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJhZG1pbiIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IkFkbWluIiwiZXhwIjoxNzgxNjI2ODAwLCJpc3MiOiJRdW90ZTJDYXNoIiwiYXVkIjoiUXVvdGUyQ2FzaFVzZXJzIn0.jNzyFZPXmibtIfyPlJvJKs8ALmmKuj9qn4EdS-SPtDc

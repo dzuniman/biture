@@ -53,12 +53,13 @@ builder.Services.AddAuthorization();
 builder.Services.AddPersistenceServices(builder.Configuration);
 
 // ✅ Configure CORS
-builder.Services.AddCors(options =>
+builder.Services.AddCors(options     =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy.WithOrigins(
             "https://quote2cash.onrender.com", // production frontend
+            "https://quote2cash-api.onrender.com", // production backend
             "http://localhost:4173"            // dev frontend
         )
         .AllowAnyHeader()
