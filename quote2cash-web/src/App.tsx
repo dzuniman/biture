@@ -74,6 +74,7 @@ function App() {
   const [viewingClient, setViewingClient] = useState<Client | null>(null);
   const [viewingQuote, setViewingQuote] = useState<Quote | null>(null);
   const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null);
+  const [viewingStatement, setViewingStatement] = useState<Statement | null>(null);
   const [quoteDescriptions, setQuoteDescriptions] = useState<QuoteDescription[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [adminView, setAdminView] = useState<AdminView>('home');
@@ -530,10 +531,34 @@ function App() {
     }
   };
 
+  const handleViewStatement = async (statement: Statement) => {
+    try {
+      setIsLoading(true);
+      // Assuming StatementViewPage can handle the statement object directly
+      // If full details are needed, a getStatement(statement.id) call would be here
+      setViewingStatement(statement); // Assuming a state for viewingStatement exists or is added
+      setStatementView('view');
+      setSection('statements');
+    } catch (err: any) {
+      setError(getErrorMessage(err, 'Unable to load statement.'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Dashboard Calculations
   const totalQuoteValue = quotes.reduce((sum, quote) => sum + (Number(quote.total) || 0), 0);
   const averageQuoteValue = quotes.length ? totalQuoteValue / quotes.length : 0;
   const largestQuoteValue = quotes.length ? Math.max(...quotes.map((quote) => Number(quote.total) || 0)) : 0;
+
+  const topClients = clients
+    .map((client) => ({
+      name: client.name || 'Unknown Client',
+      total: quotes.filter((quote) => quote.clientId === client.id).reduce((sum, quote) => sum + (Number(quote.total) || 0), 0)
+    }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 5);
+  const chartMax = Math.max(...topClients.map((client) => client.total), 1);
 
   const totalInvoiceValue = invoices.reduce((sum, invoice) => sum + (Number(invoice.amount) || 0), 0);
   const averageInvoiceValue = invoices.length ? totalInvoiceValue / invoices.length : 0;
@@ -563,15 +588,6 @@ function App() {
     const dateB = (b as any).createdAt || (b as any).CreatedAt;
     return new Date(dateB).getTime() - new Date(dateA).getTime();
   }).slice(0, 5);
-
-  const topClients = clients
-    .map((client) => ({
-      name: client.name || 'Unknown Client',
-      total: quotes.filter((quote) => quote.clientId === client.id).reduce((sum, quote) => sum + (Number(quote.total) || 0), 0)
-    }))
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 5);
-  const chartMax = Math.max(...topClients.map((client) => client.total), 1);
 
   if (!isAuthenticated) {
     return <Login />;
@@ -926,6 +942,72 @@ function App() {
             </div>
           </div>
 
+          <div className="chart-grid" style={{ marginTop: '20px' }}>
+            <div className="dashboard-card chart-card">
+              <div className="card-heading">
+                <h3>Top Clients by Invoice Value</h3>
+                <span className="badge accent-blue">Live</span>
+              </div>
+              {topClientsByInvoiceValue.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-state-icon">📊</div>
+                  <p>No client invoice totals available yet.</p>
+                </div>
+              ) : (
+                <div className="bar-chart">
+                  {topClientsByInvoiceValue.map((client) => (
+                    <div className="chart-row" key={client.name}>
+                      <div className="chart-row-label">{client.name}</div>
+                      <div className="chart-bar-wrap">
+                        <div
+                          className="chart-bar-fill"
+                          style={{ width: `${(client.total / chartMaxInvoice) * 100}%` }}
+                        />
+                      </div>
+                      <div className="chart-row-value">{formatAmount(client.total)}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="dashboard-card metrics-card">
+              <div className="card-heading">
+                <h3>Invoice Performance</h3>
+                <span className="badge accent-green">Trend</span>
+              </div>
+              <div className="metric-grid">
+                <div className="metric-tile metric-blue">
+                  <span>Total Value</span>
+                  <strong>{formatAmount(totalInvoiceValue)}</strong>
+                </div>
+                <div className="metric-tile metric-white">
+                  <span>Average Invoice</span>
+                  <strong>{formatAmount(averageInvoiceValue)}</strong>
+                </div>
+                <div className="metric-tile metric-red">
+                  <span>Largest Invoice</span>
+                  <strong>{formatAmount(largestInvoiceValue)}</strong>
+                </div>
+                <div className="metric-tile metric-dark">
+                  <span>Clients with Invoices</span>
+                  <strong>{invoices.filter(inv => inv.client || inv.quote?.client).length}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="stats-row" style={{ marginTop: '20px' }}>
+            <div className="stat-box">
+              <span className="stat-label">Total Statements</span>
+              <span className="stat-value">{totalStatementsCount}</span>
+            </div>
+            <div className="stat-box">
+              <span className="stat-label">Total Payments Recorded</span>
+              <span className="stat-value">{formatAmount(totalPaymentsRecorded)}</span>
+            </div>
+          </div>
+
           {quotes.length > 0 && (
             <div className="dashboard-card quote-list-card">
               <div className="card-heading">
@@ -948,6 +1030,64 @@ function App() {
                 ))}
               </div>
             </div>
+          )}
+
+          {invoices.length > 0 && (
+            <div className="dashboard-card quote-list-card" style={{ marginTop: '20px' }}>
+              <div className="card-heading">
+                <h3>Recent Invoices</h3>
+              </div>
+              <div className="quote-list">
+                {recentInvoices.map((invoice) => (
+                  <button
+                    type="button"
+                    key={invoice.id}
+                    className="quote-list-item"
+                    onClick={() => handleViewInvoice(invoice)}
+                  >
+                    <div>
+                      <strong>#{invoice.invoiceNumber}</strong> {invoice.quote?.reference || invoice.description}
+                      <div className="quote-list-meta">{invoice.client?.name || invoice.quote?.client?.name || 'No client'}</div>
+                    </div>
+                    <span>{formatAmount(invoice.amount)}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {statements.length > 0 && (
+            <div className="dashboard-card quote-list-card" style={{ marginTop: '20px' }}>
+              <div className="card-heading">
+                <h3>Recent Statements</h3>
+              </div>
+              <div className="quote-list">
+                {recentStatements.map((statement) => {
+                  const items = (statement as any).items || (statement as any).Items || [];
+                  const statementTotalPayments = items.reduce((itemSum: number, item: any) => itemSum + (item.paymentAmount || item.PaymentAmount || 0), 0);
+                  const clientName = (statement as any).client?.name || (statement as any).Client?.Name || 'No client';
+
+                  return (
+                    <button
+                      type="button"
+                      key={statement.id}
+                      className="quote-list-item"
+                      onClick={() => handleViewStatement(statement)}
+                    >
+                      <div>
+                        <strong>#{statement.statementNumber || (statement as any).StatementNumber}</strong>
+                        <div className="quote-list-meta">{clientName}</div>
+                      </div>
+                      <span>{formatAmount(statementTotalPayments)}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {statements.length === 0 && invoices.length === 0 && quotes.length === 0 && (
+            <p style={{ textAlign: 'center', marginTop: '40px', color: '#6b7280' }}>No data available to display on the dashboard yet. Start by creating clients, quotes, invoices, or statements.</p>
           )}
         </div>
       )}
