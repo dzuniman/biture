@@ -113,7 +113,7 @@ export default function DocumentManagementPage() {
                   {filteredDocuments.length === 0 ? (
                     <tr style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}>
                       <td colSpan={4} className="empty-row" style={{textAlign: 'center'}}>
-                        No documents found.
+                        No documents found. Click "+ Add Document" to get started.
                       </td>
                     </tr>
                   ) : (
@@ -123,7 +123,7 @@ export default function DocumentManagementPage() {
                         <td>{doc.description || '-'}</td>
                         <td>{new Date(doc.uploadedAt).toLocaleDateString()}</td>
                         <td>
-                          <div className="action-buttons">
+                          <div className="actions-row">
                             <button onClick={() => handleDownload(doc.id, doc.documentName)} className="btn-small">
                               Download
                             </button>

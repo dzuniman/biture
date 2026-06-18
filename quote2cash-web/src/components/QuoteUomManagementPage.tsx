@@ -122,18 +122,18 @@ export default function QuoteUomManagementPage({ uoms, onBack, onRefresh }: Prop
                 {filtered.length === 0 ? (
                   <tr style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}>
                     <td colSpan={2} className="empty-row">
-                      No UOMs found.
+                      No UOMs found. Click "+ New UOM" to get started.
                     </td>
                   </tr>
                 ) : (
                   filtered.map((uom) => (
                     <tr key={uom.id} style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }} className="table-row-dark-hover">
                       <td>{uom.value}</td>
-                      <td className="actions-column">
-                        <button className="btn-secondary small" onClick={() => startEdit(uom)}>
+                      <td className="actions-row">
+                        <button className="button" onClick={() => startEdit(uom)}>
                           Edit
                         </button>
-                        <button className="btn-danger small" onClick={() => handleDelete(uom.id)}>
+                        <button className="button" onClick={() => handleDelete(uom.id)}>
                           Delete
                         </button>
                       </td>

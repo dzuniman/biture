@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 import type { Client } from '../types';
-import ClientCard from './ClientCard';
 import SearchBar from './SearchBar';
 import Pagination from './Pagination';
 
@@ -12,7 +11,7 @@ interface Props {
   onCreateNew: () => void;
 }
 
-const ITEMS_PER_PAGE = 9;
+const ITEMS_PER_PAGE = 10;
 
 export default function ClientsListPage({
   clients,
@@ -65,32 +64,60 @@ export default function ClientsListPage({
         onChange={setSearchTerm}
       />
 
-      {paginatedClients.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-state-icon">📋</div>
-          <h3>No clients found</h3>
-          <p>
-            {filteredClients.length === 0 && searchTerm
-              ? 'Try adjusting your search terms'
-              : 'Get started by creating your first client'}
-          </p>
-          {!searchTerm && <button onClick={onCreateNew} className="btn-primary">
-            Create Client
-          </button>}
-        </div>
-      ) : (
-        <>
-          <div className="cards-grid">
-            {paginatedClients.map((client) => (
-              <ClientCard
-                key={client.id}
-                client={client}
-                onEdit={onEdit}
-                onView={onView}
-                onDelete={onDelete}
-              />
-            ))}
-          </div>
+      <div className="table-card">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>VAT Number</th>
+              <th>Vendor #</th>
+              <th>Representative</th>
+              <th>Phone</th>
+              <th className="actions-column">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {paginatedClients.length === 0 ? (
+              <tr style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}>
+                <td colSpan={6} className="empty-row" style={{ textAlign: 'center' }}>
+                  {searchTerm ? 'No clients match your search.' : 'No clients found. Click "+ New Client" to add one.'}
+                </td>
+              </tr>
+            ) : (
+              paginatedClients.map((client) => (
+                <tr
+                  key={client.id}
+                  style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}
+                  className="table-row-dark-hover"
+                >
+                  <td>{client.name}</td>
+                  <td>{client.vatNumber || '—'}</td>
+                  <td>{client.vendorNumber || '—'}</td>
+                  <td>{client.representativeName || '—'}</td>
+                  <td>{client.representativeNumber || '—'}</td>
+                  <td className="actions-row">
+                    <button type="button" onClick={() => onView(client)}>
+                      View
+                    </button>
+                    <button type="button" onClick={() => onEdit(client)}>
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="danger"
+                      onClick={() => onDelete(client.id)}
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {filteredClients.length > 0 && (
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
@@ -98,7 +125,6 @@ export default function ClientsListPage({
             itemsPerPage={ITEMS_PER_PAGE}
             totalItems={filteredClients.length}
           />
-        </>
       )}
     </div>
   );

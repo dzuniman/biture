@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿import { useEffect, useRef, useState } from 'react';
+﻿﻿import { useEffect, useRef, useState } from 'react';
 import { formatAmount } from '../formatters';
 import {
   createClient,
@@ -7,6 +7,7 @@ import {
   deleteClient,
   deleteInvoice,
   deleteQuote,
+  deleteStatement,
   getClients,
   getInvoice,
   getInvoiceNextNumber,
@@ -14,6 +15,7 @@ import {
   getQuote,
   getQuoteDescriptions,
   getQuotes,
+  getStatements,
   getUsers,
   updateClient,
   updateInvoice,
@@ -27,7 +29,8 @@ import type {
   Quote,
   QuoteCreateRequest,
   QuoteDescription,
-  User
+  User,
+  Statement
 } from './types';
 import { useAuth } from './AuthContext';
 import { Login } from './components/Login';
@@ -64,6 +67,7 @@ function App() {
   const [clients, setClients] = useState<Client[]>([]);
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [statements, setStatements] = useState<Statement[]>([]);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [editingQuote, setEditingQuote] = useState<Quote | null>(null);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
@@ -100,18 +104,20 @@ function App() {
     try {
       setError(null);
       setIsLoading(true);
-      const [clientsData, quotesData, descriptionsData, usersData, invoicesData] = await Promise.all([
+      const [clientsData, quotesData, descriptionsData, usersData, invoicesData, statementsData] = await Promise.all([
         getClients(),
         getQuotes(),
         getQuoteDescriptions(),
         getUsers(),
-        getInvoices()
+        getInvoices(),
+        getStatements()
       ]);
       setClients(clientsData);
       setQuotes(quotesData);
       setQuoteDescriptions(descriptionsData);
       setUsers(usersData);
       setInvoices(invoicesData);
+      setStatements(statementsData);
     } catch (err: any) {
       setError(getErrorMessage(err, 'Unable to load data. Confirm the API is running.'));
     } finally {
@@ -274,6 +280,21 @@ function App() {
         await loadAll();
       } catch (err: any) {
         setError(getErrorMessage(err, 'Unable to delete invoice.'));
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  const handleDeleteStatement = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this statement?')) {
+      try {
+        setError(null);
+        setIsLoading(true);
+        await deleteStatement(id);
+        await loadAll();
+      } catch (err: any) {
+        setError(getErrorMessage(err, 'Unable to delete statement.'));
       } finally {
         setIsLoading(false);
       }
@@ -509,9 +530,40 @@ function App() {
     }
   };
 
+  // Dashboard Calculations
   const totalQuoteValue = quotes.reduce((sum, quote) => sum + (Number(quote.total) || 0), 0);
   const averageQuoteValue = quotes.length ? totalQuoteValue / quotes.length : 0;
   const largestQuoteValue = quotes.length ? Math.max(...quotes.map((quote) => Number(quote.total) || 0)) : 0;
+
+  const totalInvoiceValue = invoices.reduce((sum, invoice) => sum + (Number(invoice.amount) || 0), 0);
+  const averageInvoiceValue = invoices.length ? totalInvoiceValue / invoices.length : 0;
+  const largestInvoiceValue = invoices.length ? Math.max(...invoices.map((invoice) => Number(invoice.amount) || 0)) : 0;
+
+  const totalStatementsCount = statements.length;
+  const totalPaymentsRecorded = statements.reduce((sum, statement) => {
+    const items = (statement as any).items || (statement as any).Items || [];
+    return sum + items.reduce((itemSum: number, item: any) => itemSum + (item.paymentAmount || item.PaymentAmount || 0), 0);
+  }, 0);
+
+  const topClientsByInvoiceValue = clients
+    .map((client) => ({
+      name: client.name || 'Unknown Client',
+      total: invoices
+        .filter((inv) => inv.clientId === client.id || inv.client?.id === client.id)
+        .reduce((sum, inv) => sum + (Number(inv.amount) || 0), 0)
+    }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 5);
+  const chartMaxInvoice = Math.max(...topClientsByInvoiceValue.map((client) => client.total), 1);
+
+  const recentQuotes = quotes.slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
+  const recentInvoices = invoices.slice().sort((a, b) => new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime()).slice(0, 5);
+  const recentStatements = statements.slice().sort((a, b) => {
+    const dateA = (a as any).createdAt || (a as any).CreatedAt;
+    const dateB = (b as any).createdAt || (b as any).CreatedAt;
+    return new Date(dateB).getTime() - new Date(dateA).getTime();
+  }).slice(0, 5);
+
   const topClients = clients
     .map((client) => ({
       name: client.name || 'Unknown Client',
@@ -773,7 +825,9 @@ function App() {
         </div>
       )}
 
-      {!isLoading && section === 'statements' && <Statements invoices={invoices} clients={clients} />}
+      {!isLoading && section === 'statements' && (
+        <Statements invoices={invoices} clients={clients} statements={statements} onRefresh={loadAll} onDelete={handleDeleteStatement} />
+      )}
 
       {isLoading && section !== 'dashboard' && (
         <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
@@ -806,6 +860,14 @@ function App() {
             <div className="stat-box">
               <span className="stat-label">Avg. Quote Value</span>
               <span className="stat-value">{formatAmount(averageQuoteValue)}</span>
+            </div>
+            <div className="stat-box">
+              <span className="stat-label">Total Invoices</span>
+              <span className="stat-value">{invoices.length}</span>
+            </div>
+            <div className="stat-box">
+              <span className="stat-label">Total Invoice Value</span>
+              <span className="stat-value">{formatAmount(totalInvoiceValue)}</span>
             </div>
           </div>
 
