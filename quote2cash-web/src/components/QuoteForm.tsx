@@ -4,6 +4,16 @@ import * as XLSX from 'xlsx';
 import type { Client, Quote, QuoteCreateRequest, QuoteItemCreateRequest, QuoteDescription } from '../types';
 import { getQuoteNextNumber } from '../api';
 
+// Define the expected API response structure for next numbers
+interface NextNumberApiResponse {
+  nextQuoteNumber?: string;
+  NextQuoteNumber?: string;
+  nextInvoiceNumber?: string;
+  NextInvoiceNumber?: string;
+  nextNumber?: string;
+  NextNumber?: string;
+}
+
 interface Props {
   clients: Client[];
   descriptionOptions: QuoteDescription[];
@@ -130,23 +140,27 @@ export default function QuoteForm({
   }, []);
   const [clientId, setClientId] = useState(initialData?.clientId ?? selectedClientId ?? '');
   const [quoteNumber, setQuoteNumber] = useState(initialData?.quoteNumber ?? '');
+  const [isFetchingQuoteNumber, setIsFetchingQuoteNumber] = useState(false); // NEW: Loading state
+  const [quoteNumberError, setQuoteNumberError] = useState<string | null>(null); // NEW: Error state
+
   const [reference, setReference] = useState(initialData?.reference ?? '');
   const [date, setDate] = useState(initialData?.date ? initialData.date.slice(0, 10) : today);
   const [validityDays, setValidityDays] = useState(initialData?.validityDays.toString() ?? '30');
   const [items, setItems] = useState<QuoteItemCreateRequest[]>(initialData?.items?.length ? initialData.items : [blankItem]);
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
+  
   useEffect(() => {
+    console.log('QuoteForm: Initializing form state. initialData:', initialData, 'isDuplicate:', isDuplicate, 'selectedClientId:', selectedClientId); // eslint-disable-line no-console
     if (initialData) {
       setClientId(initialData.clientId ?? '');
-      setQuoteNumber(initialData.quoteNumber);
+      setQuoteNumber(isDuplicate ? '' : (initialData.quoteNumber ?? ''));
       setReference(initialData.reference);
       setDate(initialData.date ? initialData.date.slice(0, 10) : today);
       setValidityDays(initialData.validityDays.toString());
-      const sorted = [...initialData.items].sort((a, b) => a.itemNumber - b.itemNumber);
+      const sorted = [...(initialData.items || [])].sort((a, b) => a.itemNumber - b.itemNumber);
       setItems(sorted.length ? sorted : [blankItem]);
-    } else {
+    } else { // This block runs for a brand new quote or when duplicating
       setClientId(selectedClientId ?? '');
       setQuoteNumber('');
       setReference('');
@@ -154,15 +168,48 @@ export default function QuoteForm({
       setValidityDays('30');
       setItems([blankItem]);
     }
-  }, [initialData, selectedClientId, today]);
+  }, [initialData, today, isDuplicate, selectedClientId]); // Re-added selectedClientId to dependencies
 
   useEffect(() => {
-    if (!initialData && !quoteNumber) {
-      getQuoteNextNumber().then(setQuoteNumber).catch(() => {
+    console.log('QuoteForm: Autopopulation effect running. initialData:', initialData, 'isDuplicate:', isDuplicate, 'current quoteNumber:', quoteNumber); // eslint-disable-line no-console
+    // Only fetch if creating new or duplicating, and quoteNumber is currently empty
+    if ((!initialData || isDuplicate) && quoteNumber === '') {
+      console.log('QuoteForm: Condition met for fetching next quote number.'); // eslint-disable-line no-console
+      setIsFetchingQuoteNumber(true); // NEW: Set loading true
+      setQuoteNumberError(null); // NEW: Clear previous errors
+
+      // Generate prefix for quote number (e.g., QYYYYMM)
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const quotePrefix = `Q${year}${month}`;
+
+      getQuoteNextNumber(quotePrefix).then((res: NextNumberApiResponse | string) => { // Pass prefix
+        console.log('QuoteForm: getQuoteNextNumber API response:', res); // eslint-disable-line no-console
+        // Extract number from object response
+        const next = typeof res === 'object' && res !== null 
+          ? (res.nextQuoteNumber || res.NextQuoteNumber || res.nextNumber || res.NextNumber || res.nextInvoiceNumber) 
+          : res;
+        if (next) {
+          const rawStr = String(next);
+          const formatted = rawStr.startsWith('Q') ? rawStr : `${quotePrefix}${rawStr.padStart(4, '0')}`; // Ensure prefix is included
+          console.log('QuoteForm: Successfully extracted next number:', formatted); // eslint-disable-line no-console
+          setQuoteNumber(formatted);
+        } else {
+          console.warn('QuoteForm: API response for next number was empty or invalid:', res); // eslint-disable-line no-console
+          setQuoteNumberError('Failed to generate number. Please enter manually.'); // NEW: Set error
+        }
+      }).catch((err) => { // eslint-disable-line no-console
+        console.error('QuoteForm: Error fetching next quote number:', err); // eslint-disable-line no-console
+        setQuoteNumberError('Failed to fetch next number. Please enter manually.'); // NEW: Set error
         // silenced, number will remain blank until available
+      }).finally(() => {
+        setIsFetchingQuoteNumber(false); // NEW: Set loading false
       });
+    } else { // eslint-disable-line no-console
+      console.log('QuoteForm: Autopopulation condition NOT met. Reason: initialData:', initialData, 'isDuplicate:', isDuplicate, 'quoteNumber:', quoteNumber); // eslint-disable-line no-console
     }
-  }, [initialData, quoteNumber]);
+  }, [initialData, quoteNumber, isDuplicate, date]); // Added 'date' to dependencies for prefix
 
   useEffect(() => {
     if (!initialData && selectedClientId) {
@@ -304,16 +351,16 @@ export default function QuoteForm({
 
   const uomSuggestionOptions = useMemo(() => {
     const seen = new Set<string>();
-    return descriptionOptions.reduce<{ id: string; value: string }[]>((list, option) => {
+    return descriptionOptions.reduce<{ id: string; value: string }[]>((list, option: QuoteDescription) => {
       const value = option.uom?.trim();
       if (!value || seen.has(value.toLowerCase())) return list;
       seen.add(value.toLowerCase());
       return [...list, { id: option.id, value }];
     }, []);
   }, [descriptionOptions]);
-
+  
   const codeSuggestionOptions = useMemo(() => {
-    return descriptionOptions.map((option) => ({ id: option.id, value: option.code }));
+    return descriptionOptions.map((option: QuoteDescription) => ({ id: option.id, value: option.code }));
   }, [descriptionOptions]);
 
   const lineCount = useMemo(() => items.length, [items]);
@@ -370,7 +417,7 @@ export default function QuoteForm({
               }}
             >
               <option value="">Select existing client</option>
-              {clients.map((client) => (
+              {clients.map((client: Client) => (
                 <option key={client.id} value={client.id}>
                   {client.name}
                 </option>
@@ -385,11 +432,16 @@ export default function QuoteForm({
           Quote number
           <input
             type="text"
-            value={quoteNumber}
-            onChange={(event) => setQuoteNumber(event.target.value)}
+            value={isFetchingQuoteNumber ? 'Loading...' : quoteNumber} // NEW: Show loading state
+            onChange={(event) => {
+              setQuoteNumber(event.target.value);
+              setQuoteNumberError(null); // NEW: Clear error on manual input
+            }}
             placeholder="Qyyyymm0000"
             required
+            disabled={isFetchingQuoteNumber} // NEW: Disable input while loading
           />
+          {quoteNumberError && <p style={{ color: 'red', fontSize: '0.8em' }}>{quoteNumberError}</p>} {/* NEW: Display error */}
         </label>
         <label>
           Reference
@@ -476,7 +528,7 @@ export default function QuoteForm({
                 />
                 <SuggestionInput
                   options={descriptionOptions.map((option) => ({ id: option.id, value: option.description }))}
-                  value={item.description}
+                  value={item.description ?? ''}
                   onChange={(value) => handleUpdateItem(index, 'description', value)}
                   placeholder="Select or type description"
                   required

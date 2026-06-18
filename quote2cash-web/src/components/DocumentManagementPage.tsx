@@ -1,149 +1,159 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import DocumentForm from './DocumentForm';
-import { getDocuments, deleteDocument, downloadDocument } from '../api';
-import { DocumentResponse } from '../types';
+import React, { useState, useEffect } from 'react';
+import DocumentListPage from './DocumentListPage'; // New component for listing documents
+import DocumentForm from './DocumentForm'; // Existing component for document form
+import { getDocuments, deleteDocument, downloadDocument } from '../api'; // Assuming downloadDocument exists
+import type { DocumentResponse } from '../types';
 
-export default function DocumentManagementPage() {
+interface Props {
+  onBack: () => void;
+  onRefreshApp: () => Promise<void>; // To refresh documents in App.tsx after changes
+}
+
+type DocumentView = 'list' | 'manage';
+
+export default function DocumentManagementPage({ onBack, onRefreshApp }: Props) { // Added onRefreshApp
+  const [documentView, setDocumentView] = useState<DocumentView>('list');
   const [documents, setDocuments] = useState<DocumentResponse[]>([]);
-  const [isEditing, setIsEditing] = useState(false);
-  const [selectedDoc, setSelectedDoc] = useState<DocumentResponse | undefined>();
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [editingDocument, setEditingDocument] = useState<DocumentResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchDocuments = async () => {
+  const loadDocuments = async () => {
+    setIsLoading(true);
+    setError(null);
     try {
       const data = await getDocuments();
       setDocuments(data);
-    } catch (error) {
-      console.error('Error fetching documents:', error);
+    } catch (err: any) {
+      setError('Failed to load documents: ' + (err.message || 'Unknown error'));
+      console.error('Failed to load documents:', err);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchDocuments();
+    loadDocuments();
   }, []);
 
-  const handleDelete = async (id: string) => {
+  const handleCreateNew = () => {
+    setEditingDocument(null);
+    setDocumentView('manage');
+  };
+
+  const handleEditDocument = (doc: DocumentResponse) => {
+    setEditingDocument(doc);
+    setDocumentView('manage');
+  };
+
+  const handleDeleteDocument = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this document?')) {
+      setIsLoading(true);
+      setError(null);
       try {
         await deleteDocument(id);
-        await fetchDocuments();
-      } catch (error) {
-        console.error('Error deleting document:', error);
+        await loadDocuments();
+        await onRefreshApp(); // Refresh global app state if needed
+      } catch (err: any) {
+        setError('Failed to delete document: ' + (err.message || 'Unknown error'));
+        console.error('Failed to delete document:', err);
+      } finally {
+        setIsLoading(false);
       }
     }
   };
 
-  const handleDownload = async (id: string, name: string) => {
+  const handleDocumentFormSuccess = async () => {
+    setDocumentView('list');
+    setEditingDocument(null);
+    await loadDocuments();
+    await onRefreshApp(); // Refresh global app state if needed
+  };
+
+  const handleDocumentFormCancel = () => {
+    setDocumentView('list');
+    setEditingDocument(null);
+  };
+
+  const handleDownloadDocument = async (document: DocumentResponse) => {
+    setIsLoading(true);
+    setError(null);
     try {
-      const data = await downloadDocument(id);
-      const url = window.URL.createObjectURL(new Blob([data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', name);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (error) {
-      console.error('Error downloading document:', error);
+      // Assuming downloadDocument API returns a blob or initiates a download
+      await downloadDocument(document.id);
+    } catch (err: any) {
+      setError('Failed to download document: ' + (err.message || 'Unknown error'));
+      console.error('Failed to download document:', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const filteredDocuments = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
-    if (!term) return documents;
-    return documents.filter((doc) =>
-      (doc.documentName?.toLowerCase() || '').includes(term) ||
-      (doc.description?.toLowerCase() || '').includes(term)
-    );
-  }, [documents, searchTerm]);
-
-  if (isEditing) {
-    return (
-      <div className="page-section">
-        <h2>{selectedDoc ? 'Edit Document' : 'Upload New Document'}</h2>
-        <DocumentForm 
-          document={selectedDoc} 
-          onSuccess={() => { setIsEditing(false); fetchDocuments(); }}
-          onCancel={() => setIsEditing(false)} 
-        />
-      </div>
-    );
-  }
-
   return (
     <div className="page-section">
-      <div className="section-header">
-        <div>
-          <h2>Documents Management</h2>
-          <p>Manage your business documents and templates.</p>
+      {error && (
+        <div
+          style={{
+            background: '#fee2e2',
+            color: '#991b1b',
+            padding: '16px',
+            borderRadius: '8px',
+            marginBottom: '24px',
+            border: '1px solid #fecaca'
+          }}
+        >
+          {error}
+          <button
+            onClick={() => setError(null)}
+            style={{
+              marginLeft: '12px',
+              background: 'none',
+              border: 'none',
+              color: '#991b1b',
+              cursor: 'pointer',
+              fontWeight: 'bold'
+            }}
+          >
+            ✕
+          </button>
         </div>
-        <button onClick={() => { setSelectedDoc(undefined); setIsEditing(true); }} className="btn-primary">
-          + Add Document
-        </button>
-      </div>
+      )}
 
-      <div className="management-container">
-        {loading ? (
-          <p>Loading documents...</p>
-        ) : (
-          <>
-            <div className="table-toolbar">
-              <input
-                type="search"
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Search documents by name or description..."
-                className="search-input"
-              />
+      {isLoading && (
+        <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+          Loading…
+        </div>
+      )}
+
+      {!isLoading && documentView === 'list' && (
+        <DocumentListPage
+          documents={documents}
+          onEdit={handleEditDocument}
+          onDelete={handleDeleteDocument}
+          onCreateNew={handleCreateNew}
+          onDownload={handleDownloadDocument}
+          onBack={onBack} // Pass onBack to DocumentListPage
+        />
+      )}
+
+      {!isLoading && documentView === 'manage' && (
+        <>
+          <div className="section-header">
+            <div>
+              <h2>{editingDocument ? 'Edit Document' : 'Upload Document'}</h2>
+              <p>{editingDocument ? 'Update document details' : 'Add a new document to the system'}</p>
             </div>
-            <div className="table-card">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Description</th>
-                    <th>Uploaded</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredDocuments.length === 0 ? (
-                    <tr style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}>
-                      <td colSpan={4} className="empty-row" style={{textAlign: 'center'}}>
-                        No documents found. Click "+ Add Document" to get started.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredDocuments.map(doc => (
-                      <tr key={doc.id} style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }} className="table-row-dark-hover">
-                        <td>{doc.documentName}</td>
-                        <td>{doc.description || '-'}</td>
-                        <td>{new Date(doc.uploadedAt).toLocaleDateString()}</td>
-                        <td>
-                          <div className="actions-row">
-                            <button onClick={() => handleDownload(doc.id, doc.documentName)} className="btn-small">
-                              Download
-                            </button>
-                            <button onClick={() => { setSelectedDoc(doc); setIsEditing(true); }} className="btn-small">
-                              Edit
-                            </button>
-                            <button onClick={() => handleDelete(doc.id)} className="btn-small btn-danger">
-                              Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
-      </div>
+            <button onClick={handleDocumentFormCancel} className="btn-secondary">
+              ← Back
+            </button>
+          </div>
+          <DocumentForm
+            document={editingDocument ?? undefined}
+            onSuccess={handleDocumentFormSuccess}
+            onCancel={handleDocumentFormCancel}
+          />
+        </>
+      )}
     </div>
   );
 }
