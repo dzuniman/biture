@@ -153,7 +153,7 @@ export default function QuoteDescriptionManagementPage({ descriptions, onBack, o
                 {filtered.length === 0 ? (
                   <tr style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}>
                     <td colSpan={4} className="empty-row">
-                      No descriptions found.
+                      No descriptions found. Click "+ New Description" to get started.
                     </td>
                   </tr>
                 ) : (

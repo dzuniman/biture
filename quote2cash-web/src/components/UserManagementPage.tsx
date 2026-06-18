@@ -144,7 +144,7 @@ export default function UserManagementPage({ users, onBack, onRefresh }: Props) 
                 {filtered.length === 0 ? (
                   <tr style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}>
                     <td colSpan={3} className="empty-row">
-                      No users found.
+                      No users found. Click "+ New User" to get started.
                     </td>
                   </tr>
                 ) : (

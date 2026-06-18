@@ -246,6 +246,11 @@ export const getStatement = async (id: string): Promise<Statement> => {
   return response.data;
 };
 
+export const getStatements = async (): Promise<Statement[]> => {
+  const response = await api.get('/statements');
+  return response.data;
+};
+
 export const createStatement = async (statement: StatementCreateRequest): Promise<Statement> => {
   const response = await api.post('/statements', statement);
   return response.data;

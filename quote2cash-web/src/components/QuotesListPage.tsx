@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { formatAmount } from '../../formatters';
 import type { Quote } from '../types';
-import QuoteCard from './QuoteCard';
 import SearchBar from './SearchBar';
 import Pagination from './Pagination';
 
@@ -14,7 +13,7 @@ interface Props {
   onCreateNew: () => void;
 }
 
-const ITEMS_PER_PAGE = 6;
+const ITEMS_PER_PAGE = 10;
 
 export default function QuotesListPage({
   quotes,
@@ -97,17 +96,44 @@ export default function QuotesListPage({
         </div>
       ) : (
         <>
-          <div className="cards-grid cards-grid-2col">
-            {paginatedQuotes.map((quote) => (
-              <QuoteCard
-                key={quote.id}
-                quote={quote}
-                onEdit={onEdit}
-                onView={onView}
-                onDelete={onDelete}
-                onDuplicate={onDuplicate}
-              />
-            ))}
+          <div className="table-card">
+            <table>
+              <thead>
+                <tr>
+                  <th>Quote #</th>
+                  <th>Reference</th>
+                  <th>Client</th>
+                  <th>Date</th>
+                  <th>Total</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedQuotes.map((quote) => (
+                  <tr key={quote.id} style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }} className="table-row-dark-hover">
+                    <td>{quote.quoteNumber}</td>
+                    <td>{quote.reference || '—'}</td>
+                    <td>{quote.client?.name ?? '—'}</td>
+                    <td>{new Date(quote.date).toLocaleDateString()}</td>
+                    <td>{formatAmount(quote.total)}</td>
+                    <td className="actions-row">
+                      <button type="button" onClick={() => onView(quote)}>
+                        View
+                      </button>
+                      <button type="button" onClick={() => onEdit(quote)}>
+                        Edit
+                      </button>
+                      <button type="button" onClick={() => onDuplicate(quote)}>
+                        Duplicate
+                      </button>
+                      <button type="button" className="danger" onClick={() => onDelete(quote.id)}>
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
           <Pagination
             currentPage={currentPage}

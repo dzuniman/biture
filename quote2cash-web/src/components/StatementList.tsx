@@ -25,8 +25,7 @@ export default function StatementList({ statements, invoices, onEdit, onView, on
   };
 
   return (
-    <div className="card">
-      <h2>Statements</h2>
+    <div className="table-card">
       <table>
         <thead>
           <tr>
@@ -34,37 +33,49 @@ export default function StatementList({ statements, invoices, onEdit, onView, on
             <th>Client</th>
             <th>Total Payments</th>
             <th>Total Outstanding</th>
-            <th>Actions</th>
+            <th className="actions-column">Actions</th>
           </tr>
         </thead>
         <tbody>
-          {statements.map((statement: any) => {
-            const items = statement.items || statement.Items || [];
-            const { totalPayments, totalOutstanding } = getTotals(items);
-            const clientName = statement.client?.name || statement.Client?.Name || '—';
-            
-            return (
-              <tr key={statement.id}>
-                <td>{statement.statementNumber || statement.StatementNumber}</td>
-                <td>{clientName}</td>
-                <td>{formatAmount(totalPayments)}</td>
-                <td style={{ color: totalOutstanding > 0 ? '#dc2626' : '#22c55e', fontWeight: 'bold' }}>
-                  {formatAmount(totalOutstanding)}
-                </td>
-                <td className="actions-row">
-                  <button type="button" onClick={() => onView(statement)}>
-                    View
-                  </button>
-                  <button type="button" onClick={() => onEdit(statement)}>
-                    Edit
-                  </button>
-                  <button type="button" className="danger" onClick={() => onDelete(statement.id)}>
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            );
-          })}
+          {statements.length === 0 ? (
+            <tr style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}>
+              <td colSpan={5} className="empty-row" style={{ textAlign: 'center' }}>
+                No statements found. Click "+ New Statement" to get started.
+              </td>
+            </tr>
+          ) : (
+            statements.map((statement: any) => {
+              const items = statement.items || statement.Items || [];
+              const { totalPayments, totalOutstanding } = getTotals(items);
+              const clientName = statement.client?.name || statement.Client?.Name || '—';
+              
+              return (
+                <tr
+                  key={statement.id}
+                  style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}
+                  className="table-row-dark-hover"
+                >
+                  <td>{statement.statementNumber || statement.StatementNumber}</td>
+                  <td>{clientName}</td>
+                  <td>{formatAmount(totalPayments)}</td>
+                  <td style={{ color: totalOutstanding > 0 ? '#dc2626' : '#22c55e', fontWeight: 'bold' }}>
+                    {formatAmount(totalOutstanding)}
+                  </td>
+                  <td className="actions-row">
+                    <button type="button" onClick={() => onView(statement)}>
+                      View
+                    </button>
+                    <button type="button" onClick={() => onEdit(statement)}>
+                      Edit
+                    </button>
+                    <button type="button" className="danger" onClick={() => onDelete(statement.id)}>
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              );
+            })
+          )}
         </tbody>
       </table>
     </div>

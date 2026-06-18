@@ -79,48 +79,48 @@ export default function InvoiceListPage({
         onChange={setSearchTerm}
       />
 
-      {paginatedInvoices.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-state-icon">📋</div>
-          <h3>No invoices found</h3>
-          <p>
-            {filteredInvoices.length === 0 && searchTerm
-              ? 'Try adjusting your search terms'
-              : 'Get started by creating your first invoice'}
-          </p>
-          {!searchTerm && <button type="button" onClick={onCreateNew} className="btn-primary">
-            Create Invoice
-          </button>}
-        </div>
-      ) : (
-        <>
-          <div className="card">
-            <table>
-              <thead>
-                <tr>
-                  <th>Invoice Number</th>
-                  <th>Client</th>
-                  <th>Reference</th>
-                  <th>Amount</th>
-                  <th>Created</th>
-                  <th>Due</th>
-                  <th>Status</th>
-                  <th>Overdue</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedInvoices.map((invoice) => (
-                  <tr key={invoice.id}>
+      <div className="table-card">
+        <table>
+          <thead>
+            <tr>
+              <th>Invoice Number</th>
+              <th>Client</th>
+              <th>Reference</th>
+              <th>Amount</th>
+              <th>Created</th>
+              <th>Due</th>
+              <th>Status</th>
+              <th>Overdue</th>
+              <th className="actions-column">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {paginatedInvoices.length === 0 ? (
+              <tr style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}>
+                <td colSpan={9} className="empty-row" style={{ textAlign: 'center' }}>
+                  {searchTerm ? 'No invoices match your search.' : 'No invoices found. Click "+ New Invoice" to get started.'}
+                </td>
+              </tr>
+            ) : (
+              paginatedInvoices.map((invoice) => (
+                <tr
+                  key={invoice.id}
+                  style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}
+                  className="table-row-dark-hover"
+                >
                     <td>{invoice.invoiceNumber}</td>
-                    <td>{invoice.client?.name ?? '—'}</td>
+                    <td>{(invoice.client?.name || invoice.quote?.client?.name) ?? '—'}</td>
                     <td>{invoice.quote?.reference ?? '—'}</td>
                     <td>{formatAmount(invoice.amount)}</td>
-                    <td>{invoice.createdAt ? new Date(invoice.createdAt).toLocaleDateString() : '—'}</td>
-                    <td>{invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '—'}</td>
+                  <td>
+                    {invoice.createdAt ? new Date(invoice.createdAt).toLocaleDateString() : '—'}
+                  </td>
+                  <td>
+                    {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '—'}
+                  </td>
                     <td>{invoice.status}</td>
                     <td>{invoice.isOverdue ? 'Yes' : 'No'}</td>
-                    <td className="actions-row">
+                  <td className="actions-row">
                       <button type="button" onClick={() => onView(invoice)}>
                         View
                       </button>
@@ -132,18 +132,20 @@ export default function InvoiceListPage({
                       </button>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-            itemsPerPage={ITEMS_PER_PAGE}
-            totalItems={filteredInvoices.length}
-          />
-        </>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {filteredInvoices.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+          itemsPerPage={ITEMS_PER_PAGE}
+          totalItems={filteredInvoices.length}
+        />
       )}
     </div>
   );
