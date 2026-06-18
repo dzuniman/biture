@@ -1,6 +1,17 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, useRef, type FormEvent } from 'react'; // Added useRef
 import type { Invoice, InvoiceCreateRequest, Quote, InvoiceQuote } from '../types';
 import { getInvoiceNextNumber } from '../api';
+
+// Define the expected API response structure for next numbers
+// Define the expected API response structure for next numbers
+interface NextNumberApiResponse {
+  nextQuoteNumber?: string;
+  NextQuoteNumber?: string;
+  nextInvoiceNumber?: string;
+  NextInvoiceNumber?: string;
+  nextNumber?: string;
+  NextNumber?: string;
+}
 
 interface Props {
   quotes: Quote[];
@@ -13,9 +24,12 @@ export default function InvoiceForm({ quotes, initialData, onSubmit, onCancel }:
   const [quoteId, setQuoteId] = useState('');
   const [clientId, setClientId] = useState('');
   const [invoiceNumber, setInvoiceNumber] = useState('');
+  const [isFetchingInvoiceNumber, setIsFetchingInvoiceNumber] = useState(false); // NEW: Loading state
+  const [invoiceNumberError, setInvoiceNumberError] = useState<string | null>(null); // NEW: Error state
   const [description, setDescription] = useState('');
   const [date, setDate] = useState('');
   const [status, setStatus] = useState('Draft');
+  const isFirstRender = useRef(true);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -45,22 +59,37 @@ export default function InvoiceForm({ quotes, initialData, onSubmit, onCancel }:
       setDate(now.toISOString().slice(0, 10));
       setStatus('Draft');
     }
+    // Mark first render as complete after initial state setup
+    isFirstRender.current = false;
   }, [initialData]);
 
   useEffect(() => {
-    if (initialData || invoiceNumber !== '' || !date) return;
+    console.log('InvoiceForm: Autopopulation effect running. initialData:', initialData, 'current invoiceNumber:', invoiceNumber, 'current date:', date, 'isFirstRender:', isFirstRender.current);
+    // Only fetch if creating new, invoiceNumber is empty, date is set, and it's not the very first render
+    if (isFirstRender.current || initialData || invoiceNumber !== '' || !date) {
+      console.log('InvoiceForm: Autopopulation condition NOT met. Reason: initialData:', initialData, 'invoiceNumber:', invoiceNumber, 'date:', date, 'isFirstRender:', isFirstRender.current);
+      return;
+    }
 
-    // Extract year and month directly from the YYYY-MM-DD string
-    const [year, month] = date.split('-');
+    console.log('InvoiceForm: Condition met for fetching next invoice number.');
+    const [year, month] = date.split('-'); // Extract year and month directly from the YYYY-MM-DD string
     const prefix = `INV${year}${month}`;
 
-    getInvoiceNextNumber(prefix).then((nextNumber) => {
-      if (nextNumber !== undefined && nextNumber !== null) {
-        const raw = String(nextNumber);
-        const formatted = raw.startsWith('INV') ? raw : `${prefix}${raw.padStart(4, '0')}`;
-        setInvoiceNumber(formatted);
+    getInvoiceNextNumber(prefix).then((res: NextNumberApiResponse | string) => {
+      console.log('InvoiceForm: getInvoiceNextNumber API response:', res);
+      if (res) {
+        const raw = typeof res === 'object' ? (res.nextInvoiceNumber || res.NextInvoiceNumber || res.nextNumber || res.NextNumber) : res;
+        if (raw) {
+          const rawStr = String(raw);
+          const formatted = rawStr.startsWith('INV') ? rawStr : `${prefix}${rawStr.padStart(4, '0')}`;
+          console.log('InvoiceForm: Successfully extracted next number:', formatted);
+          setInvoiceNumber(formatted);
+        } else {
+          console.warn('InvoiceForm: API response for next number was empty or invalid:', res);
+        }
       }
-    }).catch(() => {
+    }).catch((err) => {
+      console.error('InvoiceForm: Error fetching next invoice number:', err);
       // ignore failure and allow manual input
     });
   }, [initialData, invoiceNumber, date]);
@@ -115,11 +144,16 @@ export default function InvoiceForm({ quotes, initialData, onSubmit, onCancel }:
         <label>
           Invoice number
           <input
-            value={invoiceNumber}
-            onChange={(event) => setInvoiceNumber(event.target.value)}
+            value={isFetchingInvoiceNumber ? 'Loading...' : invoiceNumber} // NEW: Show loading state
+            onChange={(event) => {
+              setInvoiceNumber(event.target.value);
+              setInvoiceNumberError(null); // NEW: Clear error on manual input
+            }}
             required
             placeholder={`e.g., INV${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}0000`}
+            disabled={isFetchingInvoiceNumber} // NEW: Disable input while loading
           />
+          {invoiceNumberError && <p style={{ color: 'red', fontSize: '0.8em' }}>{invoiceNumberError}</p>} {/* NEW: Display error */}
         </label>
         <label>
           Description

@@ -1,4 +1,4 @@
-﻿﻿import { useEffect, useRef, useState } from 'react';
+﻿﻿﻿﻿import { useEffect, useRef, useState } from 'react';
 import { formatAmount } from '../formatters';
 import {
   createClient,
@@ -12,8 +12,10 @@ import {
   getInvoice,
   getInvoiceNextNumber,
   getInvoices,
+  getDocuments, // Added for document management
   getQuote,
   getQuoteDescriptions,
+  getQuoteNextNumber,
   getQuotes,
   getStatements,
   getUsers,
@@ -30,7 +32,8 @@ import type {
   QuoteCreateRequest,
   QuoteDescription,
   User,
-  Statement
+  Statement,
+  DocumentResponse // Added for document management
 } from './types';
 import { useAuth } from './AuthContext';
 import { Login } from './components/Login';
@@ -68,6 +71,7 @@ function App() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [statements, setStatements] = useState<Statement[]>([]);
+  const [documents, setDocuments] = useState<DocumentResponse[]>([]); // Added for document management
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [editingQuote, setEditingQuote] = useState<Quote | null>(null);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
@@ -105,20 +109,22 @@ function App() {
     try {
       setError(null);
       setIsLoading(true);
-      const [clientsData, quotesData, descriptionsData, usersData, invoicesData, statementsData] = await Promise.all([
+      const [clientsData, quotesData, descriptionsData, usersData, invoicesData, statementsData, documentsData] = await Promise.all([ // Modified for documents
         getClients(),
         getQuotes(),
         getQuoteDescriptions(),
         getUsers(),
         getInvoices(),
-        getStatements()
-      ]);
+        getStatements(),
+        getDocuments() // Fetch documents
+      ]); // Closing the Promise.all array
       setClients(clientsData);
       setQuotes(quotesData);
       setQuoteDescriptions(descriptionsData);
       setUsers(usersData);
       setInvoices(invoicesData);
       setStatements(statementsData);
+      setDocuments(documentsData); // Set documents state
     } catch (err: any) {
       setError(getErrorMessage(err, 'Unable to load data. Confirm the API is running.'));
     } finally {
@@ -1155,10 +1161,10 @@ function App() {
           selectedClientId={quoteClientId}
           descriptionOptions={quoteDescriptions}
           onSelectClientId={setQuoteClientId}
-          isNew={!editingQuote}
+          isNew={!editingQuote?.id}
           isDuplicate={isDuplicatingQuote}
           onSubmit={
-            editingQuote && !isDuplicatingQuote
+            editingQuote?.id && !isDuplicatingQuote
               ? (payload) => handleUpdateQuote(editingQuote.id, payload)
               : handleCreateQuote
           }
@@ -1204,7 +1210,7 @@ function App() {
           quotes={quotes}
           initialData={editingInvoice ?? undefined}
           onSubmit={
-            editingInvoice
+            editingInvoice?.id
               ? (payload) => handleUpdateInvoice(editingInvoice.id, payload)
               : handleCreateInvoice
           }
@@ -1243,7 +1249,7 @@ function App() {
       )}
 
       {!isLoading && section === 'admin' && adminView === 'documents' && (
-        <DocumentManagementPage />
+        <DocumentManagementPage onBack={() => setAdminView('home')} onRefreshApp={loadAll} />
       )}
     </div>
   );

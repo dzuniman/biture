@@ -26,7 +26,7 @@ import type {
   DocumentResponse
 } from './types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:5227';
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://192.168.8.103:5227/api'; 
 
 const getToken = () => localStorage.getItem('token');
 
@@ -112,8 +112,8 @@ export const deleteQuote = async (id: string): Promise<void> => {
   await api.delete(`/quotes/${id}`);
 };
 
-export const getQuoteNextNumber = async (): Promise<string> => {
-  const response = await api.get('/quotes/nextNumber');
+export const getQuoteNextNumber = async (prefix: string): Promise<string> => { // Added prefix parameter
+  const response = await api.get(`/quotes/next-number?prefix=${prefix}`); 
   return response.data;
 };
 
@@ -143,7 +143,7 @@ export const deleteInvoice = async (id: string): Promise<void> => {
 };
 
 export const getInvoiceNextNumber = async (prefix: string): Promise<string> => {
-  const response = await api.get(`/invoices/nextNumber?prefix=${prefix}`);
+  const response = await api.get(`/invoices/next-number?prefix=${prefix}`);
   return response.data;
 };
 
