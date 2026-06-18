@@ -553,43 +553,20 @@ function App() {
   };
 
   // Dashboard Calculations
-  const totalQuoteValue = quotes.reduce((sum, quote) => sum + (Number(quote.total) || 0), 0);
-  const averageQuoteValue = quotes.length ? totalQuoteValue / quotes.length : 0;
-  const largestQuoteValue = quotes.length ? Math.max(...quotes.map((quote) => Number(quote.total) || 0)) : 0;
-
-  const topClients = clients
-    .map((client) => ({
-      name: client.name || 'Unknown Client',
-      total: quotes.filter((quote) => quote.clientId === client.id).reduce((sum, quote) => sum + (Number(quote.total) || 0), 0)
-    }))
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 5);
-  const chartMax = Math.max(...topClients.map((client) => client.total), 1);
-
-  const totalInvoiceValue = invoices.reduce((sum, invoice) => sum + (Number(invoice.amount) || 0), 0);
-  const averageInvoiceValue = invoices.length ? totalInvoiceValue / invoices.length : 0;
-  const largestInvoiceValue = invoices.length ? Math.max(...invoices.map((invoice) => Number(invoice.amount) || 0)) : 0;
-
-  const totalStatementsCount = statements.length;
+  const totalQuoteValue = quotes.reduce((sum, q) => sum + (Number(q.total) || 0), 0);
+  const totalInvoiceValue = invoices.reduce((sum, inv) => sum + (Number(inv.amount) || 0), 0);
+  
   const totalPaymentsRecorded = statements.reduce((sum, statement) => {
     const items = (statement as any).items || (statement as any).Items || [];
     return sum + items.reduce((itemSum: number, item: any) => itemSum + (item.paymentAmount || item.PaymentAmount || 0), 0);
   }, 0);
 
-  const topClientsByInvoiceValue = clients
-    .map((client) => ({
-      name: client.name || 'Unknown Client',
-      total: invoices
-        .filter((inv) => inv.clientId === client.id || inv.client?.id === client.id)
-        .reduce((sum, inv) => sum + (Number(inv.amount) || 0), 0)
-    }))
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 5);
-  const chartMaxInvoice = Math.max(...topClientsByInvoiceValue.map((client) => client.total), 1);
+  const totalOutstanding = Math.max(0, totalInvoiceValue - totalPaymentsRecorded);
+  const collectionRate = totalInvoiceValue > 0 ? (totalPaymentsRecorded / totalInvoiceValue) * 100 : 0;
 
-  const recentQuotes = quotes.slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
-  const recentInvoices = invoices.slice().sort((a, b) => new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime()).slice(0, 5);
-  const recentStatements = statements.slice().sort((a, b) => {
+  const recentQuotes = [...quotes].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
+  const recentInvoices = [...invoices].sort((a, b) => new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime()).slice(0, 5);
+  const recentStatements = [...statements].sort((a, b) => {
     const dateA = (a as any).createdAt || (a as any).CreatedAt;
     const dateB = (b as any).createdAt || (b as any).CreatedAt;
     return new Date(dateB).getTime() - new Date(dateA).getTime();
@@ -858,243 +835,175 @@ function App() {
       )}
 
       {!isLoading && section === 'dashboard' && (
-        <div className="page-section">
-          <div className="section-header">
+        <div className="page-section dashboard-new">
+          <style dangerouslySetInnerHTML={{ __html: `
+            .dashboard-new { max-width: 1400px; margin: 0 auto; padding: 20px; }
+            .dash-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+            .dash-header h2 { margin: 0; font-size: 1.8rem; color: #e6e6e6; }
+            .dash-header p { margin: 4px 0 0; color: #ffffff; font-size: 0.95rem; }
+            
+            .metrics-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 40px; }
+            .metric-card { background: white; padding: 24px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); transition: transform 0.2s; }
+            .metric-card:hover { transform: translateY(-2px); }
+            .metric-card .m-label { display: block; font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+            .metric-card .m-value { display: block; font-size: 1.75rem; font-weight: 800; color: #0f172a; margin-top: 10px; }
+            .metric-card .m-sub { display: block; font-size: 0.75rem; color: #94a3b8; margin-top: 6px; font-weight: 500; }
+            
+            .m-card-quotes { border-top: 5px solid #3b82f6; }
+            .m-card-invoices { border-top: 5px solid #10b981; }
+            .m-card-payments { border-top: 5px solid #8b5cf6; }
+            .m-card-outstanding { border-top: 5px solid #ef4444; }
+
+            .activity-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px; }
+            .activity-block { background: white; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+            .block-header { padding: 18px 24px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+            .block-header h3 { margin: 0; font-size: 1.05rem; font-weight: 700; color: #334155; }
+            .block-header button { font-size: 0.8rem; font-weight: 700; color: #3b82f6; background: white; border: 1px solid #e2e8f0; cursor: pointer; padding: 6px 12px; border-radius: 8px; transition: all 0.2s; }
+            .block-header button:hover { background: #eff6ff; border-color: #3b82f6; }
+            
+            .list-scroll { flex: 1; max-height: 400px; overflow-y: auto; }
+            .dash-item { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: background 0.2s; }
+            .dash-item:hover { background: #f8fafc; }
+            .dash-item:last-child { border-bottom: none; }
+            .item-main { display: flex; flex-direction: column; gap: 4px; }
+            .item-main .title { font-size: 0.95rem; font-weight: 700; color: #1e293b; }
+            .item-main .subtitle { font-size: 0.8rem; color: #64748b; }
+            .item-side { text-align: right; }
+            .item-side .amount { font-size: 1rem; font-weight: 700; color: #0f172a; display: block; }
+            .item-side .date { font-size: 0.75rem; color: #94a3b8; }
+            
+            .status-tag { font-size: 0.65rem; font-weight: 800; padding: 4px 8px; border-radius: 6px; text-transform: uppercase; margin-right: 10px; display: inline-block; vertical-align: middle; }
+            .status-tag.paid { background: #dcfce7; color: #166534; }
+            .status-tag.draft { background: #f1f5f9; color: #475569; }
+            .status-tag.sent { background: #dbeafe; color: #1e40af; }
+            .status-tag.overdue { background: #fee2e2; color: #991b1b; }
+            
+            .empty-msg { padding: 60px; text-align: center; color: #94a3b8; font-style: italic; font-size: 0.95rem; }
+          ` }} />
+          
+          <div className="dash-header">
             <div>
               <h2>Dashboard</h2>
-              <p>Live quote insights and client performance.</p>
+              <p>Hello, {user?.username}. Here's the current health of your operations and activities.</p>
+            </div>
+            <div className="dash-summary-pills">
+               <span className="badge accent-blue" style={{ padding: '10px 20px', borderRadius: '25px', fontWeight: 'bold' }}>{clients.length} Active Clients</span>
             </div>
           </div>
 
-          <div className="stats-row">
-            <div className="stat-box">
-              <span className="stat-label">Total Clients</span>
-              <span className="stat-value">{clients.length}</span>
+          <div className="metrics-row">
+            <div className="metric-card m-card-quotes">
+              <span className="m-label">Quoted Pipeline</span>
+              <span className="m-value">{formatAmount(totalQuoteValue)}</span>
+              <span className="m-sub">Value of {quotes.length} total quotes</span>
             </div>
-            <div className="stat-box">
-              <span className="stat-label">Total Quotes</span>
-              <span className="stat-value">{quotes.length}</span>
+            <div className="metric-card m-card-invoices">
+              <span className="m-label">Billed Revenue</span>
+              <span className="m-value">{formatAmount(totalInvoiceValue)}</span>
+              <span className="m-sub">{invoices.length} invoices generated</span>
             </div>
-            <div className="stat-box">
-              <span className="stat-label">Total Quote Value</span>
-              <span className="stat-value">{formatAmount(totalQuoteValue)}</span>
+            <div className="metric-card m-card-payments">
+              <span className="m-label">Cash Collected</span>
+              <span className="m-value" style={{ color: '#10b981' }}>{formatAmount(totalPaymentsRecorded)}</span>
+              <span className="m-sub">{collectionRate.toFixed(1)}% collection efficiency</span>
             </div>
-            <div className="stat-box">
-              <span className="stat-label">Avg. Quote Value</span>
-              <span className="stat-value">{formatAmount(averageQuoteValue)}</span>
-            </div>
-            <div className="stat-box">
-              <span className="stat-label">Total Invoices</span>
-              <span className="stat-value">{invoices.length}</span>
-            </div>
-            <div className="stat-box">
-              <span className="stat-label">Total Invoice Value</span>
-              <span className="stat-value">{formatAmount(totalInvoiceValue)}</span>
+            <div className="metric-card m-card-outstanding">
+              <span className="m-label">Pending Receivables</span>
+              <span className="m-value" style={{ color: totalOutstanding > 0 ? '#ef4444' : '#10b981' }}>
+                {formatAmount(totalOutstanding)}
+              </span>
+              <span className="m-sub">Balance from issued invoices</span>
             </div>
           </div>
 
-          <div className="chart-grid">
-            <div className="dashboard-card chart-card">
-              <div className="card-heading">
-                <h3>Top Clients by Quote Value</h3>
-                <span className="badge accent-red">Live</span>
+          <div className="activity-grid">
+            {/* Recent Payments */}
+            <div className="activity-block">
+              <div className="block-header">
+                <h3>Recent Collection Activity</h3>
+                <button onClick={() => setSection('statements')}>Statement Logs</button>
               </div>
-              {topClients.length === 0 ? (
-                <div className="empty-state">
-                  <div className="empty-state-icon">📊</div>
-                  <p>No client quote totals available yet.</p>
-                </div>
-              ) : (
-                <div className="bar-chart">
-                  {topClients.map((client) => (
-                    <div className="chart-row" key={client.name}>
-                      <div className="chart-row-label">{client.name}</div>
-                      <div className="chart-bar-wrap">
-                        <div
-                          className="chart-bar-fill"
-                          style={{ width: `${(client.total / chartMax) * 100}%` }}
-                        />
+              <div className="list-scroll" style={{ maxHeight: '300px' }}>
+                {recentStatements.length === 0 ? (
+                  <div className="empty-msg">No payment history recorded</div>
+                ) : (
+                  recentStatements.map(s => {
+                    const sItems = (s as any).items || (s as any).Items || [];
+                    const sTotal = sItems.reduce((sum: number, i: any) => sum + (i.paymentAmount || i.PaymentAmount || 0), 0);
+                    const clientName = (s as any).client?.name || (s as any).Client?.Name || 'Unknown Client';
+                    const sNum = (s as any).statementNumber || (s as any).StatementNumber;
+                    return (
+                      <div key={s.id} className="dash-item" onClick={() => handleViewStatement(s)}>
+                        <div className="item-main">
+                          <span className="title">Payment Advice #{sNum}</span>
+                          <span className="subtitle">{clientName}</span>
+                        </div>
+                        <div className="item-side">
+                          <span className="amount" style={{ color: '#10b981' }}>+{formatAmount(sTotal)}</span>
+                          <span className="date">{new Date((s as any).createdAt || (s as any).CreatedAt).toLocaleDateString()}</span>
+                        </div>
                       </div>
-                      <div className="chart-row-value">{formatAmount(client.total)}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="dashboard-card metrics-card">
-              <div className="card-heading">
-                <h3>Quote Performance</h3>
-                <span className="badge accent-yellow">Trend</span>
-              </div>
-              <div className="metric-grid">
-                <div className="metric-tile metric-blue">
-                  <span>Total Value</span>
-                  <strong>{formatAmount(totalQuoteValue)}</strong>
-                </div>
-                <div className="metric-tile metric-white">
-                  <span>Average Quote</span>
-                  <strong>{formatAmount(averageQuoteValue)}</strong>
-                </div>
-                <div className="metric-tile metric-red">
-                  <span>Largest Quote</span>
-                  <strong>{formatAmount(largestQuoteValue)}</strong>
-                </div>
-                <div className="metric-tile metric-dark">
-                  <span>Clients with Quotes</span>
-                  <strong>{topClients.filter((client) => client.total > 0).length}</strong>
-                </div>
+                    );
+                  })
+                )}
               </div>
             </div>
-          </div>
 
-          <div className="chart-grid" style={{ marginTop: '20px' }}>
-            <div className="dashboard-card chart-card">
-              <div className="card-heading">
-                <h3>Top Clients by Invoice Value</h3>
-                <span className="badge accent-blue">Live</span>
+            {/* Recent Invoices */}
+            <div className="activity-block">
+              <div className="block-header">
+                <h3>Latest Invoices</h3>
+                <button onClick={() => setSection('invoices')}>Manage Invoices</button>
               </div>
-              {topClientsByInvoiceValue.length === 0 ? (
-                <div className="empty-state">
-                  <div className="empty-state-icon">📊</div>
-                  <p>No client invoice totals available yet.</p>
-                </div>
-              ) : (
-                <div className="bar-chart">
-                  {topClientsByInvoiceValue.map((client) => (
-                    <div className="chart-row" key={client.name}>
-                      <div className="chart-row-label">{client.name}</div>
-                      <div className="chart-bar-wrap">
-                        <div
-                          className="chart-bar-fill"
-                          style={{ width: `${(client.total / chartMaxInvoice) * 100}%` }}
-                        />
+              <div className="list-scroll" style={{ maxHeight: '300px' }}>
+                {recentInvoices.length === 0 ? (
+                  <div className="empty-msg">No invoicing activity found</div>
+                ) : (
+                  recentInvoices.map(inv => (
+                    <div key={inv.id} className="dash-item" onClick={() => handleViewInvoice(inv)}>
+                      <div className="item-main">
+                        <span className="title">
+                          <span className={`status-tag ${inv.status.toLowerCase()}`}>{inv.status}</span>
+                          #{inv.invoiceNumber}
+                        </span>
+                        <span className="subtitle">{inv.client?.name || inv.quote?.client?.name || 'Unknown Client'}</span>
                       </div>
-                      <div className="chart-row-value">{formatAmount(client.total)}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="dashboard-card metrics-card">
-              <div className="card-heading">
-                <h3>Invoice Performance</h3>
-                <span className="badge accent-green">Trend</span>
-              </div>
-              <div className="metric-grid">
-                <div className="metric-tile metric-blue">
-                  <span>Total Value</span>
-                  <strong>{formatAmount(totalInvoiceValue)}</strong>
-                </div>
-                <div className="metric-tile metric-white">
-                  <span>Average Invoice</span>
-                  <strong>{formatAmount(averageInvoiceValue)}</strong>
-                </div>
-                <div className="metric-tile metric-red">
-                  <span>Largest Invoice</span>
-                  <strong>{formatAmount(largestInvoiceValue)}</strong>
-                </div>
-                <div className="metric-tile metric-dark">
-                  <span>Clients with Invoices</span>
-                  <strong>{invoices.filter(inv => inv.client || inv.quote?.client).length}</strong>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="stats-row" style={{ marginTop: '20px' }}>
-            <div className="stat-box">
-              <span className="stat-label">Total Statements</span>
-              <span className="stat-value">{totalStatementsCount}</span>
-            </div>
-            <div className="stat-box">
-              <span className="stat-label">Total Payments Recorded</span>
-              <span className="stat-value">{formatAmount(totalPaymentsRecorded)}</span>
-            </div>
-          </div>
-
-          {quotes.length > 0 && (
-            <div className="dashboard-card quote-list-card">
-              <div className="card-heading">
-                <h3>Recent Quotes</h3>
-              </div>
-              <div className="quote-list">
-                {quotes.slice(0, 5).map((quote) => (
-                  <button
-                    type="button"
-                    key={quote.id}
-                    className="quote-list-item"
-                    onClick={() => handleViewQuote(quote)}
-                  >
-                    <div>
-                      <strong>#{quote.quoteNumber}</strong> {quote.reference}
-                      <div className="quote-list-meta">{quote.client?.name ?? 'No client'}</div>
-                    </div>
-                    <span>{formatAmount(quote.total)}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {invoices.length > 0 && (
-            <div className="dashboard-card quote-list-card" style={{ marginTop: '20px' }}>
-              <div className="card-heading">
-                <h3>Recent Invoices</h3>
-              </div>
-              <div className="quote-list">
-                {recentInvoices.map((invoice) => (
-                  <button
-                    type="button"
-                    key={invoice.id}
-                    className="quote-list-item"
-                    onClick={() => handleViewInvoice(invoice)}
-                  >
-                    <div>
-                      <strong>#{invoice.invoiceNumber}</strong> {invoice.quote?.reference || invoice.description}
-                      <div className="quote-list-meta">{invoice.client?.name || invoice.quote?.client?.name || 'No client'}</div>
-                    </div>
-                    <span>{formatAmount(invoice.amount)}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {statements.length > 0 && (
-            <div className="dashboard-card quote-list-card" style={{ marginTop: '20px' }}>
-              <div className="card-heading">
-                <h3>Recent Statements</h3>
-              </div>
-              <div className="quote-list">
-                {recentStatements.map((statement) => {
-                  const items = (statement as any).items || (statement as any).Items || [];
-                  const statementTotalPayments = items.reduce((itemSum: number, item: any) => itemSum + (item.paymentAmount || item.PaymentAmount || 0), 0);
-                  const clientName = (statement as any).client?.name || (statement as any).Client?.Name || 'No client';
-
-                  return (
-                    <button
-                      type="button"
-                      key={statement.id}
-                      className="quote-list-item"
-                      onClick={() => handleViewStatement(statement)}
-                    >
-                      <div>
-                        <strong>#{statement.statementNumber || (statement as any).StatementNumber}</strong>
-                        <div className="quote-list-meta">{clientName}</div>
+                      <div className="item-side">
+                        <span className="amount">{formatAmount(inv.amount)}</span>
+                        <span className="date">{inv.createdAt ? new Date(inv.createdAt).toLocaleDateString() : ''}</span>
                       </div>
-                      <span>{formatAmount(statementTotalPayments)}</span>
-                    </button>
-                  );
-                })}
+                    </div>
+                  ))
+                )}
               </div>
             </div>
-          )}
 
-          {statements.length === 0 && invoices.length === 0 && quotes.length === 0 && (
-            <p style={{ textAlign: 'center', marginTop: '40px', color: '#6b7280' }}>No data available to display on the dashboard yet. Start by creating clients, quotes, invoices, or statements.</p>
-          )}
+            {/* Recent Quotes */}
+            <div className="activity-block">
+              <div className="block-header">
+                <h3>Active Quotes</h3>
+                <button onClick={() => setSection('quotes')}>Manage Quotes</button>
+              </div>
+              <div className="list-scroll">
+                {recentQuotes.length === 0 ? (
+                  <div className="empty-msg">No quotations created yet</div>
+                ) : (
+                  recentQuotes.map(q => (
+                    <div key={q.id} className="dash-item" onClick={() => handleViewQuote(q)}>
+                      <div className="item-main">
+                        <span className="title">#{q.quoteNumber}</span>
+                        <span className="subtitle">{q.client?.name || 'Private Client'} — {q.reference}</span>
+                      </div>
+                      <div className="item-side">
+                        <span className="amount">{formatAmount(q.total)}</span>
+                        <span className="date">{new Date(q.date).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
