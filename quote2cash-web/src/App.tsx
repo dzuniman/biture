@@ -1,4 +1,4 @@
-﻿﻿﻿﻿import { useEffect, useRef, useState } from 'react';
+﻿﻿import { useEffect, useRef, useState } from 'react';
 import { formatAmount } from '../formatters';
 import {
   createClient,
@@ -310,10 +310,10 @@ function App() {
 
   const resolveInvoiceRelationships = (invoice: Invoice) => {
     const resolved = { ...invoice } as any;
-    
+
     // Reconstruct quote relationship - Don't overwrite if current quote already has items
     const invoiceQuoteId = resolved.quoteId || (typeof resolved.quote === 'string' ? resolved.quote : resolved.quote?.id);
-    
+
     if (invoiceQuoteId) {
       const quoteFromState = quotes.find(q => q.id === invoiceQuoteId);
       const currentHasItems = resolved.quote && typeof resolved.quote !== 'string' && resolved.quote.items && resolved.quote.items.length > 0;
@@ -350,7 +350,7 @@ function App() {
         }
       }
     }
-    
+
     return resolved;
   };
 
@@ -528,7 +528,7 @@ function App() {
       const fullQuote = await getQuote(quote.id);
       setEditingQuote(fullQuote);
       setIsDuplicatingQuote(true);
-      setQuoteClientId(fullQuote.clientId ?? ''); 
+      setQuoteClientId(fullQuote.clientId ?? '');
       setQuoteView('manage');
     } catch (err: any) {
       setError(getErrorMessage(err, 'Unable to load quote for duplication.'));
@@ -555,7 +555,7 @@ function App() {
   // Dashboard Calculations
   const totalQuoteValue = quotes.reduce((sum, q) => sum + (Number(q.total) || 0), 0);
   const totalInvoiceValue = invoices.reduce((sum, inv) => sum + (Number(inv.amount) || 0), 0);
-  
+
   const totalPaymentsRecorded = statements.reduce((sum, statement) => {
     const items = (statement as any).items || (statement as any).Items || [];
     return sum + items.reduce((itemSum: number, item: any) => itemSum + (item.paymentAmount || item.PaymentAmount || 0), 0);
@@ -580,8 +580,8 @@ function App() {
     <div className="app-shell">
       <header className="site-header no-print">
         <div className="header-left">
-          <div 
-            className="brand-block" 
+          <div
+            className="brand-block"
             onClick={() => {
               setSection('dashboard');
               setStatementView('list');
@@ -592,11 +592,11 @@ function App() {
             }}
             style={{ cursor: 'pointer' }}
           >
-            <img 
-              src={logo} 
-              alt="Logo" 
-              className="brand-logo" 
-              style={{ display: 'block', height: '80px', width: 'auto', flexShrink: 0, marginRight: '12px' }} 
+            <img
+              src={logo}
+              alt="Logo"
+              className="brand-logo"
+              style={{ display: 'block', height: '80px', width: 'auto', flexShrink: 0, marginRight: '12px' }}
             />
             {/*<div>
               <div className="brand-title">EPEC Solution</div>
@@ -836,7 +836,8 @@ function App() {
 
       {!isLoading && section === 'dashboard' && (
         <div className="page-section dashboard-new">
-          <style dangerouslySetInnerHTML={{ __html: `
+          <style dangerouslySetInnerHTML={{
+            __html: `
             .dashboard-new { max-width: 1400px; margin: 0 auto; padding: 20px; }
             .dash-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
             .dash-header h2 { margin: 0; font-size: 1.8rem; color: #e6e6e6; }
@@ -880,14 +881,14 @@ function App() {
             
             .empty-msg { padding: 60px; text-align: center; color: #94a3b8; font-style: italic; font-size: 0.95rem; }
           ` }} />
-          
+
           <div className="dash-header">
             <div>
               <h2>Dashboard</h2>
               <p>Hello, {user?.username}. Here's the current health of your operations and activities.</p>
             </div>
             <div className="dash-summary-pills">
-               <span className="badge accent-blue" style={{ padding: '10px 20px', borderRadius: '25px', fontWeight: 'bold' }}>{clients.length} Active Clients</span>
+              <span className="badge accent-blue" style={{ padding: '10px 20px', borderRadius: '25px', fontWeight: 'bold' }}>{clients.length} Active Clients</span>
             </div>
           </div>
 

@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import axios from 'axios';
 import type { Invoice, Client } from '../types';
 import { formatAmount } from '../../formatters';
-import { getStatementNextNumber } from '../api';
+import { getStatementNextNumber, createStatement, updateStatement } from '../api';
 
 interface StatementItem {
   id?: string;
@@ -118,14 +118,11 @@ export const StatementForm: React.FC<Props> = ({ invoices, clients, initialData,
         }))
       };
 
-      const token = localStorage.getItem('token');
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-
       const id = initialData?.id || initialData?.Id;
       if (id) {
-        await axios.put(`/api/statements/${id}`, payload, config);
+        await updateStatement(id, payload);
       } else {
-        await axios.post('/api/statements', payload, config);
+        await createStatement(payload);
       }
       onSuccess();
     } catch (err) {

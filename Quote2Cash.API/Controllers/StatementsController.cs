@@ -137,27 +137,35 @@ namespace Quote2Cash.API.Controllers
 
                 existing.StatementNumber = request.StatementNumber;
                 existing.ClientId = request.ClientId;
-                existing.Client = null;
 
-                // Atomic Update: Remove old items and clear navigation
-                _context.StatementItems.RemoveRange(existing.Items);
-                existing.Items.Clear();
-
-                // Add new items
-                foreach (var item in request.Items)
+                var existingItems = existing.Items.ToList();
+                if (existingItems.Any())
                 {
-                    existing.Items.Add(new StatementItem
-                    {
-                        Id = Guid.NewGuid(),
-                        StatementId = id,
-                        InvoiceId = item.InvoiceId,
-                        PaymentAmount = item.PaymentAmount,
-                        Description = item.Description,
-                        PaymentDate = DateTime.SpecifyKind(item.PaymentDate, DateTimeKind.Utc)
-                    });
+                    _context.StatementItems.RemoveRange(existingItems);
+                    await _context.SaveChangesAsync();
                 }
 
-                await _context.SaveChangesAsync();
+                var newItems = request.Items.Select(item => new StatementItem
+                {
+                    Id = Guid.NewGuid(),
+                    StatementId = id,
+                    InvoiceId = item.InvoiceId,
+                    PaymentAmount = item.PaymentAmount,
+                    Description = item.Description,
+                    PaymentDate = DateTime.SpecifyKind(item.PaymentDate, DateTimeKind.Utc)
+                }).ToList();
+
+                if (newItems.Any())
+                {
+                    _context.StatementItems.AddRange(newItems);
+                    await _context.SaveChangesAsync();
+                }
+                else
+                {
+                    // Ensure any parent statement changes are saved if there were no items to process
+                    await _context.SaveChangesAsync();
+                }
+
                 return NoContent();
             }
             catch (Exception ex)
