@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { StatementForm } from './StatementForm';
 import StatementList from './StatementList';
 import { StatementViewPage } from './StatementViewPage';

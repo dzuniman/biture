@@ -239,10 +239,17 @@ export interface InvoiceCreateRequest {
   amount?: number; // Add amount if it's part of the create request
 }
 
+export interface StatementItemCreateRequest {
+  invoiceId: string;
+  paymentAmount: number;
+  description: string;
+  paymentDate: string;
+}
+
 export interface StatementCreateRequest {
   clientId?: string | null;
   statementNumber: string;
-  items: StatementItem[];
+  items: StatementItemCreateRequest[];
 }
 
 export interface DocumentResponse {
