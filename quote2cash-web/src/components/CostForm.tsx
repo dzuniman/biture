@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+/*import { useEffect, useState, type FormEvent } from 'react';
 import type { Client, Cost, JobCard, CostCreateRequest } from '../types';
 
 interface Props {
@@ -121,3 +121,4 @@ export default function CostForm({ clients, jobCards, initialData, onSubmit, onC
     </div>
   );
 }
+*/
