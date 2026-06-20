@@ -1,4 +1,4 @@
-﻿﻿import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { formatAmount } from '../formatters';
 import {
   createClient,
@@ -21,7 +21,12 @@ import {
   getUsers,
   updateClient,
   updateInvoice,
-  updateQuote
+  updateQuote,
+  getJobCards,
+  getJobCard,
+  createJobCard,
+  updateJobCard,
+  deleteJobCard
 } from './api';
 import type {
   Client,
@@ -33,7 +38,9 @@ import type {
   QuoteDescription,
   User,
   Statement,
-  DocumentResponse // Added for document management
+  DocumentResponse, // Added for document management
+  JobCard,
+  JobCardCreateRequest
 } from './types';
 import { useAuth } from './AuthContext';
 import { Login } from './components/Login';
@@ -51,14 +58,18 @@ import AdminHomePage from './components/AdminHomePage';
 import QuoteDescriptionManagementPage from './components/QuoteDescriptionManagementPage';
 import UserManagementPage from './components/UserManagementPage';
 import { Statements } from './components/Statements';
+import JobCardListPage from './components/JobCardListPage';
+import JobCardForm from './components/JobCardForm';
+import JobCardViewPage from './components/JobCardViewPage';
 import logo from './assets/logo.png';
 
 
-type Section = 'dashboard' | 'clients' | 'quotes' | 'invoices' | 'admin' | 'statements';
+type Section = 'dashboard' | 'clients' | 'quotes' | 'invoices' | 'admin' | 'statements' | 'jobcards';
 type ClientView = 'list' | 'manage' | 'view';
 type QuoteView = 'list' | 'manage' | 'view';
 type InvoiceView = 'list' | 'manage' | 'view';
 type StatementView = 'list' | 'manage' | 'view';
+type JobCardView = 'list' | 'manage' | 'view';
 type AdminView = 'home' | 'descriptions' | 'users' | 'documents';
 
 function App() {
@@ -67,18 +78,22 @@ function App() {
   const [quoteView, setQuoteView] = useState<QuoteView>('list');
   const [invoiceView, setInvoiceView] = useState<InvoiceView>('list');
   const [statementView, setStatementView] = useState<StatementView>('list');
+  const [jobCardView, setJobCardView] = useState<JobCardView>('list');
   const [clients, setClients] = useState<Client[]>([]);
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [statements, setStatements] = useState<Statement[]>([]);
+  const [jobCards, setJobCards] = useState<JobCard[]>([]);
   const [documents, setDocuments] = useState<DocumentResponse[]>([]); // Added for document management
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [editingQuote, setEditingQuote] = useState<Quote | null>(null);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+  const [editingJobCard, setEditingJobCard] = useState<JobCard | null>(null);
   const [viewingClient, setViewingClient] = useState<Client | null>(null);
   const [viewingQuote, setViewingQuote] = useState<Quote | null>(null);
   const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null);
   const [viewingStatement, setViewingStatement] = useState<Statement | null>(null);
+  const [viewingJobCard, setViewingJobCard] = useState<JobCard | null>(null);
   const [quoteDescriptions, setQuoteDescriptions] = useState<QuoteDescription[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [adminView, setAdminView] = useState<AdminView>('home');
@@ -109,22 +124,24 @@ function App() {
     try {
       setError(null);
       setIsLoading(true);
-      const [clientsData, quotesData, descriptionsData, usersData, invoicesData, statementsData, documentsData] = await Promise.all([ // Modified for documents
+      const [clientsData, quotesData, descriptionsData, usersData, invoicesData, statementsData, documentsData, jobCardsData] = await Promise.all([
         getClients(),
         getQuotes(),
         getQuoteDescriptions(),
         getUsers(),
         getInvoices(),
         getStatements(),
-        getDocuments() // Fetch documents
-      ]); // Closing the Promise.all array
+        getDocuments(),
+        getJobCards()
+      ]);
       setClients(clientsData);
       setQuotes(quotesData);
       setQuoteDescriptions(descriptionsData);
       setUsers(usersData);
       setInvoices(invoicesData);
       setStatements(statementsData);
-      setDocuments(documentsData); // Set documents state
+      setDocuments(documentsData);
+      setJobCards(jobCardsData);
     } catch (err: any) {
       setError(getErrorMessage(err, 'Unable to load data. Confirm the API is running.'));
     } finally {
@@ -457,6 +474,12 @@ function App() {
     setStatementView('list');
   };
 
+  const clearJobCardState = () => {
+    setEditingJobCard(null);
+    setViewingJobCard(null);
+    setJobCardView('list');
+  };
+
   const clearClientState = () => {
     setEditingClient(null);
     setViewingClient(null);
@@ -540,13 +563,86 @@ function App() {
   const handleViewStatement = async (statement: Statement) => {
     try {
       setIsLoading(true);
-      // Assuming StatementViewPage can handle the statement object directly
-      // If full details are needed, a getStatement(statement.id) call would be here
-      setViewingStatement(statement); // Assuming a state for viewingStatement exists or is added
+      setViewingStatement(statement);
       setStatementView('view');
       setSection('statements');
     } catch (err: any) {
       setError(getErrorMessage(err, 'Unable to load statement.'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // --- Job Card Handlers ---
+  const handleCreateJobCard = async (payload: JobCardCreateRequest) => {
+    try {
+      setError(null);
+      setIsLoading(true);
+      await createJobCard(payload);
+      clearJobCardState();
+      await loadAll();
+      setSection('jobcards');
+      setJobCardView('list');
+    } catch (err: any) {
+      setError(getErrorMessage(err, 'Unable to save job card.'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUpdateJobCard = async (id: string, payload: JobCardCreateRequest) => {
+    try {
+      setError(null);
+      setIsLoading(true);
+      await updateJobCard(id, payload);
+      clearJobCardState();
+      await loadAll();
+      setJobCardView('list');
+    } catch (err: any) {
+      setError(getErrorMessage(err, 'Unable to update job card.'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteJobCard = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this job card?')) {
+      try {
+        setError(null);
+        setIsLoading(true);
+        await deleteJobCard(id);
+        await loadAll();
+      } catch (err: any) {
+        setError(getErrorMessage(err, 'Unable to delete job card.'));
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  const handleEditJobCard = async (jobCard: JobCard) => {
+    try {
+      setIsLoading(true);
+      const fullJobCard = await getJobCard(jobCard.id);
+      setEditingJobCard(fullJobCard);
+      setJobCardView('manage');
+      setSection('jobcards');
+    } catch (err: any) {
+      setError(getErrorMessage(err, 'Unable to load job card for editing.'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleViewJobCard = async (jobCard: JobCard) => {
+    try {
+      setIsLoading(true);
+      const fullJobCard = await getJobCard(jobCard.id);
+      setViewingJobCard(fullJobCard);
+      setJobCardView('view');
+      setSection('jobcards');
+    } catch (err: any) {
+      setError(getErrorMessage(err, 'Unable to load job card.'));
     } finally {
       setIsLoading(false);
     }
@@ -589,6 +685,7 @@ function App() {
               clearQuoteState();
               clearInvoiceState();
               clearStatementState();
+              clearJobCardState();
             }}
             style={{ cursor: 'pointer' }}
           >
@@ -713,6 +810,28 @@ function App() {
                   >
                     Create Client
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSection('jobcards');
+                      setJobCardView('list');
+                      clearJobCardState();
+                      setQuickActionsOpen(false);
+                    }}
+                  >
+                    View Job Cards
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSection('jobcards');
+                      clearJobCardState();
+                      setJobCardView('manage');
+                      setQuickActionsOpen(false);
+                    }}
+                  >
+                    Create Job Card
+                  </button>
                 </div>
               )}
             </div>
@@ -768,6 +887,21 @@ function App() {
               }}
             >
               Invoices
+            </button>
+            <button
+              type="button"
+              className={`nav-button ${section === 'jobcards' ? 'active' : ''}`}
+              onClick={() => {
+                setSection('jobcards');
+                setJobCardView('list');
+                clearClientState();
+                clearQuoteState();
+                clearInvoiceState();
+                clearStatementState();
+                clearJobCardState();
+              }}
+            >
+              Job Cards
             </button>
             <button
               type="button"
@@ -1160,6 +1294,47 @@ function App() {
 
       {!isLoading && section === 'admin' && adminView === 'documents' && (
         <DocumentManagementPage onBack={() => setAdminView('home')} onRefreshApp={loadAll} />
+      )}
+
+      {!isLoading && section === 'jobcards' && jobCardView === 'list' && (
+        <JobCardListPage
+          jobCards={jobCards}
+          onView={handleViewJobCard}
+          onEdit={handleEditJobCard}
+          onDelete={handleDeleteJobCard}
+          onCreateNew={() => {
+            clearJobCardState();
+            setJobCardView('manage');
+          }}
+        />
+      )}
+
+      {!isLoading && section === 'jobcards' && jobCardView === 'manage' && (
+        <JobCardForm
+          quotes={quotes}
+          initialData={editingJobCard ?? undefined}
+          isNew={!editingJobCard?.id}
+          onSubmit={
+            editingJobCard?.id
+              ? (payload) => handleUpdateJobCard(editingJobCard.id, payload)
+              : handleCreateJobCard
+          }
+          onCancel={() => {
+            clearJobCardState();
+            setJobCardView('list');
+          }}
+        />
+      )}
+
+      {!isLoading && section === 'jobcards' && jobCardView === 'view' && viewingJobCard && (
+        <JobCardViewPage
+          jobCard={viewingJobCard}
+          onEdit={() => viewingJobCard && handleEditJobCard(viewingJobCard)}
+          onBack={() => {
+            clearJobCardState();
+            setJobCardView('list');
+          }}
+        />
       )}
     </div>
   );

@@ -51,7 +51,7 @@ namespace Quote2Cash.API.Controllers
                     i.Client.RepresentativeName,
                     i.Client.RepresentativeNumber
                 } : null,
-                Quote = i.Quote != null ? new { i.Quote.Id, i.Quote.QuoteNumber, i.Quote.Reference } : null // Ensure QuoteNumber is included here
+                Quote = i.Quote != null ? new { i.Quote.Id, i.Quote.QuoteNumber, i.Quote.Reference, i.Quote.PONumber } : null // Ensure QuoteNumber is included here
             }));
         }
 
@@ -125,6 +125,7 @@ namespace Quote2Cash.API.Controllers
                 invoice.Quote.SubTotal,
                 invoice.Quote.Vat,
                 invoice.Quote.Total,
+                invoice.Quote.PONumber,
                 Client = invoice.Quote.Client != null ? new
                 {
                     invoice.Quote.Client.Id,

@@ -84,6 +84,7 @@ export interface Quote {
   subTotal: number;
   vat: number;
   total: number;
+  poNumber?: string | null;
 }
 
 export interface QuoteCreateRequest {
@@ -93,6 +94,7 @@ export interface QuoteCreateRequest {
   date: string;
   validityDays: number;
   items: QuoteItemCreateRequest[];
+  poNumber?: string | null;
 }
 
 export interface QuoteUom {
@@ -141,22 +143,30 @@ export interface UserUpdateRequest {
 
 export interface JobCard {
   id: string;
-  client?: Client | null;
-  jobNumber: string;
+  jobCardNumber: string;
+  reference: string;
+  quoteNumber: string;
   description: string;
-  status: string;
   createdAt: string;
-  startDate?: string;
-  endDate?: string;
-  totalCost: number;
-  costCount?: number;
-  costTotal?: number;
+  client?: { id: string; name: string } | null; // From list endpoint
+  quote?: {
+    id: string;
+    quoteNumber: string;
+    reference: string;
+    date?: string;
+    validityDays?: number;
+    subTotal?: number;
+    vat?: number;
+    total?: number;
+    client?: Client | null;
+    items?: QuoteItem[];
+  } | null; // From detail endpoint
 }
 
 export interface Cost {
   id: string;
   client?: Client | null;
-  jobCard?: { id: string; jobNumber: string } | null;
+  jobCard?: { id: string; jobCardNumber: string } | null;
   category: string;
   description: string;
   amount: number;
@@ -176,6 +186,7 @@ export interface InvoiceQuote {
   subTotal?: number;
   vat?: number;
   total?: number;
+  poNumber?: string | null;
 }
 
 export interface Invoice {
@@ -210,13 +221,10 @@ export interface Statement {
 }
 
 export interface JobCardCreateRequest {
-  clientId?: string | null;
-  jobNumber: string;
+  jobCardNumber?: string;
+  quoteNumber: string;
+  reference: string;
   description: string;
-  status: string;
-  startDate?: string;
-  endDate?: string;
-  totalCost: number;
 }
 
 export interface CostCreateRequest {

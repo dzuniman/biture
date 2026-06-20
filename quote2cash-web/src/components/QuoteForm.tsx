@@ -144,6 +144,7 @@ export default function QuoteForm({
   const [quoteNumberError, setQuoteNumberError] = useState<string | null>(null); // NEW: Error state
 
   const [reference, setReference] = useState(initialData?.reference ?? '');
+  const [poNumber, setPoNumber] = useState(initialData?.poNumber ?? '');
   const [date, setDate] = useState(initialData?.date ? initialData.date.slice(0, 10) : today);
   const [validityDays, setValidityDays] = useState(initialData?.validityDays.toString() ?? '30');
   const [items, setItems] = useState<QuoteItemCreateRequest[]>(initialData?.items?.length ? initialData.items : [blankItem]);
@@ -156,6 +157,7 @@ export default function QuoteForm({
       setClientId(initialData.clientId ?? '');
       setQuoteNumber(isDuplicate ? '' : (initialData.quoteNumber ?? ''));
       setReference(initialData.reference);
+      setPoNumber(initialData.poNumber ?? '');
       setDate(initialData.date ? initialData.date.slice(0, 10) : today);
       setValidityDays(initialData.validityDays.toString());
       const sorted = [...(initialData.items || [])].sort((a, b) => a.itemNumber - b.itemNumber);
@@ -164,6 +166,7 @@ export default function QuoteForm({
       setClientId(selectedClientId ?? '');
       setQuoteNumber('');
       setReference('');
+      setPoNumber('');
       setDate(today);
       setValidityDays('30');
       setItems([blankItem]);
@@ -382,6 +385,7 @@ export default function QuoteForm({
       clientId: clientId || undefined,
       quoteNumber: quoteNumber.trim(),
       reference: reference.trim(),
+      poNumber: poNumber.trim() || undefined,
       date: date || new Date().toISOString(),
       validityDays: Number(validityDays),
       items: items.map((item) => ({
@@ -446,6 +450,10 @@ export default function QuoteForm({
         <label>
           Reference
           <input value={reference} onChange={(event) => setReference(event.target.value)} required />
+        </label>
+        <label>
+          PO Number (Optional)
+          <input value={poNumber} onChange={(event) => setPoNumber(event.target.value)} placeholder="Enter PO Number" />
         </label>
         <div className="grid-2">
           <label>

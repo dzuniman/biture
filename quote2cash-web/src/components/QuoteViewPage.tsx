@@ -194,6 +194,12 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
                   <span className="view-label">VENDOR NUMBER:</span>
                   <span className="view-value">{quote.vendorNumber}</span>
                 </div>
+                {quote.poNumber && (
+                  <div className="view-row" style={{ marginBottom: '1px', lineHeight: '0' }}>
+                    <span className="view-label">PO NUMBER:</span>
+                    <span className="view-value">{quote.poNumber}</span>
+                  </div>
+                )}
               </div>
 
               {quote.client && (
