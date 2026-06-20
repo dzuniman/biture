@@ -123,6 +123,12 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
                     <span className="view-value">{invoice.description}</span>
                   </div>
                 )}
+                {quote?.poNumber && (
+                  <div className="view-row" style={{ marginBottom: '1px' }}>
+                    <span className="view-label">PO NUMBER:</span>
+                    <span className="view-value">{quote.poNumber}</span>
+                  </div>
+                )}
               {displayClient ? (
                 <div className="customer-box" style={{ border: '1px solid #000', padding: '8px', marginTop: '8px', fontSize: '0.75rem', lineHeight: '1.4', minHeight: '80px' }}>
                   <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>BILL TO:</div>

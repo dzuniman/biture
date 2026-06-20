@@ -58,6 +58,7 @@ namespace Quote2Cash.Persistence.Data
                 entity.Property(e => e.Date).IsRequired();
                 entity.Property(e => e.ValidityDays).IsRequired();
                 entity.Property(e => e.Description).HasMaxLength(2000);
+                entity.Property(e => e.PONumber).HasMaxLength(100);
                 entity.HasOne(e => e.Client).WithMany(c => c.Quotes).HasForeignKey(e => e.ClientId);
             });
 
@@ -86,12 +87,11 @@ namespace Quote2Cash.Persistence.Data
             modelBuilder.Entity<JobCard>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.JobNumber).IsRequired().HasMaxLength(100);
-                entity.Property(e => e.Description).HasMaxLength(1000);
-                entity.Property(e => e.Status).IsRequired().HasMaxLength(100);
-                entity.Property(e => e.TotalCost).HasPrecision(18, 2);
+                entity.Property(e => e.JobCardNumber).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Reference).HasMaxLength(200);
+                entity.Property(e => e.QuoteNumber).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Description).HasMaxLength(2000);
                 entity.Property(e => e.CreatedAt).IsRequired();
-                entity.HasOne(e => e.Client).WithMany(c => c.JobCards).HasForeignKey(e => e.ClientId);
             });
 
             modelBuilder.Entity<Cost>(entity =>
@@ -103,7 +103,7 @@ namespace Quote2Cash.Persistence.Data
                 entity.Property(e => e.Status).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.IncurredAt).IsRequired();
                 entity.HasOne(e => e.Client).WithMany(c => c.Costs).HasForeignKey(e => e.ClientId);
-                entity.HasOne(e => e.JobCard).WithMany(j => j.Costs).HasForeignKey(e => e.JobCardId);
+                entity.HasOne(e => e.JobCard).WithMany().HasForeignKey(e => e.JobCardId);
             });
 
             modelBuilder.Entity<Invoice>(entity =>

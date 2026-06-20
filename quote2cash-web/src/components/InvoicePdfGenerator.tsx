@@ -119,6 +119,9 @@ export const generateInvoicePDF = async (invoice: Invoice) => {
   if (invoice.description) {
     addInvoiceDetailRow('DESCRIPTION:', invoice.description);
   }
+  if (invoice.quote?.poNumber) {
+    addInvoiceDetailRow('PO NUMBER:', invoice.quote.poNumber);
+  }
  
   // --- Customer Box (Right) ---
   const spaceAfterQuoteDetailsBeforeCustomerBox = 5;

@@ -33,7 +33,7 @@ namespace Quote2Cash.API.Controllers
                 c.Status,
                 c.IncurredAt,
                 Client = c.Client != null ? new { c.Client.Id, c.Client.Name } : null,
-                JobCard = c.JobCard != null ? new { c.JobCard.Id, c.JobCard.JobNumber } : null
+                JobCard = c.JobCard != null ? new { c.JobCard.Id, JobNumber = c.JobCard.JobCardNumber } : null
             }));
         }
 

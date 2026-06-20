@@ -23,7 +23,6 @@ namespace Quote2Cash.Domain.Entities
         public DateTime? UpdatedAt { get; set; }
 
         public ICollection<Quote> Quotes { get; set; } = new List<Quote>();
-        public ICollection<JobCard> JobCards { get; set; } = new List<JobCard>();
         public ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
         public ICollection<Statement> Statements { get; set; } = new List<Statement>();
         public ICollection<Cost> Costs { get; set; } = new List<Cost>();

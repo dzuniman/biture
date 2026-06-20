@@ -30,5 +30,6 @@ namespace Quote2Cash.Domain.Entities
         public string Status { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
         public DateTime? DueDate { get; set; }
+        public string? PONumber { get; set; }
     }
 }

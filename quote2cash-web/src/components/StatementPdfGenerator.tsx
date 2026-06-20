@@ -110,7 +110,6 @@ export const generateStatementPDF = async (statement: Statement, invoices: Invoi
 
   addDetailRow('STATEMENT NO:', statement.statementNumber || (statement as any).StatementNumber || '—');
   addDetailRow('STATEMENT DATE:', formatDate(statement.createdAt || (statement as any).CreatedAt));
-  addDetailRow('VENDOR NUMBER:', client?.vendorNumber || '—');
 
   // --- Customer Box (Right) ---
   const spaceAfterDetailsBeforeCustomerBox = 5;
@@ -172,10 +171,11 @@ export const generateStatementPDF = async (statement: Statement, invoices: Invoi
     const inv = invoiceMap[id];
     const paid = paymentsByInvoice[id] || 0;
     const outstanding = (inv?.amount ?? 0) - paid;
+    const poNumber = (inv as any)?.quote?.poNumber || (inv as any)?.Quote?.PoNumber || '—';
     return [
       inv?.invoiceNumber || '—',
       formatDate(inv?.dueDate),
-      client?.vendorNumber || '—',
+      poNumber,
       formatAmount(inv?.amount ?? 0),
       formatAmount(outstanding)
     ];
@@ -189,7 +189,7 @@ export const generateStatementPDF = async (statement: Statement, invoices: Invoi
   // --- AutoTable Generation for Statement Items ---
   autoTable(doc, {
     startY: currentY,
-    head: [['INVOICE #', 'DUE DATE', 'VENDOR #', 'INVOICE AMOUNT', 'OUTSTANDING']],
+    head: [['INVOICE #', 'DUE DATE', 'PO NUMBER', 'INVOICE AMOUNT', 'OUTSTANDING']],
     body: tableRows,
     theme: 'grid',
     styles: {
