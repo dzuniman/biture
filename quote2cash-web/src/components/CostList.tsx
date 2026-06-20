@@ -1,4 +1,4 @@
-import type { Cost } from '../types';
+/*import type { Cost } from '../types';
 import { formatAmount } from '../../formatters';
 
 interface Props {
@@ -49,3 +49,4 @@ export default function CostList({ costs, onEdit, onDelete }: Props) {
     </div>
   );
 }
+*/
