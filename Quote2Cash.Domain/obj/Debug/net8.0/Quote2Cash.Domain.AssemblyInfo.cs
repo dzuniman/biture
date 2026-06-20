@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Quote2Cash.Domain")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+cf129999e6ef8184a17d09426677942516ffcc47")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b4a1c5b4d1f213510ec81673a3a69b807c61b8cb")]
 [assembly: System.Reflection.AssemblyProductAttribute("Quote2Cash.Domain")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Quote2Cash.Domain")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
