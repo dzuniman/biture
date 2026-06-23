@@ -47,7 +47,8 @@ export default function JobCardViewPage({ jobCard, onEdit, onBack }: Props) {
 
   return (
     <div className="page-section">
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         .print-only { display: none !important; }
         @media print {
           .no-print, .section-header { display: none !important; }
@@ -158,16 +159,16 @@ export default function JobCardViewPage({ jobCard, onEdit, onBack }: Props) {
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
             <div style={{ width: '240px', fontSize: '0.8rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <span>Sub total</span>
-                <strong>{formatAmount(subTotal)}</strong>
+                <span></span>
+                <strong></strong>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <span>VAT</span>
-                <strong>{formatAmount(vat)}</strong>
+                <span></span>
+                <strong></strong>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #000', paddingTop: '8px', marginTop: '8px', fontSize: '0.9rem' }}>
-                <span>Total</span>
-                <strong>{formatAmount(total)}</strong>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '8px', marginTop: '8px', fontSize: '0.9rem' }}>
+                <span></span>
+                <strong></strong>
               </div>
             </div>
           </div>
