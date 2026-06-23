@@ -87,7 +87,7 @@ export const generateJobCardPDF = async (jobCard: JobCard) => {
   const client = jobCard.quote?.client;
   if (client) {
     const boxW = 75;
-    const boxH = 32;
+    const boxH = 34;
     const boxX = pageWidth - margin - boxW;
     const boxY = detailY + 4;
     doc.setLineWidth(0.25);
@@ -188,12 +188,12 @@ export const generateJobCardPDF = async (jobCard: JobCard) => {
     currentY += 5;
   };
 
-  addSummaryRow('Sub total', subTotal);
+  /*addSummaryRow('Sub total', subTotal);
   addSummaryRow('VAT', vat);
-  doc.setLineWidth(0.4);
+  doc.setLineWidth(0.0);
   doc.setDrawColor(50, 50, 50);
   doc.line(labelX, currentY - 2, summaryX, currentY - 2);
-  addSummaryRow('Total', total, true);
+  addSummaryRow('Total', total, true);*/
 
   currentY += 8;
 
