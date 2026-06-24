@@ -128,8 +128,20 @@ export const generateInvoicePDF = async (invoice: Invoice) => {
   let customerBoxY = quoteDetailsY + spaceAfterQuoteDetailsBeforeCustomerBox;
   
   if (invoice.client) {
+    const clientLines = [
+      invoice.client.name,
+      invoice.client.addressLine1,
+      invoice.client.addressLine2,
+      invoice.client.addressLine3,
+      invoice.client.addressLine4,
+      invoice.client.vatNumber ? `VAT No: ${invoice.client.vatNumber}` : null,
+      invoice.client.email ? `Email: ${invoice.client.email}` : null,
+      invoice.client.representativeName ? `Rep: ${invoice.client.representativeName}` : null,
+      invoice.client.representativeNumber ? `Tel: ${invoice.client.representativeNumber}` : null
+    ].filter(Boolean);
+
     const boxWidth = 70;
-    const boxHeight = 30;
+    const boxHeight = 6 + (clientLines.length * 3);
     const boxX = pageWidth - margin - boxWidth;
 
     doc.setLineWidth(0.2);
@@ -142,16 +154,6 @@ export const generateInvoicePDF = async (invoice: Invoice) => {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
     let custTextY = customerBoxY + 7;
-    const clientLines = [
-      invoice.client.name,
-      invoice.client.addressLine1,
-      invoice.client.addressLine2,
-      invoice.client.addressLine3,
-      invoice.client.addressLine4,
-      invoice.client.vatNumber ? `VAT No: ${invoice.client.vatNumber}` : null,
-      `${invoice.client.representativeName || '-'}`,
-      `${invoice.client.representativeNumber || '-'}`
-    ].filter(Boolean);
 
     clientLines.forEach(line => {
       doc.text(line!, boxX + 2, custTextY);
@@ -212,7 +214,12 @@ export const generateInvoicePDF = async (invoice: Invoice) => {
     margin: margin,
   });
 
-  currentY = (doc as any).lastAutoTable.finalY + 8;
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const footerBlockHeight = 22;
+  const summaryHeight = 20;
+  const totalFooterHeight = summaryHeight + footerBlockHeight;
+
+  currentY = Math.max((doc as any).lastAutoTable.finalY + 8, pageHeight - margin - totalFooterHeight);
 
   // --- Summary ---
   const summaryX = pageWidth - margin;
@@ -244,8 +251,6 @@ export const generateInvoicePDF = async (invoice: Invoice) => {
   doc.setFont('helvetica', 'normal');
 
   // --- Payment Details ---
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const footerBlockHeight = 22;
   currentY = Math.max(currentY + 5, pageHeight - margin - footerBlockHeight);
   
   doc.setFontSize(8);

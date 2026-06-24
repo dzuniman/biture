@@ -205,11 +205,11 @@ export const generateJobCardPDF = async (jobCard: JobCard) => {
 
   doc.text('Received and Approved by:', margin, currentY);
   doc.line(margin + 55, currentY + 0.5, pageWidth - margin, currentY + 0.5);
-  currentY += 12;
+  currentY += 8;
 
   doc.text('Signature & Date:', margin, currentY);
   doc.line(margin + 55, currentY + 0.5, pageWidth - margin, currentY + 0.5);
-  currentY += 12;
+  currentY += 8;
 
   // ── Payment Details ──
   doc.setFontSize(8);

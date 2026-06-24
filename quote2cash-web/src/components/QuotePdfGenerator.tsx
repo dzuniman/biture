@@ -95,8 +95,20 @@ export const generateQuotePDF = async (quote: Quote) => {
   let customerBoxY = quoteDetailsY + spaceAfterQuoteDetailsBeforeCustomerBox;
   
   if (quote.client) {
+    const clientLines = [
+      quote.client.name,
+      quote.client.addressLine1,
+      quote.client.addressLine2,
+      quote.client.addressLine3,
+      quote.client.addressLine4,
+      quote.client.vatNumber ? `VAT No: ${quote.client.vatNumber}` : null,
+      quote.client.email ? `Email: ${quote.client.email}` : null,
+      quote.client.representativeName ? `Rep: ${quote.client.representativeName}` : null,
+      quote.client.representativeNumber ? `Tel: ${quote.client.representativeNumber}` : null
+    ].filter(Boolean);
+
     const boxWidth = 70;
-    const boxHeight = 30;
+    const boxHeight = 6 + (clientLines.length * 3);
     const boxX = pageWidth - margin - boxWidth;
 
     doc.setLineWidth(0.2);
@@ -109,18 +121,6 @@ export const generateQuotePDF = async (quote: Quote) => {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
     let custTextY = customerBoxY + 7;
-    const clientLines = [
-      quote.client.name,
-      quote.client.addressLine1,
-      quote.client.addressLine2,
-      quote.client.addressLine3,
-      quote.client.addressLine4,
-      quote.client.vatNumber ? `VAT No: ${quote.client.vatNumber}` : null,
-      quote.client.email ? `Email: ${quote.client.email}` : null,
-      `${quote.client.representativeName || '-'}`,
-      `${quote.client.representativeNumber || '-'}`,
-      ``
-    ].filter(Boolean);
 
     clientLines.forEach(line => {
       doc.text(line!, boxX + 2, custTextY);
@@ -179,7 +179,12 @@ export const generateQuotePDF = async (quote: Quote) => {
     margin: margin,
   });
 
-  currentY = (doc as any).lastAutoTable.finalY + 8;
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const footerBlockHeight = 55;
+  const summaryHeight = 20;
+  const totalFooterHeight = summaryHeight + footerBlockHeight;
+
+  currentY = Math.max((doc as any).lastAutoTable.finalY + 8, pageHeight - margin - totalFooterHeight);
 
   // 5. Summary
   const summaryX = pageWidth - margin;
@@ -202,10 +207,6 @@ export const generateQuotePDF = async (quote: Quote) => {
   doc.setFont('helvetica', 'normal');
 
   // 6. Approval and Terms
-  const pageHeight = doc.internal.pageSize.getHeight();
-  // Combined height of approval lines, footer text, and the terms list is approx 55mm.
-  // We calculate a starting Y that pushes this block to the bottom of the A4 page.
-  const footerBlockHeight = 55;
   currentY = Math.max(currentY + 5, pageHeight - margin - footerBlockHeight);
 
   doc.setFontSize(8);

@@ -34,7 +34,19 @@ namespace Quote2Cash.API.Controllers
                 s.StatementNumber,
                 s.ClientId,
                 s.CreatedAt,
-                Client = s.Client != null ? new { s.Client.Id, s.Client.Name } : null,
+                Client = s.Client != null ? new { 
+                    s.Client.Id, 
+                    s.Client.Name,
+                    s.Client.AddressLine1,
+                    s.Client.AddressLine2,
+                    s.Client.AddressLine3,
+                    s.Client.AddressLine4,
+                    s.Client.VatNumber,
+                    s.Client.Email,
+                    s.Client.RepresentativeName,
+                    s.Client.RepresentativeNumber,
+                    s.Client.VendorNumber
+                } : null,
                 Items = s.Items.Select(item => new {
                     item.Id,
                     item.InvoiceId,
