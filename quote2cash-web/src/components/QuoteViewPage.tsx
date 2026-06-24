@@ -55,6 +55,10 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
             width: 100% !important;
             margin: 0 !important;
             font-size: 9pt !important;
+            display: flex !important;
+            flex-direction: column !important;
+            min-height: 26.7cm !important;
+            box-sizing: border-box !important;
           }
           .company-lines { font-size: 7.5pt !important; line-height: 1.1 !important; }
           .company-logo { max-height: 60px !important; }
@@ -157,7 +161,7 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
       </div>
 
       <div className="view-container">
-        <div className="view-card" style={{ color: '#000' }}>
+        <div className="view-card" style={{ color: '#000', display: 'flex', flexDirection: 'column', minHeight: '29.7cm', boxSizing: 'border-box' }}>
           <div className="quote-view-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
             <div className="quote-view-left">
               <div className="company-block">
@@ -212,14 +216,14 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
                   {quote.client.addressLine4 && <div style={{ marginBottom: '2px' }}>{quote.client.addressLine4}</div>}
                   {quote.client.vatNumber && <div style={{ marginBottom: '2px' }}>VAT No: {quote.client.vatNumber}</div>}
                   {quote.client.email && <div style={{ marginBottom: '2px' }}>Email: {quote.client.email}</div>}
-                  <div style={{ marginBottom: '2px' }}>{quote.client.representativeName || '—'}</div>
-                  <div style={{ marginBottom: '2px' }}>{quote.client.representativeNumber || '—'}</div>
+                  <div style={{ marginBottom: '2px' }}>Rep: {quote.client.representativeName || '—'}</div>
+                  <div style={{ marginBottom: '2px' }}>Tel: {quote.client.representativeNumber || '—'}</div>
                 </div>
               )}
             </div>
           </div>
 
-          <div className="quote-view-main">
+          <div className="quote-view-main" style={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
             <div className="view-section">
               <div className="items-table" style={{ border: '1px solid #000', borderRadius: '2px', overflow: 'hidden' }}>
                 <div className="items-table-header" style={{ display: 'grid', gridTemplateColumns: '50px 40px 55px 45px 1fr 100px 100px', gap: '0', background: '#f3f4f6', borderBottom: '1px solid #000' }}>
@@ -250,7 +254,7 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
               </div>
             </div>
 
-            <div className="view-section" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
+            <div className="view-section" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'auto', paddingTop: '12px' }}>
               <div style={{ width: '220px' }}>
                 <div className="summary-row" style={{ justifyContent: 'space-between', lineHeight: '0', marginBottom: '0px' }}>
                   <span className="summary-label">Sub Total</span>

@@ -3,7 +3,7 @@ import { StatementForm } from './StatementForm';
 import StatementList from './StatementList';
 import { StatementViewPage } from './StatementViewPage';
 import type { Statement, Invoice, Client } from '../types';
-import { deleteStatement } from '../api';
+import { deleteStatement, getStatement } from '../api';
 
 export const Statements: React.FC<{ invoices: Invoice[], clients: Client[], statements: Statement[], onRefresh: () => Promise<void>, onDelete: (id: string) => Promise<void> }> = ({ invoices, clients, statements, onRefresh, onDelete }) => {
   const [view, setView] = useState<'list' | 'manage' | 'view'>('list');
@@ -15,8 +15,14 @@ export const Statements: React.FC<{ invoices: Invoice[], clients: Client[], stat
     setView('manage');
   };
 
-  const handleView = (statement: Statement) => {
-    setViewingStatement(statement);
+  const handleView = async (statement: Statement) => {
+    try {
+      const fullStatement = await getStatement(statement.id);
+      setViewingStatement(fullStatement);
+    } catch (error) {
+      console.error("Failed to fetch full statement:", error);
+      setViewingStatement(statement);
+    }
     setView('view');
   };
 

@@ -66,7 +66,7 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
           .no-print, .section-header { display: none !important; }
           body { background: white !important; margin: 0 !important; padding: 0 !important; }
           .view-container, .view-card, .view-section, .items-table, .items-table-header, .items-table-row, .summary-row { border: none !important; box-shadow: none !important; background: none !important; }
-          .view-card { padding: 20px !important; width: 100% !important; margin: 0 !important; font-size: 9pt !important; }
+          .view-card { padding: 20px !important; width: 100% !important; margin: 0 !important; font-size: 9pt !important; display: flex !important; flex-direction: column !important; min-height: 26.7cm !important; box-sizing: border-box !important; }
           .items-table-header, .items-table-row { display: grid !important; grid-template-columns: 60px 1fr 120px 120px !important; gap: 4px !important; }
           .items-table-header div, .items-table-row div { border-left: 0.5pt solid #ccc !important; padding: 6px !important; }
           .items-table-header div:last-child, .items-table-row div:last-child { border-right: 0.5pt solid #ccc !important; }
@@ -85,7 +85,7 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
         </div>
       </div>
       <div className="view-container">
-        <div className="view-card" style={{ color: '#000' }}>
+        <div className="view-card" style={{ color: '#000', display: 'flex', flexDirection: 'column', minHeight: '29.7cm', boxSizing: 'border-box' }}>
           <div className="quote-view-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '24px', marginBottom: '18px' }}>
             <div className="quote-view-left" style={{ minWidth: '280px' }}>
               <div className="company-block">
@@ -174,7 +174,7 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
               )}
             </div>
           </div>
-          <div className="view-section" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
+          <div className="view-section" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'auto', paddingTop: '24px' }}>
             <div style={{ width: '220px' }}>
               <div className="summary-row" style={{ lineHeight: '0', display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
                 <span>Sub total</span>

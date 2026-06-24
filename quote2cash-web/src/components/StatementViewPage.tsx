@@ -106,7 +106,7 @@ export const StatementViewPage: React.FC<Props> = ({ statement, invoices, onEdit
           .no-print, .section-header { display: none !important; }
           body { background: white !important; margin: 0 !important; padding: 0 !important; }
           .view-container, .view-card, .view-section, .items-table, .items-table-header, .items-table-row, .summary-row { border: none !important; box-shadow: none !important; background: none !important; }
-          .view-card { padding: 20px !important; width: 100% !important; margin: 0 !important; font-size: 9pt !important; }
+          .view-card { padding: 20px !important; width: 100% !important; margin: 0 !important; font-size: 9pt !important; display: flex !important; flex-direction: column !important; min-height: 26.7cm !important; box-sizing: border-box !important; }
           .items-table-header, .items-table-row { display: grid !important; grid-template-columns: 120px 140px 100px 1fr 120px !important; gap: 4px !important; }
           .items-table-header div, .items-table-row div { border-left: 0.5pt solid #ccc !important; padding: 6px !important; }
           .items-table-header div:last-child, .items-table-row div:last-child { border-right: 0.5pt solid #ccc !important; }
@@ -128,7 +128,7 @@ export const StatementViewPage: React.FC<Props> = ({ statement, invoices, onEdit
         </div>
       </div>
       <div className="view-container">
-        <div className="view-card" style={{ color: '#000' }}>
+        <div className="view-card" style={{ color: '#000', display: 'flex', flexDirection: 'column', minHeight: '29.7cm', boxSizing: 'border-box' }}>
           <div className="quote-view-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '24px', marginBottom: '18px' }}>
             <div className="quote-view-left" style={{ minWidth: '280px' }}>
               <div className="company-block">
@@ -157,7 +157,7 @@ export const StatementViewPage: React.FC<Props> = ({ statement, invoices, onEdit
                   <span className="view-value">{uniqueInvoiceIds.map(id => invoiceMap[id]?.quote?.poNumber).find(p => !!p) || '—'}</span>
                 </div>
                 {client ? (
-                  <div className="customer-box" style={{ border: '1px solid #000', padding: '8px', marginTop: '8px', fontSize: '0.75rem', lineHeight: '1.4', minHeight: '60px', textAlign: 'left' }}>
+                  <div className="customer-box" style={{ border: '1px solid #000', padding: '8px', marginTop: '8px', fontSize: '0.75rem', lineHeight: '1.4', minHeight: '80px', textAlign: 'left' }}>
                     <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>BILL TO:</div>
                     {client.name && <div style={{ marginBottom: '2px' }}>{client.name}</div>}
                     {client.addressLine1 && <div style={{ marginBottom: '2px' }}>{client.addressLine1}</div>}
@@ -165,6 +165,9 @@ export const StatementViewPage: React.FC<Props> = ({ statement, invoices, onEdit
                     {client.addressLine3 && <div style={{ marginBottom: '2px' }}>{client.addressLine3}</div>}
                     {client.addressLine4 && <div style={{ marginBottom: '2px' }}>{client.addressLine4}</div>}
                     {client.vatNumber && <div style={{ marginBottom: '2px' }}>VAT No: {client.vatNumber}</div>}
+                    {client.email && <div style={{ marginBottom: '2px' }}>Email: {client.email}</div>}
+                    <div style={{ marginBottom: '2px' }}>Rep: {client.representativeName || '—'}</div>
+                    <div style={{ marginBottom: '2px' }}>Tel: {client.representativeNumber || '—'}</div>
                   </div>
                 ) : (
                   <div className="customer-box" style={{ border: '1px solid #000', padding: '6px', marginTop: '8px', fontSize: '0.75rem', textAlign: 'left' }}>
@@ -179,7 +182,7 @@ export const StatementViewPage: React.FC<Props> = ({ statement, invoices, onEdit
           <div className="view-section" style={{ marginTop: '24px' }}>
             <div className="items-table" style={{ border: '1px solid #000', borderRadius: '2px', overflow: 'hidden' }}>
               <div className="items-table-header" style={{ display: 'grid', gridTemplateColumns: '120px 140px 100px 1fr 120px', gap: '0', background: '#f3f4f6', borderBottom: '1px solid #000', padding: '0' }}>
-                <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>Invoice #</div>
+                <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>Invoice</div>
                 <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>Due Date</div>
                 <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>PO Number</div>
                 <div style={{ padding: '8px 6px', fontWeight: 'bold', textAlign: 'right' }}>Invoice Amount</div>
@@ -206,7 +209,7 @@ export const StatementViewPage: React.FC<Props> = ({ statement, invoices, onEdit
             </div>
           </div>
 
-          <div className="view-section" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+          <div className="view-section" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'auto', paddingTop: '20px' }}>
             <div style={{ width: '250px' }}>
               <div className="summary-row" style={{ lineHeight: '0', display: 'flex', justifyContent: 'space-between', fontSize: '1.05rem' }}>
                 <span>Total Outstanding</span>

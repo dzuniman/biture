@@ -116,8 +116,20 @@ export const generateStatementPDF = async (statement: Statement, invoices: Invoi
   let customerBoxY = detailsY + spaceAfterDetailsBeforeCustomerBox;
 
   if (client) {
+    const clientLines = [
+      client.name,
+      client.addressLine1,
+      client.addressLine2,
+      client.addressLine3,
+      client.addressLine4,
+      client.vatNumber ? `VAT No: ${client.vatNumber}` : null,
+      client.email ? `Email: ${client.email}` : null,
+      client.representativeName ? `Rep: ${client.representativeName}` : null,
+      client.representativeNumber ? `Tel: ${client.representativeNumber}` : null
+    ].filter(Boolean);
+
     const boxWidth = 70;
-    const boxHeight = 26;
+    const boxHeight = 6 + (clientLines.length * 3);
     const boxX = pageWidth - margin - boxWidth;
 
     doc.setLineWidth(0.2);
@@ -130,14 +142,6 @@ export const generateStatementPDF = async (statement: Statement, invoices: Invoi
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
     let custTextY = customerBoxY + 7;
-    const clientLines = [
-      client.name,
-      client.addressLine1,
-      client.addressLine2,
-      client.addressLine3,
-      client.addressLine4,
-      client.vatNumber ? `VAT No: ${client.vatNumber}` : null
-    ].filter(Boolean);
 
     clientLines.forEach(line => {
       doc.text(line!, boxX + 2, custTextY);
@@ -189,7 +193,7 @@ export const generateStatementPDF = async (statement: Statement, invoices: Invoi
   // --- AutoTable Generation for Statement Items ---
   autoTable(doc, {
     startY: currentY,
-    head: [['INVOICE #', 'DUE DATE', 'PO NUMBER', 'INVOICE AMOUNT', 'OUTSTANDING']],
+    head: [['INVOICE', 'DUE DATE', 'PO NUMBER', 'INVOICE AMOUNT', 'OUTSTANDING']],
     body: tableRows,
     theme: 'grid',
     styles: {
@@ -216,7 +220,13 @@ export const generateStatementPDF = async (statement: Statement, invoices: Invoi
     margin: margin,
   });
 
-  currentY = (doc as any).lastAutoTable.finalY + 6;
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const footerBlockHeight = 22;
+  const agingBlockHeight = 16;
+  const summaryHeight = 12;
+  const totalFooterHeight = summaryHeight + agingBlockHeight + footerBlockHeight;
+
+  currentY = Math.max((doc as any).lastAutoTable.finalY + 6, pageHeight - margin - totalFooterHeight);
 
   // --- Total Outstanding ---
   const summaryX = pageWidth - margin;
@@ -302,12 +312,10 @@ export const generateStatementPDF = async (statement: Statement, invoices: Invoi
     margin: margin,
   });
 
-  currentY = (doc as any).lastAutoTable.finalY + 8;
+  currentY = (doc as any).lastAutoTable.finalY + 4;
 
   // --- Payment Details ---
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const footerBlockHeight = 22;
-  currentY = Math.max(currentY + 5, pageHeight - margin - footerBlockHeight);
+  currentY = Math.max(currentY + 2, pageHeight - margin - footerBlockHeight);
 
   doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
