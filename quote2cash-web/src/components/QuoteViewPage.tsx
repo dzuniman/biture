@@ -153,7 +153,7 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
       <div className="section-header no-print">
         <div>
           <h2>{quote.reference}</h2>
-          <p>Quote #{quote.quoteNumber}</p>
+          <p>Quote Number{quote.quoteNumber}</p>
         </div>
         <button onClick={onBack} className="btn-secondary no-print">
           ← Back to Quotes
