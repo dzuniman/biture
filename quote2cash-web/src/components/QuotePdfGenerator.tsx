@@ -228,8 +228,10 @@ export const generateQuotePDF = async (quote: Quote) => {
     '1) This quote automatically expires after thirty (30) days irrespective of the valid date above.',
     '2) The standard terms and conditions of sale of EPEC (Pty) Ltd shall apply (such terms and conditions available on request)',
     '3) Delivery will be confirmed upon receipt of a purchase order.',
-    '4) Errors and omissions are excluded. 5) Upon placing of order, please quote this quote number.',
-    '6) Payment terms must be adhered to. 7) This quotation is conditional upon your signed acceptance and return within 30 days.'
+    '4) Errors and omissions are excluded.',
+    '5) Upon placing of order, please quote this quote number.',
+    '6) Payment terms must be adhered to.',
+    '7) This quotation is conditional upon your signed acceptance and return within 30 days.'
   ];
   terms.forEach(term => {
     const wrappedTerm = doc.splitTextToSize(term, contentWidth);
