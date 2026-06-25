@@ -37,6 +37,7 @@ namespace Quote2Cash.API.Controllers
                 i.Status,
                 i.CreatedAt,
                 i.DueDate,
+                i.Description,
                 IsOverdue = i.Status != "Paid" && i.DueDate < DateTime.UtcNow,
                 Client = i.Client != null ? new { 
                     i.Client.Id, 

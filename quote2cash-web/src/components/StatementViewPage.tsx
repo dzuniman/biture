@@ -181,9 +181,10 @@ export const StatementViewPage: React.FC<Props> = ({ statement, invoices, onEdit
 
           <div className="view-section" style={{ marginTop: '24px' }}>
             <div className="items-table" style={{ border: '1px solid #000', borderRadius: '2px', overflow: 'hidden' }}>
-              <div className="items-table-header" style={{ display: 'grid', gridTemplateColumns: '120px 140px 100px 1fr 120px', gap: '0', background: '#f3f4f6', borderBottom: '1px solid #000', padding: '0' }}>
+              <div className="items-table-header" style={{ display: 'grid', gridTemplateColumns: '120px 140px 140px 100px 1fr 120px', gap: '0', background: '#f3f4f6', borderBottom: '1px solid #000', padding: '0' }}>
                 <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>Document No</div>
                 <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>Due Date</div>
+                <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>Account Type</div>
                 <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>PO Number</div>
                 <div style={{ padding: '8px 6px', fontWeight: 'bold', textAlign: 'right' }}>Invoice Amount</div>
                 <div style={{ padding: '8px 6px', fontWeight: 'bold', textAlign: 'right' }}>Outstanding</div>
@@ -194,9 +195,10 @@ export const StatementViewPage: React.FC<Props> = ({ statement, invoices, onEdit
                   const paid = paymentsByInvoice[id] || 0;
                   const outstanding = (inv?.amount ?? 0) - paid;
                   return (
-                    <div key={id} className="items-table-row" style={{ display: 'grid', gridTemplateColumns: '120px 140px 100px 1fr 120px', gap: '0', borderTop: '1px solid #eee' }}>
+                    <div key={id} className="items-table-row" style={{ display: 'grid', gridTemplateColumns: '120px 140px 140px 100px 1fr 120px', gap: '0', borderTop: '1px solid #eee' }}>
                       <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{inv?.invoiceNumber || '—'}</div>
                       <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{formatDate(inv?.dueDate)}</div>
+                      <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{inv?.description || '—'}</div>
                       <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{inv?.quote?.poNumber || '—'}</div>
                       <div style={{ padding: '8px 6px', textAlign: 'right', lineHeight: '1.2' }}>{formatAmount(inv?.amount ?? 0)}</div>
                       <div style={{ padding: '8px 6px', textAlign: 'right', lineHeight: '1.2', fontWeight: 'bold', color: outstanding > 0 ? '#dc2626' : '#22c55e' }}>{formatAmount(outstanding)}</div>
