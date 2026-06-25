@@ -166,8 +166,8 @@ export const StatementViewPage: React.FC<Props> = ({ statement, invoices, onEdit
                     {client.addressLine4 && <div style={{ marginBottom: '2px' }}>{client.addressLine4}</div>}
                     {client.vatNumber && <div style={{ marginBottom: '2px' }}>VAT No: {client.vatNumber}</div>}
                     {client.email && <div style={{ marginBottom: '2px' }}>Email: {client.email}</div>}
-                    <div style={{ marginBottom: '2px' }}>Rep: {client.representativeName || '—'}</div>
-                    <div style={{ marginBottom: '2px' }}>Tel: {client.representativeNumber || '—'}</div>
+                    <div style={{ marginBottom: '2px' }}>{client.representativeName || '—'}</div>
+                    <div style={{ marginBottom: '2px' }}>{client.representativeNumber || '—'}</div>
                   </div>
                 ) : (
                   <div className="customer-box" style={{ border: '1px solid #000', padding: '6px', marginTop: '8px', fontSize: '0.75rem', textAlign: 'left' }}>

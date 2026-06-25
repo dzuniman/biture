@@ -216,8 +216,8 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
                   {quote.client.addressLine4 && <div style={{ marginBottom: '2px' }}>{quote.client.addressLine4}</div>}
                   {quote.client.vatNumber && <div style={{ marginBottom: '2px' }}>VAT No: {quote.client.vatNumber}</div>}
                   {quote.client.email && <div style={{ marginBottom: '2px' }}>Email: {quote.client.email}</div>}
-                  <div style={{ marginBottom: '2px' }}>Rep: {quote.client.representativeName || '—'}</div>
-                  <div style={{ marginBottom: '2px' }}>Tel: {quote.client.representativeNumber || '—'}</div>
+                  <div style={{ marginBottom: '2px' }}>{quote.client.representativeName || '—'}</div>
+                  <div style={{ marginBottom: '2px' }}>{quote.client.representativeNumber || '—'}</div>
                 </div>
               )}
             </div>

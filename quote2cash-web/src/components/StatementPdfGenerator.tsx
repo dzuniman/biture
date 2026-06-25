@@ -124,8 +124,8 @@ export const generateStatementPDF = async (statement: Statement, invoices: Invoi
       client.addressLine4,
       client.vatNumber ? `VAT No: ${client.vatNumber}` : null,
       client.email ? `Email: ${client.email}` : null,
-      client.representativeName ? `Rep: ${client.representativeName}` : null,
-      client.representativeNumber ? `Tel: ${client.representativeNumber}` : null
+      client.representativeName ? `${client.representativeName}` : null,
+      client.representativeNumber ? `${client.representativeNumber}` : null
     ].filter(Boolean);
 
     const boxWidth = 70;

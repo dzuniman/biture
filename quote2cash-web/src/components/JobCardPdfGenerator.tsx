@@ -106,8 +106,8 @@ export const generateJobCardPDF = async (jobCard: JobCard) => {
       client.addressLine4,
       client.vatNumber ? `VAT No: ${client.vatNumber}` : null,
       client.email ? `Email: ${client.email}` : null,
-      `Rep: ${client.representativeName || '—'}`,
-      `Tel: ${client.representativeNumber || '—'}`
+      `${client.representativeName || '—'}`,
+      `${client.representativeNumber || '—'}`
     ].filter(Boolean) as string[];
     lines.forEach(line => { doc.text(line, boxX + 2, cy); cy += 3; });
     detailY = boxY + boxH + 5;
