@@ -107,6 +107,7 @@ namespace Quote2Cash.API.Controllers
                     quote.SubTotal,
                     quote.Vat,
                     quote.Total,
+                    quote.PONumber,
                     Client = quote.Client != null ? new
                     {
                         quote.Client.Id,

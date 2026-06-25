@@ -101,6 +101,9 @@ export default function JobCardViewPage({ jobCard, onEdit, onBack }: Props) {
               <div style={{ fontSize: '0.75rem', marginBottom: '2px' }}>
                 <span style={{ fontWeight: 600 }}>REFERENCE: </span>{jobCard.reference || '—'}
               </div>
+              <div style={{ fontSize: '0.75rem', marginBottom: '2px' }}>
+                <span style={{ fontWeight: 600 }}>PO NUMBER: </span>{quote?.poNumber || '—'}
+              </div>
 
               {/* Client box */}
               {displayClient ? (

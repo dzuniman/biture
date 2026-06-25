@@ -159,6 +159,7 @@ export interface JobCard {
     vat?: number;
     total?: number;
     client?: Client | null;
+    poNumber?: string;
     items?: QuoteItem[];
   } | null; // From detail endpoint
 }
