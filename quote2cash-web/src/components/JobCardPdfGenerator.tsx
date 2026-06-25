@@ -81,6 +81,7 @@ export const generateJobCardPDF = async (jobCard: JobCard) => {
   addDetailRow('JOB CARD NUMBER:', jobCard.jobCardNumber);
   addDetailRow('DATE:', formatDate(jobCard.createdAt ? new Date(jobCard.createdAt) : undefined));
   addDetailRow('REFERENCE:', jobCard.reference || '—');
+  addDetailRow('PO NUMBER:', jobCard.quote?.poNumber || '—');
 
   // ── Client Box (right) ──
   const client = jobCard.quote?.client;
