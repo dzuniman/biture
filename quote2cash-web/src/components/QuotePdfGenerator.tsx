@@ -212,7 +212,7 @@ export const generateQuotePDF = async (quote: Quote) => {
   doc.setFontSize(8);
   doc.text('Received and Approved by: __________________________________________________________', margin, currentY);
   currentY += 8;
-  doc.text('Signature: _________________________________________________________________________', margin, currentY);
+  doc.text('Signature: ________________________________________________________________________', margin, currentY);
   currentY += 10;
   doc.setFontSize(7);
   doc.text('A written order is required should the quote be accepted', margin, currentY);

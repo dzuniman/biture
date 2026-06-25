@@ -277,7 +277,7 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
               </div>
               <div className="print-only" style={{ height: '20px' }}></div>
               <div style={{ marginBottom: '15px', fontSize: '0.8rem' }}>
-                Signature: _________________________________________________________________________
+                Signature: ____________________________________________________________________________
               </div>
               <div className="print-only" style={{ height: '20px' }}></div>
 

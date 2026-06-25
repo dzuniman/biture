@@ -20,7 +20,7 @@ export const generateJobCardPDF = async (jobCard: JobCard) => {
     });
   };
 
-  const margin = 10;
+  const margin = 5;
   const pageWidth = doc.internal.pageSize.getWidth();
   let currentY = margin;
 
@@ -78,9 +78,8 @@ export const generateJobCardPDF = async (jobCard: JobCard) => {
     });
   };
 
-  addDetailRow('JOB CARD:', jobCard.jobCardNumber);
+  addDetailRow('JOB CARD NUMBER:', jobCard.jobCardNumber);
   addDetailRow('DATE:', formatDate(jobCard.createdAt ? new Date(jobCard.createdAt) : undefined));
-  addDetailRow('QUOTE NUMBER:', jobCard.quoteNumber);
   addDetailRow('REFERENCE:', jobCard.reference || '—');
 
   // ── Client Box (right) ──
@@ -94,7 +93,7 @@ export const generateJobCardPDF = async (jobCard: JobCard) => {
     doc.rect(boxX, boxY, boxW, boxH);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7.5);
-    doc.text('CLIENT:', boxX + 2, boxY + 4);
+    doc.text('SITE DETAILS:', boxX + 2, boxY + 4);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
     let cy = boxY + 8;
@@ -122,7 +121,7 @@ export const generateJobCardPDF = async (jobCard: JobCard) => {
   doc.line(margin, currentY, pageWidth - margin, currentY);
   currentY += 5;
 
-  // ── Items Table — Qty + Description only ──
+  // ── Items Table — Item + Qty + Description only ──
   const tableRows = (jobCard.quote?.items ?? [])
     .slice()
     .sort((a: QuoteItem, b: QuoteItem) => {
@@ -131,11 +130,11 @@ export const generateJobCardPDF = async (jobCard: JobCard) => {
       if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
       return String(a.itemNumber).localeCompare(String(b.itemNumber), undefined, { numeric: true });
     })
-    .map((item: QuoteItem) => [item.quantity, item.description]);
+    .map((item: QuoteItem) => [item.itemNumber, item.quantity, item.description]);
 
   autoTable(doc, {
     startY: currentY,
-    head: [['QTY', 'DESCRIPTION']],
+    head: [['ITEM', 'QTY', 'DESCRIPTION']],
     body: tableRows,
     theme: 'grid',
     styles: {
@@ -153,8 +152,9 @@ export const generateJobCardPDF = async (jobCard: JobCard) => {
       lineWidth: 0.15,
     },
     columnStyles: {
-      0: { cellWidth: 20, halign: 'center' },
-      1: { cellWidth: 'auto' },
+      0: { cellWidth: 12, halign: 'center' },
+      1: { cellWidth: 12, halign: 'center' },
+      2: { cellWidth: 'auto' },
     },
     margin: { left: margin, right: margin },
   });
@@ -165,7 +165,7 @@ export const generateJobCardPDF = async (jobCard: JobCard) => {
   if (jobCard.description) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
-    doc.text('Description:', margin, currentY);
+    doc.text('REMARKS:', margin, currentY);
     doc.setFont('helvetica', 'normal');
     const descLines = doc.splitTextToSize(jobCard.description, pageWidth - margin * 2 - 28);
     doc.text(descLines, margin + 28, currentY);
@@ -188,28 +188,21 @@ export const generateJobCardPDF = async (jobCard: JobCard) => {
     currentY += 5;
   };
 
-  /*addSummaryRow('Sub total', subTotal);
-  addSummaryRow('VAT', vat);
-  doc.setLineWidth(0.0);
-  doc.setDrawColor(50, 50, 50);
-  doc.line(labelX, currentY - 2, summaryX, currentY - 2);
-  addSummaryRow('Total', total, true);*/
-
-  currentY += 8;
-
   // ── Received / Approved & Signature Lines ──
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const footerBlockHeight = 38;
+  currentY = Math.max(currentY + 5, pageHeight - margin - footerBlockHeight);
+
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setDrawColor(0, 0, 0);
   doc.setLineWidth(0.3);
 
-  doc.text('Received and Approved by:', margin, currentY);
-  doc.line(margin + 55, currentY + 0.5, pageWidth - margin, currentY + 0.5);
+  doc.setFontSize(8);
+  doc.text('Received and Approved by: __________________________________________________________', margin, currentY);
   currentY += 8;
-
-  doc.text('Signature & Date:', margin, currentY);
-  doc.line(margin + 55, currentY + 0.5, pageWidth - margin, currentY + 0.5);
-  currentY += 8;
+  doc.text('Signature: ________________________________________________________________________', margin, currentY);
+  currentY += 10;
 
   // ── Payment Details ──
   doc.setFontSize(8);

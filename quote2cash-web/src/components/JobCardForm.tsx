@@ -98,11 +98,11 @@ export default function JobCardForm({ quotes, initialData, isNew, onSubmit, onCa
               />
             </label>
             <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>Description</span>
+              <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>Remarks</span>
               <input
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Enter description..."
+                placeholder="Enter remarks..."
               />
             </label>
           </div>
