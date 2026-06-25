@@ -116,8 +116,8 @@ export default function JobCardViewPage({ jobCard, onEdit, onBack }: Props) {
                   {displayClient.addressLine4 && <div>{displayClient.addressLine4}</div>}
                   {displayClient.vatNumber && <div>VAT No: {displayClient.vatNumber}</div>}
                   {displayClient.email && <div>Email: {displayClient.email}</div>}
-                  <div>Rep: {displayClient.representativeName || '—'}</div>
-                  <div>Tel: {displayClient.representativeNumber || '—'}</div>
+                  <div>{displayClient.representativeName || '—'}</div>
+                  <div>{displayClient.representativeNumber || '—'}</div>
                 </div>
               ) : (
                 <div style={{ border: '1px solid #000', padding: '6px', marginTop: '10px', fontSize: '0.75rem', textAlign: 'left' }}>

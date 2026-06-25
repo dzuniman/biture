@@ -139,8 +139,8 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
                   {displayClient.addressLine4 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine4}</div>}
                   {displayClient.vatNumber && <div style={{ marginBottom: '2px' }}>VAT No: {displayClient.vatNumber}</div>}
                   {displayClient.email && <div style={{ marginBottom: '2px' }}>Email: {displayClient.email}</div>}
-                  <div style={{ marginBottom: '2px' }}>Rep: {displayClient.representativeName || '—'}</div>
-                  <div style={{ marginBottom: '2px' }}>Tel: {displayClient.representativeNumber || '—'}</div>
+                  <div style={{ marginBottom: '2px' }}>{displayClient.representativeName || '—'}</div>
+                  <div style={{ marginBottom: '2px' }}>{displayClient.representativeNumber || '—'}</div>
                 </div>
               ) : (
                 <div className="customer-box" style={{ border: '1px solid #000', padding: '6px', marginTop: '8px', fontSize: '0.75rem' }}>

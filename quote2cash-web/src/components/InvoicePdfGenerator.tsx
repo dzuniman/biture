@@ -136,8 +136,8 @@ export const generateInvoicePDF = async (invoice: Invoice) => {
       invoice.client.addressLine4,
       invoice.client.vatNumber ? `VAT No: ${invoice.client.vatNumber}` : null,
       invoice.client.email ? `Email: ${invoice.client.email}` : null,
-      invoice.client.representativeName ? `Rep: ${invoice.client.representativeName}` : null,
-      invoice.client.representativeNumber ? `Tel: ${invoice.client.representativeNumber}` : null
+      invoice.client.representativeName ? `${invoice.client.representativeName}` : null,
+      invoice.client.representativeNumber ? `${invoice.client.representativeNumber}` : null
     ].filter(Boolean);
 
     const boxWidth = 70;

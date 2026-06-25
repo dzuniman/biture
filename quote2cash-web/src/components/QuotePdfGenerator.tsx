@@ -103,8 +103,8 @@ export const generateQuotePDF = async (quote: Quote) => {
       quote.client.addressLine4,
       quote.client.vatNumber ? `VAT No: ${quote.client.vatNumber}` : null,
       quote.client.email ? `Email: ${quote.client.email}` : null,
-      quote.client.representativeName ? `Rep: ${quote.client.representativeName}` : null,
-      quote.client.representativeNumber ? `Tel: ${quote.client.representativeNumber}` : null
+      quote.client.representativeName ? `${quote.client.representativeName}` : null,
+      quote.client.representativeNumber ? `${quote.client.representativeNumber}` : null
     ].filter(Boolean);
 
     const boxWidth = 70;
