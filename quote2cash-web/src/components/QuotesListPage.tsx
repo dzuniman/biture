@@ -100,7 +100,7 @@ export default function QuotesListPage({
             <table>
               <thead>
                 <tr>
-                  <th>Quote #</th>
+                  <th>Quote</th>
                   <th>Reference</th>
                   <th>Client</th>
                   <th>Date</th>

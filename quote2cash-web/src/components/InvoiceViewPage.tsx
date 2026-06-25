@@ -102,7 +102,7 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
               <div style={{ fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '1px', lineHeight: '1' }}>TAX INVOICE</div>
               <div className="quote-details-block" style={{ fontSize: '0.75rem', lineHeight: '0', marginBottom: '2px' }}>
                 <div className="view-row" style={{ marginBottom: '1px' }}>
-                  <span className="view-label">INVOICE:</span>
+                  <span className="view-label">INVOICE NUMBER:</span>
                   <span className="view-value">{invoice.invoiceNumber}</span>
                 </div>
                 <div className="view-row" style={{ marginBottom: '1px' }}>
@@ -117,12 +117,6 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
                   <span className="view-label">VENDOR NUMBER:</span>
                   <span className="view-value">{invoice.client?.vendorNumber || '—'}</span>
                 </div>
-                {invoice.description && (
-                  <div className="view-row" style={{ marginBottom: '1px' }}>
-                    <span className="view-label">DESCRIPTION:</span>
-                    <span className="view-value">{invoice.description}</span>
-                  </div>
-                )}
                 {quote?.poNumber && (
                   <div className="view-row" style={{ marginBottom: '1px' }}>
                     <span className="view-label">PO NUMBER:</span>
@@ -138,7 +132,7 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
                   {displayClient.addressLine3 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine3}</div>}
                   {displayClient.addressLine4 && <div style={{ marginBottom: '2px' }}>{displayClient.addressLine4}</div>}
                   {displayClient.vatNumber && <div style={{ marginBottom: '2px' }}>VAT No: {displayClient.vatNumber}</div>}
-                  {displayClient.email && <div style={{ marginBottom: '2px' }}>Email: {displayClient.email}</div>}
+                  {displayClient.email && <div style={{ marginBottom: '2px' }}>{displayClient.email}</div>}
                   <div style={{ marginBottom: '2px' }}>{displayClient.representativeName || '—'}</div>
                   <div style={{ marginBottom: '2px' }}>{displayClient.representativeNumber || '—'}</div>
                 </div>
@@ -154,7 +148,8 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
 
           <div className="view-section" style={{ marginTop: '24px' }}>
             <div className="items-table" style={{ border: '1px solid #000', borderRadius: '2px', overflow: 'hidden' }}>
-              <div className="items-table-header" style={{ display: 'grid', gridTemplateColumns: '60px 1fr 120px 120px', gap: '0', background: '#f3f4f6', borderBottom: '1px solid #000', padding: '0' }}>
+              <div className="items-table-header" style={{ display: 'grid', gridTemplateColumns: '60px 60px 1fr 120px 120px', gap: '0', background: '#f3f4f6', borderBottom: '1px solid #000', padding: '0' }}>
+                <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>ITEM</div>
                 <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>Qty</div>
                 <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>Description</div>
                 <div style={{ padding: '8px 6px', fontWeight: 'bold', textAlign: 'right' }}>Unit Price</div>
@@ -162,7 +157,8 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
               </div>
               {items.length > 0 ? (
                 items.map((item) => (
-                  <div key={item.id} className="items-table-row" style={{ display: 'grid', gridTemplateColumns: '60px 1fr 120px 120px', gap: '0', borderTop: '1px solid #eee' }}>
+                  <div key={item.id} className="items-table-row" style={{ display: 'grid', gridTemplateColumns: '60px 60px 1fr 120px 120px', gap: '0', borderTop: '1px solid #eee' }}>
+                    <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{item.itemNumber}</div>
                     <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{item.quantity}</div>
                     <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{item.description}</div>
                     <div style={{ padding: '8px 6px', textAlign: 'right', lineHeight: '1.2' }}>{formatAmount(item.unitPrice)}</div>

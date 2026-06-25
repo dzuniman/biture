@@ -112,13 +112,10 @@ export const generateInvoicePDF = async (invoice: Invoice) => {
     });
   };
 
-  addInvoiceDetailRow('INVOICE:', invoice.invoiceNumber);
+  addInvoiceDetailRow('INVOICE NUMBER:', invoice.invoiceNumber);
   addInvoiceDetailRow('INVOICE DATE:', formatDate(invoice.createdAt ? new Date(invoice.createdAt) : undefined));
   addInvoiceDetailRow('DUE DATE:', formatDate(invoice.dueDate ? new Date(invoice.dueDate) : undefined));
   addInvoiceDetailRow('VENDOR NUMBER:', invoice.client?.vendorNumber || '—');
-  if (invoice.description) {
-    addInvoiceDetailRow('DESCRIPTION:', invoice.description);
-  }
   if (invoice.quote?.poNumber) {
     addInvoiceDetailRow('PO NUMBER:', invoice.quote.poNumber);
   }
@@ -135,7 +132,7 @@ export const generateInvoicePDF = async (invoice: Invoice) => {
       invoice.client.addressLine3,
       invoice.client.addressLine4,
       invoice.client.vatNumber ? `VAT No: ${invoice.client.vatNumber}` : null,
-      invoice.client.email ? `Email: ${invoice.client.email}` : null,
+      invoice.client.email ? `${invoice.client.email}` : null,
       invoice.client.representativeName ? `${invoice.client.representativeName}` : null,
       invoice.client.representativeNumber ? `${invoice.client.representativeNumber}` : null
     ].filter(Boolean);
@@ -188,8 +185,8 @@ export const generateInvoicePDF = async (invoice: Invoice) => {
   // Apply styles directly to autoTable options
   autoTable(doc, {
     startY: currentY,
-    head: [['QTY', 'DESCRIPTION', 'UNIT PRICE', 'TOTAL']], // Simplified headers as requested
-    body: tableRows.map(row => [row[1], row[4], row[5], row[6]]), // Only QTY, DESCRIPTION, UNIT PRICE, TOTAL
+    head: [['ITEM', 'QTY', 'DESCRIPTION', 'UNIT PRICE', 'TOTAL']], // Simplified headers as requested
+    body: tableRows.map(row => [row[0], row[1], row[4], row[5], row[6]]), // Only QTY, DESCRIPTION, UNIT PRICE, TOTAL
     theme: 'grid',
     styles: {
       font: 'helvetica',
@@ -206,10 +203,11 @@ export const generateInvoicePDF = async (invoice: Invoice) => {
       lineWidth: 0.1,
     },
     columnStyles: {
-      0: { cellWidth: 18, halign: 'center' }, // QTY
-      1: { cellWidth: 'auto' },             // DESCRIPTION
-      2: { cellWidth: 25, halign: 'right' }, // UNIT PRICE
-      3: { cellWidth: 25, halign: 'right' }, // TOTAL
+      0: { cellWidth: 12, halign: 'center' }, // ITEM
+      1: { cellWidth: 12, halign: 'center' }, // QTY
+      2: { cellWidth: 'auto' },             // DESCRIPTION
+      3: { cellWidth: 25, halign: 'right' }, // UNIT PRICE
+      4: { cellWidth: 25, halign: 'right' }, // TOTAL
     },
     margin: margin,
   });
