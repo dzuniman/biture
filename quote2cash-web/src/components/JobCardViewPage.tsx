@@ -93,13 +93,10 @@ export default function JobCardViewPage({ jobCard, onEdit, onBack }: Props) {
               <div style={{ fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '6px', letterSpacing: '1px' }}>JOB CARD</div>
 
               <div style={{ fontSize: '0.75rem', marginBottom: '2px' }}>
-                <span style={{ fontWeight: 600 }}>JOB CARD: </span>{jobCard.jobCardNumber}
+                <span style={{ fontWeight: 600 }}>JOB CARD NUMBER: </span>{jobCard.jobCardNumber}
               </div>
               <div style={{ fontSize: '0.75rem', marginBottom: '2px' }}>
                 <span style={{ fontWeight: 600 }}>DATE: </span>{createdDate}
-              </div>
-              <div style={{ fontSize: '0.75rem', marginBottom: '2px' }}>
-                <span style={{ fontWeight: 600 }}>QUOTE NUMBER: </span>{jobCard.quoteNumber}
               </div>
               <div style={{ fontSize: '0.75rem', marginBottom: '2px' }}>
                 <span style={{ fontWeight: 600 }}>REFERENCE: </span>{jobCard.reference || '—'}
@@ -107,8 +104,8 @@ export default function JobCardViewPage({ jobCard, onEdit, onBack }: Props) {
 
               {/* Client box */}
               {displayClient ? (
-                <div style={{ border: '1px solid #000', padding: '8px', marginTop: '10px', fontSize: '0.75rem', lineHeight: '1.4', textAlign: 'left', minWidth: '200px' }}>
-                  <div style={{ fontWeight: 'bold', marginBottom: '3px' }}>CLIENT:</div>
+                <div style={{ border: '1px solid #000', padding: '8px', marginTop: '10px', fontSize: '0.75rem', lineHeight: '1.4', minWidth: '200px' }}>
+                  <div style={{ fontWeight: 'bold', marginBottom: '3px' }}>SITE DETAILS:</div>
                   {displayClient.name && <div>{displayClient.name}</div>}
                   {displayClient.addressLine1 && <div>{displayClient.addressLine1}</div>}
                   {displayClient.addressLine2 && <div>{displayClient.addressLine2}</div>}
@@ -128,17 +125,19 @@ export default function JobCardViewPage({ jobCard, onEdit, onBack }: Props) {
             </div>
           </div>
 
-          {/* ── ITEMS TABLE ── Qty + Description only */}
+          {/* ── ITEMS TABLE ── Item + Qty + Description only */}
           <div style={{ marginTop: '20px', border: '1px solid #000', borderRadius: '2px', overflow: 'hidden' }}>
             {/* Header */}
-            <div className="jc-items-table-header" style={{ display: 'grid', gridTemplateColumns: '80px 1fr', background: '#f3f4f6', borderBottom: '1px solid #000' }}>
+            <div className="jc-items-table-header" style={{ display: 'grid', gridTemplateColumns: '80px 80px 1fr', background: '#f3f4f6', borderBottom: '1px solid #000' }}>
+              <div style={{ padding: '8px 10px', fontWeight: 'bold', fontSize: '0.8rem' }}>Item</div>
               <div style={{ padding: '8px 10px', fontWeight: 'bold', fontSize: '0.8rem' }}>Qty</div>
               <div style={{ padding: '8px 10px', fontWeight: 'bold', fontSize: '0.8rem', borderLeft: '1px solid #ccc' }}>Description</div>
             </div>
             {/* Rows */}
             {items.length > 0 ? (
               items.map((item) => (
-                <div key={item.id} className="jc-items-table-row" style={{ display: 'grid', gridTemplateColumns: '80px 1fr', borderTop: '1px solid #eee' }}>
+                <div key={item.id} className="jc-items-table-row" style={{ display: 'grid', gridTemplateColumns: '80px 80px 1fr', borderTop: '1px solid #eee' }}>
+                  <div style={{ padding: '8px 10px', fontSize: '0.8rem', lineHeight: '1.3' }}>{item.itemNumber}</div>
                   <div style={{ padding: '8px 10px', fontSize: '0.8rem', lineHeight: '1.3' }}>{item.quantity}</div>
                   <div style={{ padding: '8px 10px', fontSize: '0.8rem', lineHeight: '1.3', borderLeft: '1px solid #eee' }}>{item.description}</div>
                 </div>
@@ -151,7 +150,7 @@ export default function JobCardViewPage({ jobCard, onEdit, onBack }: Props) {
           {/* ── DESCRIPTION ── */}
           {jobCard.description && (
             <div style={{ marginTop: '16px', fontSize: '0.8rem', lineHeight: '1.5' }}>
-              <strong>Description:</strong> {jobCard.description}
+              <strong>REMARKS:</strong> {jobCard.description}
             </div>
           )}
 
@@ -174,14 +173,13 @@ export default function JobCardViewPage({ jobCard, onEdit, onBack }: Props) {
           </div>
 
           {/* ── APPROVAL / SIGNATURE ── */}
-          <div style={{ marginTop: '36px', fontSize: '0.8rem', lineHeight: '2.8' }}>
-            <div style={{ borderBottom: '1px solid #000', marginBottom: '12px', paddingBottom: '4px' }}>
-              Received and Approved by: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-            </div>
-            <div style={{ borderBottom: '1px solid #000', paddingBottom: '4px' }}>
-              Signature &amp; Date: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-            </div>
-          </div>
+          <div style={{ marginBottom: '8px', fontSize: '0.8rem' }}>
+                Received and Approved by: __________________________________________________________
+              </div>
+              <div className="print-only" style={{ height: '20px' }}></div>
+              <div style={{ marginBottom: '15px', fontSize: '0.8rem' }}>
+                Signature: ____________________________________________________________________________
+              </div>
 
           {/* ── PAYMENT DETAILS ── */}
           <div style={{ marginTop: '28px', border: '0px solid #000', borderRadius: '2px', padding: '0', fontSize: '0.75rem', lineHeight: '1.6' }}>
