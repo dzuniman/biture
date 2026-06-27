@@ -1180,7 +1180,7 @@ function App() {
         <DeliveryNoteForm
           quotes={quotes}
           clients={clients}
-          initialData={editingDeliveryNote}
+          initialData={editingDeliveryNote ?? undefined}
           isNew={!editingDeliveryNote}
           onSubmit={editingDeliveryNote
             ? (p) => handleUpdateDeliveryNote(editingDeliveryNote.id, p)

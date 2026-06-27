@@ -1,16 +1,17 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import type { Quote, DeliveryNote, DeliveryNoteCreateRequest } from '../types';
+import type { Quote, DeliveryNote, DeliveryNoteCreateRequest, Client } from '../types';
 import { getDeliveryNoteNextNumber } from '../api';
 
 interface Props {
   quotes: Quote[];
+  clients?: Client[];
   initialData?: DeliveryNote;
   isNew: boolean;
   onSubmit: (payload: DeliveryNoteCreateRequest) => Promise<void>;
   onCancel: () => void;
 }
 
-export default function DeliveryNoteForm({ quotes, initialData, isNew, onSubmit, onCancel }: Props) {
+export default function DeliveryNoteForm({ quotes, clients, initialData, isNew, onSubmit, onCancel }: Props) {
   const [deliveryNoteNumber, setDeliveryNoteNumber] = useState('');
   const [quoteNumber, setQuoteNumber] = useState('');
   const [reference, setReference] = useState('');
