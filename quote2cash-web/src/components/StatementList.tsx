@@ -58,6 +58,7 @@ export default function StatementList({ statements, invoices, onEdit, onView, on
   return (
     <div className="table-card">
       <SearchBox placeholder="Search statements by number or client..." value={searchTerm} onChange={setSearchTerm} />
+      <p /><br />
       <table>
         <thead>
           <tr>
