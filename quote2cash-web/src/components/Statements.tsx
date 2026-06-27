@@ -1,11 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { StatementForm } from './StatementForm';
 import StatementList from './StatementList';
 import { StatementViewPage } from './StatementViewPage';
-import type { Statement, Invoice, Client } from '../types';
-import { deleteStatement, getStatement } from '../api';
+import type { Statement, Invoice, Client, CreditNote } from '../types';
+import { getStatement } from '../api';
 
-export const Statements: React.FC<{ invoices: Invoice[], clients: Client[], statements: Statement[], onRefresh: () => Promise<void>, onDelete: (id: string) => Promise<void> }> = ({ invoices, clients, statements, onRefresh, onDelete }) => {
+export const Statements: React.FC<{
+  invoices: Invoice[];
+  clients: Client[];
+  creditNotes: CreditNote[];
+  statements: Statement[];
+  onRefresh: () => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+}> = ({ invoices, clients, creditNotes, statements, onRefresh, onDelete }) => {
   const [view, setView] = useState<'list' | 'manage' | 'view'>('list');
   const [editingStatement, setEditingStatement] = useState<Statement | null>(null);
   const [viewingStatement, setViewingStatement] = useState<Statement | null>(null);
@@ -28,7 +35,7 @@ export const Statements: React.FC<{ invoices: Invoice[], clients: Client[], stat
 
   const handleCreate = () => {
     setEditingStatement(null);
-    setView('manage'); // This should be 'manage' for creating new statements
+    setView('manage');
   };
 
   return (
@@ -47,28 +54,30 @@ export const Statements: React.FC<{ invoices: Invoice[], clients: Client[], stat
 
       {view === 'list' ? (
         <StatementList
-          statements={statements} 
+          statements={statements}
           invoices={invoices}
-          onEdit={handleEdit} 
+          onEdit={handleEdit}
           onView={handleView}
           onDelete={onDelete}
         />
       ) : view === 'manage' ? (
-        <StatementForm 
+        <StatementForm
           invoices={invoices}
           clients={clients}
+          creditNotes={creditNotes}
           initialData={editingStatement}
           onSuccess={() => { setView('list'); onRefresh(); }}
-          onCancel={() => setView('list')} 
+          onCancel={() => setView('list')}
         />
       ) : (
-        <StatementViewPage 
-          statement={viewingStatement!} 
+        <StatementViewPage
+          statement={viewingStatement!}
           invoices={invoices}
+          creditNotes={creditNotes}
           onEdit={() => handleEdit(viewingStatement!)}
-          onBack={() => setView('list')} 
+          onBack={() => setView('list')}
         />
       )}
     </div>
   );
-};
+};

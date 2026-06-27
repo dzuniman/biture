@@ -164,6 +164,39 @@ export interface JobCard {
   } | null; // From detail endpoint
 }
 
+export interface DeliveryNote {
+  id: string;
+  deliveryNoteNumber: string;
+  reference: string;
+  quoteNumber: string;
+  description: string;
+  createdAt: string;
+  client?: { id: string; name: string } | null;
+  quote?: {
+    id: string;
+    quoteNumber: string;
+    reference: string;
+    date?: string;
+    validityDays?: number;
+    subTotal?: number;
+    vat?: number;
+    total?: number;
+    client?: Client | null;
+    poNumber?: string;
+    items?: QuoteItem[];
+  } | null;
+}
+
+export interface CreditNote {
+  id: string;
+  clientId: string;
+  client?: Client | null;
+  creditNoteNumber: string;
+  description: string;
+  amount: number;
+  createdAt: string;
+}
+
 export interface Cost {
   id: string;
   client?: Client | null;
@@ -207,11 +240,14 @@ export interface Invoice {
 
 export interface StatementItem {
   id: string;
-  invoiceId: string;
+  invoiceId?: string | null;
+  creditNoteId?: string | null;
+  invoiceNumber?: string | null;
+  invoiceAmount?: number;
   paymentAmount: number;
   description: string;
   paymentDate: string;
-  dueDays: string;
+  dueDays?: string;
 }
 
 export interface Statement {
@@ -228,6 +264,20 @@ export interface JobCardCreateRequest {
   quoteNumber: string;
   reference: string;
   description: string;
+}
+
+export interface DeliveryNoteCreateRequest {
+  deliveryNoteNumber?: string;
+  quoteNumber: string;
+  reference: string;
+  description: string;
+}
+
+export interface CreditNoteCreateRequest {
+  clientId: string;
+  creditNoteNumber?: string;
+  description: string;
+  amount: number;
 }
 
 export interface CostCreateRequest {
@@ -251,7 +301,8 @@ export interface InvoiceCreateRequest {
 }
 
 export interface StatementItemCreateRequest {
-  invoiceId: string;
+  invoiceId?: string | null;
+  creditNoteId?: string | null;
   paymentAmount: number;
   description: string;
   paymentDate: string;

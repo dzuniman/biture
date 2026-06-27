@@ -12,7 +12,7 @@ import {
   getInvoice,
   getInvoiceNextNumber,
   getInvoices,
-  getDocuments, // Added for document management
+  getDocuments,
   getQuote,
   getQuoteDescriptions,
   getQuoteNextNumber,
@@ -26,7 +26,17 @@ import {
   getJobCard,
   createJobCard,
   updateJobCard,
-  deleteJobCard
+  deleteJobCard,
+  getDeliveryNotes,
+  getDeliveryNote,
+  createDeliveryNote,
+  updateDeliveryNote,
+  deleteDeliveryNote,
+  getCreditNotes,
+  getCreditNote,
+  createCreditNote,
+  updateCreditNote,
+  deleteCreditNote
 } from './api';
 import type {
   Client,
@@ -38,9 +48,13 @@ import type {
   QuoteDescription,
   User,
   Statement,
-  DocumentResponse, // Added for document management
+  DocumentResponse,
   JobCard,
-  JobCardCreateRequest
+  JobCardCreateRequest,
+  DeliveryNote,
+  DeliveryNoteCreateRequest,
+  CreditNote,
+  CreditNoteCreateRequest
 } from './types';
 import { useAuth } from './AuthContext';
 import { Login } from './components/Login';
@@ -61,15 +75,23 @@ import { Statements } from './components/Statements';
 import JobCardListPage from './components/JobCardListPage';
 import JobCardForm from './components/JobCardForm';
 import JobCardViewPage from './components/JobCardViewPage';
+import DeliveryNoteListPage from './components/DeliveryNoteListPage';
+import DeliveryNoteForm from './components/DeliveryNoteForm';
+import DeliveryNoteViewPage from './components/DeliveryNoteViewPage';
+import CreditNoteListPage from './components/CreditNoteListPage';
+import CreditNoteForm from './components/CreditNoteForm';
+import CreditNoteViewPage from './components/CreditNoteViewPage';
 import logo from './assets/logo.png';
 
 
-type Section = 'dashboard' | 'clients' | 'quotes' | 'invoices' | 'admin' | 'statements' | 'jobcards';
+type Section = 'dashboard' | 'clients' | 'quotes' | 'invoices' | 'admin' | 'statements' | 'jobcards' | 'deliverynotes' | 'creditnotes';
 type ClientView = 'list' | 'manage' | 'view';
 type QuoteView = 'list' | 'manage' | 'view';
 type InvoiceView = 'list' | 'manage' | 'view';
 type StatementView = 'list' | 'manage' | 'view';
 type JobCardView = 'list' | 'manage' | 'view';
+type DeliveryNoteView = 'list' | 'manage' | 'view';
+type CreditNoteView = 'list' | 'manage' | 'view';
 type AdminView = 'home' | 'descriptions' | 'users' | 'documents';
 
 function App() {
@@ -79,21 +101,29 @@ function App() {
   const [invoiceView, setInvoiceView] = useState<InvoiceView>('list');
   const [statementView, setStatementView] = useState<StatementView>('list');
   const [jobCardView, setJobCardView] = useState<JobCardView>('list');
+  const [deliveryNoteView, setDeliveryNoteView] = useState<DeliveryNoteView>('list');
+  const [creditNoteView, setCreditNoteView] = useState<CreditNoteView>('list');
   const [clients, setClients] = useState<Client[]>([]);
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [statements, setStatements] = useState<Statement[]>([]);
   const [jobCards, setJobCards] = useState<JobCard[]>([]);
-  const [documents, setDocuments] = useState<DocumentResponse[]>([]); // Added for document management
+  const [deliveryNotes, setDeliveryNotes] = useState<DeliveryNote[]>([]);
+  const [creditNotes, setCreditNotes] = useState<CreditNote[]>([]);
+  const [documents, setDocuments] = useState<DocumentResponse[]>([]);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [editingQuote, setEditingQuote] = useState<Quote | null>(null);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [editingJobCard, setEditingJobCard] = useState<JobCard | null>(null);
+  const [editingDeliveryNote, setEditingDeliveryNote] = useState<DeliveryNote | null>(null);
+  const [editingCreditNote, setEditingCreditNote] = useState<CreditNote | null>(null);
   const [viewingClient, setViewingClient] = useState<Client | null>(null);
   const [viewingQuote, setViewingQuote] = useState<Quote | null>(null);
   const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null);
   const [viewingStatement, setViewingStatement] = useState<Statement | null>(null);
   const [viewingJobCard, setViewingJobCard] = useState<JobCard | null>(null);
+  const [viewingDeliveryNote, setViewingDeliveryNote] = useState<DeliveryNote | null>(null);
+  const [viewingCreditNote, setViewingCreditNote] = useState<CreditNote | null>(null);
   const [quoteDescriptions, setQuoteDescriptions] = useState<QuoteDescription[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [adminView, setAdminView] = useState<AdminView>('home');
@@ -124,7 +154,7 @@ function App() {
     try {
       setError(null);
       setIsLoading(true);
-      const [clientsData, quotesData, descriptionsData, usersData, invoicesData, statementsData, documentsData, jobCardsData] = await Promise.all([
+      const [clientsData, quotesData, descriptionsData, usersData, invoicesData, statementsData, documentsData, jobCardsData, deliveryNotesData, creditNotesData] = await Promise.all([
         getClients(),
         getQuotes(),
         getQuoteDescriptions(),
@@ -132,7 +162,9 @@ function App() {
         getInvoices(),
         getStatements(),
         getDocuments(),
-        getJobCards()
+        getJobCards(),
+        getDeliveryNotes(),
+        getCreditNotes()
       ]);
       setClients(clientsData);
       setQuotes(quotesData);
@@ -142,6 +174,8 @@ function App() {
       setStatements(statementsData);
       setDocuments(documentsData);
       setJobCards(jobCardsData);
+      setDeliveryNotes(deliveryNotesData);
+      setCreditNotes(creditNotesData);
     } catch (err: any) {
       setError(getErrorMessage(err, 'Unable to load data. Confirm the API is running.'));
     } finally {
@@ -480,6 +514,18 @@ function App() {
     setJobCardView('list');
   };
 
+  const clearDeliveryNoteState = () => {
+    setEditingDeliveryNote(null);
+    setViewingDeliveryNote(null);
+    setDeliveryNoteView('list');
+  };
+
+  const clearCreditNoteState = () => {
+    setEditingCreditNote(null);
+    setViewingCreditNote(null);
+    setCreditNoteView('list');
+  };
+
   const clearClientState = () => {
     setEditingClient(null);
     setViewingClient(null);
@@ -648,6 +694,118 @@ function App() {
     }
   };
 
+  // --- Delivery Note Handlers ---
+  const handleCreateDeliveryNote = async (payload: DeliveryNoteCreateRequest) => {
+    try {
+      setError(null); setIsLoading(true);
+      await createDeliveryNote(payload);
+      clearDeliveryNoteState();
+      await loadAll();
+      setSection('deliverynotes'); setDeliveryNoteView('list');
+    } catch (err: any) { setError(getErrorMessage(err, 'Unable to save delivery note.')); }
+    finally { setIsLoading(false); }
+  };
+
+  const handleUpdateDeliveryNote = async (id: string, payload: DeliveryNoteCreateRequest) => {
+    try {
+      setError(null); setIsLoading(true);
+      await updateDeliveryNote(id, payload);
+      clearDeliveryNoteState();
+      await loadAll();
+      setDeliveryNoteView('list');
+    } catch (err: any) { setError(getErrorMessage(err, 'Unable to update delivery note.')); }
+    finally { setIsLoading(false); }
+  };
+
+  const handleDeleteDeliveryNote = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this delivery note?')) {
+      try {
+        setError(null); setIsLoading(true);
+        await deleteDeliveryNote(id);
+        await loadAll();
+      } catch (err: any) { setError(getErrorMessage(err, 'Unable to delete delivery note.')); }
+      finally { setIsLoading(false); }
+    }
+  };
+
+  const handleEditDeliveryNote = async (dn: DeliveryNote) => {
+    try {
+      setIsLoading(true);
+      const full = await getDeliveryNote(dn.id);
+      setEditingDeliveryNote(full);
+      setDeliveryNoteView('manage');
+      setSection('deliverynotes');
+    } catch (err: any) { setError(getErrorMessage(err, 'Unable to load delivery note for editing.')); }
+    finally { setIsLoading(false); }
+  };
+
+  const handleViewDeliveryNote = async (dn: DeliveryNote) => {
+    try {
+      setIsLoading(true);
+      const full = await getDeliveryNote(dn.id);
+      setViewingDeliveryNote(full);
+      setDeliveryNoteView('view');
+      setSection('deliverynotes');
+    } catch (err: any) { setError(getErrorMessage(err, 'Unable to load delivery note.')); }
+    finally { setIsLoading(false); }
+  };
+
+  // --- Credit Note Handlers ---
+  const handleCreateCreditNote = async (payload: CreditNoteCreateRequest) => {
+    try {
+      setError(null); setIsLoading(true);
+      await createCreditNote(payload);
+      clearCreditNoteState();
+      await loadAll();
+      setSection('creditnotes'); setCreditNoteView('list');
+    } catch (err: any) { setError(getErrorMessage(err, 'Unable to save credit note.')); }
+    finally { setIsLoading(false); }
+  };
+
+  const handleUpdateCreditNote = async (id: string, payload: CreditNoteCreateRequest) => {
+    try {
+      setError(null); setIsLoading(true);
+      await updateCreditNote(id, payload);
+      clearCreditNoteState();
+      await loadAll();
+      setCreditNoteView('list');
+    } catch (err: any) { setError(getErrorMessage(err, 'Unable to update credit note.')); }
+    finally { setIsLoading(false); }
+  };
+
+  const handleDeleteCreditNote = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this credit note?')) {
+      try {
+        setError(null); setIsLoading(true);
+        await deleteCreditNote(id);
+        await loadAll();
+      } catch (err: any) { setError(getErrorMessage(err, 'Unable to delete credit note.')); }
+      finally { setIsLoading(false); }
+    }
+  };
+
+  const handleEditCreditNote = async (cn: CreditNote) => {
+    try {
+      setIsLoading(true);
+      const full = await getCreditNote(cn.id);
+      setEditingCreditNote(full);
+      setCreditNoteView('manage');
+      setSection('creditnotes');
+    } catch (err: any) { setError(getErrorMessage(err, 'Unable to load credit note for editing.')); }
+    finally { setIsLoading(false); }
+  };
+
+  const handleViewCreditNote = async (cn: CreditNote) => {
+    try {
+      setIsLoading(true);
+      const full = await getCreditNote(cn.id);
+      setViewingCreditNote(full);
+      setCreditNoteView('view');
+      setSection('creditnotes');
+    } catch (err: any) { setError(getErrorMessage(err, 'Unable to load credit note.')); }
+    finally { setIsLoading(false); }
+  };
+
   // Dashboard Calculations
   const totalQuoteValue = quotes.reduce((sum, q) => sum + (Number(q.total) || 0), 0);
   const totalInvoiceValue = invoices.reduce((sum, inv) => sum + (Number(inv.amount) || 0), 0);
@@ -686,6 +844,8 @@ function App() {
               clearInvoiceState();
               clearStatementState();
               clearJobCardState();
+              clearDeliveryNoteState();
+              clearCreditNoteState();
             }}
             style={{ cursor: 'pointer' }}
           >
@@ -832,6 +992,28 @@ function App() {
                   >
                     Create Job Card
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSection('deliverynotes');
+                      setDeliveryNoteView('list');
+                      clearDeliveryNoteState();
+                      setQuickActionsOpen(false);
+                    }}
+                  >
+                    View Delivery Notes
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSection('creditnotes');
+                      setCreditNoteView('list');
+                      clearCreditNoteState();
+                      setQuickActionsOpen(false);
+                    }}
+                  >
+                    View Credit Notes
+                  </button>
                 </div>
               )}
             </div>
@@ -905,6 +1087,28 @@ function App() {
             </button>
             <button
               type="button"
+              className={`nav-button ${section === 'deliverynotes' ? 'active' : ''}`}
+              onClick={() => {
+                setSection('deliverynotes');
+                setDeliveryNoteView('list');
+                clearDeliveryNoteState();
+              }}
+            >
+              Delivery Notes
+            </button>
+            <button
+              type="button"
+              className={`nav-button ${section === 'creditnotes' ? 'active' : ''}`}
+              onClick={() => {
+                setSection('creditnotes');
+                setCreditNoteView('list');
+                clearCreditNoteState();
+              }}
+            >
+              Credit Notes
+            </button>
+            <button
+              type="button"
               className={`nav-button ${section === 'admin' ? 'active' : ''}`}
               onClick={() => {
                 setSection('admin');
@@ -959,7 +1163,70 @@ function App() {
       )}
 
       {!isLoading && section === 'statements' && (
-        <Statements invoices={invoices} clients={clients} statements={statements} onRefresh={loadAll} onDelete={handleDeleteStatement} />
+        <Statements invoices={invoices} clients={clients} creditNotes={creditNotes} statements={statements} onRefresh={loadAll} onDelete={handleDeleteStatement} />
+      )}
+
+      {!isLoading && section === 'deliverynotes' && deliveryNoteView === 'list' && (
+        <DeliveryNoteListPage
+          deliveryNotes={deliveryNotes}
+          onView={handleViewDeliveryNote}
+          onEdit={handleEditDeliveryNote}
+          onDelete={handleDeleteDeliveryNote}
+          onCreateNew={() => { clearDeliveryNoteState(); setDeliveryNoteView('manage'); }}
+        />
+      )}
+
+      {!isLoading && section === 'deliverynotes' && deliveryNoteView === 'manage' && (
+        <DeliveryNoteForm
+          quotes={quotes}
+          clients={clients}
+          initialData={editingDeliveryNote}
+          isNew={!editingDeliveryNote}
+          onSubmit={editingDeliveryNote
+            ? (p) => handleUpdateDeliveryNote(editingDeliveryNote.id, p)
+            : handleCreateDeliveryNote
+          }
+          onCancel={() => setDeliveryNoteView('list')}
+        />
+      )}
+
+      {!isLoading && section === 'deliverynotes' && deliveryNoteView === 'view' && viewingDeliveryNote && (
+        <DeliveryNoteViewPage
+          deliveryNote={viewingDeliveryNote}
+          onEdit={() => handleEditDeliveryNote(viewingDeliveryNote)}
+          onBack={() => setDeliveryNoteView('list')}
+        />
+      )}
+
+      {!isLoading && section === 'creditnotes' && creditNoteView === 'list' && (
+        <CreditNoteListPage
+          creditNotes={creditNotes}
+          onView={handleViewCreditNote}
+          onEdit={handleEditCreditNote}
+          onDelete={handleDeleteCreditNote}
+          onCreateNew={() => { clearCreditNoteState(); setCreditNoteView('manage'); }}
+        />
+      )}
+
+      {!isLoading && section === 'creditnotes' && creditNoteView === 'manage' && (
+        <CreditNoteForm
+          clients={clients}
+          initialData={editingCreditNote || undefined}
+          isNew={!editingCreditNote}
+          onSubmit={editingCreditNote
+            ? (p) => handleUpdateCreditNote(editingCreditNote.id, p)
+            : handleCreateCreditNote
+          }
+          onCancel={() => setCreditNoteView('list')}
+        />
+      )}
+
+      {!isLoading && section === 'creditnotes' && creditNoteView === 'view' && viewingCreditNote && (
+        <CreditNoteViewPage
+          creditNote={viewingCreditNote}
+          onEdit={() => handleEditCreditNote(viewingCreditNote)}
+          onBack={() => setCreditNoteView('list')}
+        />
       )}
 
       {isLoading && section !== 'dashboard' && (

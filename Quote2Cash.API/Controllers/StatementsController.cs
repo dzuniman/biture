@@ -5,7 +5,7 @@ using Quote2Cash.Persistence.Data;
 
 namespace Quote2Cash.API.Controllers
 {
-    public record StatementItemDto(Guid InvoiceId, decimal PaymentAmount, string Description, DateTime PaymentDate);
+    public record StatementItemDto(Guid? InvoiceId, Guid? CreditNoteId, decimal PaymentAmount, string Description, DateTime PaymentDate);
     public record StatementRequestDto(string StatementNumber, int DueDays, Guid ClientId, StatementItemDto[] Items);
 
     [ApiController]
@@ -24,8 +24,8 @@ namespace Quote2Cash.API.Controllers
         {
             var statements = await _context.Statements.AsNoTracking()
                 .Include(s => s.Client)
-                .Include(s => s.Items)
-                    .ThenInclude(i => i.Invoice)
+                .Include(s => s.Items).ThenInclude(i => i.Invoice)
+                .Include(s => s.Items).ThenInclude(i => i.CreditNote)
                 .ToListAsync();
 
             return Ok(statements.Select(s => new
@@ -51,7 +51,9 @@ namespace Quote2Cash.API.Controllers
                 Items = s.Items.Select(item => new {
                     item.Id,
                     item.InvoiceId,
-                    InvoiceNumber = item.Invoice?.InvoiceNumber ?? "N/A",
+                    item.CreditNoteId,
+                    InvoiceNumber = item.Invoice != null ? item.Invoice.InvoiceNumber : (item.CreditNote != null ? item.CreditNote.CreditNoteNumber : "N/A"),
+                    InvoiceAmount = item.Invoice != null ? item.Invoice.Amount : (item.CreditNote != null ? item.CreditNote.Amount : 0),
                     item.PaymentAmount,
                     item.Description,
                     item.PaymentDate
@@ -65,6 +67,7 @@ namespace Quote2Cash.API.Controllers
             var s = await _context.Statements.AsNoTracking()
                 .Include(s => s.Client)
                 .Include(s => s.Items).ThenInclude(i => i.Invoice)
+                .Include(s => s.Items).ThenInclude(i => i.CreditNote)
                 .FirstOrDefaultAsync(x => x.Id == id);
 
             if (s == null) return NotFound();
@@ -79,7 +82,9 @@ namespace Quote2Cash.API.Controllers
                 Items = s.Items.Select(item => new {
                     item.Id,
                     item.InvoiceId,
-                    InvoiceNumber = item.Invoice?.InvoiceNumber ?? "N/A",
+                    item.CreditNoteId,
+                    InvoiceNumber = item.Invoice != null ? item.Invoice.InvoiceNumber : (item.CreditNote != null ? item.CreditNote.CreditNoteNumber : "N/A"),
+                    InvoiceAmount = item.Invoice != null ? item.Invoice.Amount : (item.CreditNote != null ? item.CreditNote.Amount : 0),
                     item.PaymentAmount,
                     item.Description,
                     item.PaymentDate
@@ -126,6 +131,7 @@ namespace Quote2Cash.API.Controllers
                     {
                         Id = Guid.NewGuid(),
                         InvoiceId = item.InvoiceId,
+                        CreditNoteId = item.CreditNoteId,
                         PaymentAmount = item.PaymentAmount,
                         Description = item.Description,
                         PaymentDate = DateTime.SpecifyKind(item.PaymentDate, DateTimeKind.Utc)
@@ -166,6 +172,7 @@ namespace Quote2Cash.API.Controllers
                     Id = Guid.NewGuid(),
                     StatementId = id,
                     InvoiceId = item.InvoiceId,
+                    CreditNoteId = item.CreditNoteId,
                     PaymentAmount = item.PaymentAmount,
                     Description = item.Description,
                     PaymentDate = DateTime.SpecifyKind(item.PaymentDate, DateTimeKind.Utc)
