@@ -69,6 +69,7 @@ export const StatementViewPage: React.FC<Props> = ({ statement, invoices, onEdit
       if (outstanding <= 0) return;
 
       const dueDate = new Date(inv.dueDate);
+      // dueDate.setDate(dueDate.getDate() + statement.dueDays);
       dueDate.setHours(0, 0, 0, 0);
 
       const diffTime = today.getTime() - dueDate.getTime();
@@ -153,7 +154,7 @@ export const StatementViewPage: React.FC<Props> = ({ statement, invoices, onEdit
                   <span className="view-value">{formatDate(statement.createdAt || (statement as any).CreatedAt)}</span>
                 </div>
                 <div className="view-row" style={{ marginBottom: '1px' }}>
-                  <span className="view-label">TYPE:</span>
+                  <span className="view-label">ACCOUNT TYPE:</span>
                   <span className="view-value">{statement.dueDays || (statement as any).dueDays} {" DAYS"}</span>
                 </div>
                 <div className="view-row" style={{ marginBottom: '1px' }}>
@@ -188,7 +189,7 @@ export const StatementViewPage: React.FC<Props> = ({ statement, invoices, onEdit
               <div className="items-table-header" style={{ display: 'grid', gridTemplateColumns: '120px 140px 140px 100px 1fr 120px', gap: '0', background: '#f3f4f6', borderBottom: '1px solid #000', padding: '0' }}>
                 <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>Document No</div>
                 <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>Due Date</div>
-                <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>Account Type</div>
+                <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>Document Type</div>
                 <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>PO Number</div>
                 <div style={{ padding: '8px 6px', fontWeight: 'bold', textAlign: 'right' }}>Invoice Amount</div>
                 <div style={{ padding: '8px 6px', fontWeight: 'bold', textAlign: 'right' }}>Outstanding</div>
