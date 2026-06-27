@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import type { JobCard } from '../types';
-import SearchBar from './SearchBar';
+import SearchBox from './SearchBox';
 import Pagination from './Pagination';
-
+import TableHeader from './TableHeader';
+import useTableSort from '../hooks/useTableSort';
 interface Props {
   jobCards: JobCard[];
   onView: (jobCard: JobCard) => void;
@@ -37,8 +38,9 @@ export default function JobCardListPage({
     );
   }, [jobCards, searchTerm]);
 
-  const totalPages = Math.ceil(filteredJobCards.length / ITEMS_PER_PAGE);
-  const paginatedJobCards = filteredJobCards.slice(
+  const { sortedData, sortKey, sortDirection, setSort } = useTableSort(filteredJobCards);
+  const totalPages = Math.ceil(sortedData.length / ITEMS_PER_PAGE);
+  const paginatedJobCards = sortedData.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
@@ -67,7 +69,7 @@ export default function JobCardListPage({
         </div>
       </div>
 
-      <SearchBar
+      <SearchBox
         placeholder="Search job cards by number, quote, reference, description, or client..."
         value={searchTerm}
         onChange={setSearchTerm}
@@ -77,12 +79,12 @@ export default function JobCardListPage({
         <table>
           <thead>
             <tr>
-              <th>Job Card Number</th>
-              <th>Quote Number</th>
-              <th>Reference</th>
-              <th>Description</th>
-              <th>Client</th>
-              <th>Created</th>
+              <th><TableHeader columnKey="jobCardNumber" label="Job Card Number" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
+              <th><TableHeader columnKey="quoteNumber" label="Quote Number" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
+              <th><TableHeader columnKey="reference" label="Reference" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
+              <th><TableHeader columnKey="description" label="Description" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
+              <th><TableHeader columnKey="client" label="Client" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
+              <th><TableHeader columnKey="createdAt" label="Created" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
               <th className="actions-column">Actions</th>
             </tr>
           </thead>

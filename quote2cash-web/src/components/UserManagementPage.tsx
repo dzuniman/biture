@@ -1,6 +1,9 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { createUser, deleteUser, updateUser } from '../api';
 import type { User, UserCreateRequest, UserUpdateRequest } from '../types';
+import SearchBox from './SearchBox';
+import TableHeader from './TableHeader';
+import useTableSort from '../hooks/useTableSort';
 
 interface Props {
   users: User[];
@@ -26,6 +29,8 @@ export default function UserManagementPage({ users, onBack, onRefresh }: Props) 
       (item.role?.toLowerCase() || '').includes(term)
     );
   }, [users, search]);
+
+  const { sortedData, sortKey, sortDirection, setSort } = useTableSort(filtered);
 
   const startCreate = () => {
     setMode('manage');
@@ -123,32 +128,30 @@ export default function UserManagementPage({ users, onBack, onRefresh }: Props) 
       {mode === 'list' ? (
         <>
           <div className="table-toolbar">
-            <input
-              type="search"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
+            <SearchBox
               placeholder="Search users..."
-              className="search-input"
+              value={search}
+              onChange={setSearch}
             />
           </div>
           <div className="table-card">
             <table>
               <thead>
                 <tr>
-                  <th>Username</th>
-                  <th>Role</th>
+                  <th><TableHeader columnKey="username" label="Username" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
+                  <th><TableHeader columnKey="role" label="Role" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
                   <th className="actions-column">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.length === 0 ? (
+                {sortedData.length === 0 ? (
                   <tr style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}>
                     <td colSpan={3} className="empty-row">
                       No users found. Click "+ New User" to get started.
                     </td>
                   </tr>
                 ) : (
-                  filtered.map((user) => (
+                  sortedData.map((user) => (
                     <tr key={user.id} style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }} className="table-row-dark-hover">
                       <td>{user.username}</td>
                       <td>{user.role}</td>

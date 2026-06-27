@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
 import type { CreditNote } from '../types';
-import SearchBar from './SearchBar';
+import SearchBox from './SearchBox';
 import Pagination from './Pagination';
 import { formatAmount } from '../../formatters';
+import TableHeader from './TableHeader';
+import useTableSort from '../hooks/useTableSort';
 
 interface Props {
   creditNotes: CreditNote[];
@@ -37,8 +39,9 @@ export default function CreditNoteListPage({
     );
   }, [creditNotes, searchTerm]);
 
-  const totalPages = Math.ceil(filteredCreditNotes.length / ITEMS_PER_PAGE);
-  const paginatedCreditNotes = filteredCreditNotes.slice(
+  const { sortedData, sortKey, sortDirection, setSort } = useTableSort(filteredCreditNotes);
+  const totalPages = Math.ceil(sortedData.length / ITEMS_PER_PAGE);
+  const paginatedCreditNotes = sortedData.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
@@ -75,7 +78,7 @@ export default function CreditNoteListPage({
         </div>
       </div>
 
-      <SearchBar
+      <SearchBox
         placeholder="Search credit notes by number, description, or client..."
         value={searchTerm}
         onChange={setSearchTerm}
@@ -85,11 +88,11 @@ export default function CreditNoteListPage({
         <table>
           <thead>
             <tr>
-              <th>Credit Note Number</th>
-              <th>Client</th>
-              <th>Description</th>
-              <th style={{ textAlign: 'right' }}>Amount</th>
-              <th>Created</th>
+              <th><TableHeader columnKey="creditNoteNumber" label="Credit Note Number" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
+              <th><TableHeader columnKey="client" label="Client" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
+              <th><TableHeader columnKey="description" label="Description" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
+              <th style={{ textAlign: 'right' }}><TableHeader columnKey="amount" label="Amount" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
+              <th><TableHeader columnKey="createdAt" label="Created" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
               <th className="actions-column">Actions</th>
             </tr>
           </thead>

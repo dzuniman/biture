@@ -3,6 +3,8 @@ import { formatAmount } from '../../formatters';
 import type { Quote } from '../types';
 import SearchBar from './SearchBar';
 import Pagination from './Pagination';
+import TableHeader from './TableHeader';
+import useTableSort from '../hooks/useTableSort';
 
 interface Props {
   quotes: Quote[];
@@ -39,8 +41,10 @@ export default function QuotesListPage({
     );
   }, [quotes, searchTerm]);
 
-  const totalPages = Math.ceil(filteredQuotes.length / ITEMS_PER_PAGE);
-  const paginatedQuotes = filteredQuotes.slice(
+  const { sortedData, sortKey, sortDirection, setSort } = useTableSort(filteredQuotes);
+
+  const totalPages = Math.ceil(sortedData.length / ITEMS_PER_PAGE);
+  const paginatedQuotes = sortedData.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
@@ -100,11 +104,11 @@ export default function QuotesListPage({
             <table>
               <thead>
                 <tr>
-                  <th>Quote</th>
-                  <th>Reference</th>
-                  <th>Client</th>
-                  <th>Date</th>
-                  <th>Total</th>
+                  <TableHeader columnKey="quoteNumber" label="Quote" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
+                  <TableHeader columnKey="reference" label="Reference" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
+                  <TableHeader columnKey="clientName" label="Client" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
+                  <TableHeader columnKey="date" label="Date" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
+                  <TableHeader columnKey="total" label="Total" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
                   <th>Actions</th>
                 </tr>
               </thead>

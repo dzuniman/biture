@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
 import type { DocumentResponse } from '../types';
-import SearchBar from './SearchBar';
+import SearchBox from './SearchBox';
 import Pagination from './Pagination';
+import TableHeader from './TableHeader';
+import useTableSort from '../hooks/useTableSort';
 
 interface Props {
   documents: DocumentResponse[];
@@ -36,11 +38,14 @@ export default function DocumentListPage({
     );
   }, [documents, searchTerm]);
 
-  const totalPages = Math.ceil(filteredDocuments.length / ITEMS_PER_PAGE);
-  const paginatedDocuments = filteredDocuments.slice(
+  const { sortedData, sortKey, sortDirection, setSort } = useTableSort(filteredDocuments);
+  const totalPages = Math.ceil(sortedData.length / ITEMS_PER_PAGE);
+  const paginatedDocuments = sortedData.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
+
+  // pagination handled via sortedData above
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -64,7 +69,7 @@ export default function DocumentListPage({
         </div>
       </div>
 
-      <SearchBar
+      <SearchBox
         placeholder="Search documents by name or description..."
         value={searchTerm}
         onChange={setSearchTerm}
@@ -74,9 +79,9 @@ export default function DocumentListPage({
         <table>
           <thead>
             <tr>
-              <th>Document Name</th>
-              <th>Description</th>
-              <th>Uploaded At</th>
+              <th><TableHeader columnKey="documentName" label="Document Name" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
+              <th><TableHeader columnKey="description" label="Description" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
+              <th><TableHeader columnKey="uploadedAt" label="Uploaded At" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
               <th className="actions-column">Actions</th>
             </tr>
           </thead>

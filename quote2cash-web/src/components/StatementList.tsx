@@ -1,5 +1,9 @@
+import { useMemo, useState } from 'react';
 import type { Statement, StatementItem, Invoice } from '../types';
 import { formatAmount } from '../../formatters';
+import SearchBox from './SearchBox';
+import TableHeader from './TableHeader';
+import useTableSort from '../hooks/useTableSort';
 
 interface Props {
   statements: Statement[];
@@ -10,6 +14,33 @@ interface Props {
 }
 
 export default function StatementList({ statements, invoices, onEdit, onView, onDelete }: Props) {
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Filter based on search term
+  const filteredStatements = useMemo(() => {
+    const term = searchTerm.toLowerCase();
+    if (!term) return statements;
+    return statements.filter((stmt) => {
+      const stmtNum = stmt.statementNumber?.toString() || '';
+      const clientName = stmt.client?.name || (stmt as any).Client?.Name || '';
+      return (
+        stmtNum.toLowerCase().includes(term) ||
+        clientName.toLowerCase().includes(term)
+      );
+    });
+  }, [statements, searchTerm]);
+
+  // Enrich data with derived fields needed for sorting (clientName)
+  const enrichedData = useMemo(() =>
+    filteredStatements.map((stmt) => ({
+      ...stmt,
+      clientName: stmt.client?.name || (stmt as any).Client?.Name || '',
+    })),
+    [filteredStatements]
+  );
+
+  const { sortedData, sortKey, sortDirection, setSort } = useTableSort(enrichedData);
+
   const getTotals = (rawItems: any[] = []) => {
     const totalPayments = rawItems.reduce((sum, item) => sum + (item.paymentAmount || item.PaymentAmount || 0), 0);
     const uniqueInvoiceIds = Array.from(new Set(rawItems.map(i => i.invoiceId || i.InvoiceId).filter(id => !!id)));
@@ -18,37 +49,38 @@ export default function StatementList({ statements, invoices, onEdit, onView, on
       return sum + (inv?.amount ?? 0);
     }, 0);
 
-    return { 
-      totalPayments, 
-      totalOutstanding: Math.max(0, totalInvoiced - totalPayments) 
+    return {
+      totalPayments,
+      totalOutstanding: Math.max(0, totalInvoiced - totalPayments)
     };
   };
 
   return (
     <div className="table-card">
+      <SearchBox placeholder="Search statements by number or client..." value={searchTerm} onChange={setSearchTerm} />
       <table>
         <thead>
           <tr>
-            <th>Statement #</th>
-            <th>Client</th>
-            <th>Total Payments</th>
-            <th>Total Outstanding</th>
+            <TableHeader columnKey="statementNumber" label="Statement" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
+            <TableHeader columnKey="clientName" label="Client" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
+            <TableHeader columnKey="totalPayments" label="Total Payments" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
+            <TableHeader columnKey="totalOutstanding" label="Total Outstanding" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
             <th className="actions-column">Actions</th>
           </tr>
         </thead>
         <tbody>
-          {statements.length === 0 ? (
+          {sortedData.length === 0 ? (
             <tr style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}>
               <td colSpan={5} className="empty-row" style={{ textAlign: 'center' }}>
                 No statements found. Click "+ New Statement" to get started.
               </td>
             </tr>
           ) : (
-            statements.map((statement: any) => {
+            sortedData.map((statement: any) => {
               const items = statement.items || statement.Items || [];
               const { totalPayments, totalOutstanding } = getTotals(items);
-              const clientName = statement.client?.name || statement.Client?.Name || '—';
-              
+              const clientName = statement.clientName || '—';
+
               return (
                 <tr
                   key={statement.id}
