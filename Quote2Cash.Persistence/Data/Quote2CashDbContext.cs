@@ -17,6 +17,8 @@ namespace Quote2Cash.Persistence.Data
         public DbSet<QuoteItem> QuoteItems { get; set; } = null!;
         public DbSet<QuoteDescription> QuoteDescriptions { get; set; } = null!;
         public DbSet<JobCard> JobCards { get; set; } = null!;
+        public DbSet<DeliveryNote> DeliveryNotes { get; set; } = null!;
+        public DbSet<CreditNote> CreditNotes { get; set; } = null!;
         public DbSet<Cost> Costs { get; set; } = null!;
         public DbSet<Invoice> Invoices { get; set; } = null!;
         public DbSet<Statement> Statements { get; set; } = null!;
@@ -136,6 +138,26 @@ namespace Quote2Cash.Persistence.Data
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
+            modelBuilder.Entity<DeliveryNote>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.DeliveryNoteNumber).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Reference).HasMaxLength(200);
+                entity.Property(e => e.QuoteNumber).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Description).HasMaxLength(2000);
+                entity.Property(e => e.CreatedAt).IsRequired();
+            });
+
+            modelBuilder.Entity<CreditNote>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.CreditNoteNumber).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Description).HasMaxLength(2000);
+                entity.Property(e => e.Amount).HasPrecision(18, 2);
+                entity.Property(e => e.CreatedAt).IsRequired();
+                entity.HasOne(e => e.Client).WithMany().HasForeignKey(e => e.ClientId).OnDelete(DeleteBehavior.Restrict);
+            });
+
             modelBuilder.Entity<StatementItem>(entity =>
             {
                 entity.HasKey(e => e.Id);
@@ -146,6 +168,13 @@ namespace Quote2Cash.Persistence.Data
                 entity.HasOne(e => e.Invoice)
                       .WithMany()
                       .HasForeignKey(e => e.InvoiceId)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.CreditNote)
+                      .WithMany()
+                      .HasForeignKey(e => e.CreditNoteId)
+                      .IsRequired(false)
                       .OnDelete(DeleteBehavior.Restrict);
             });
 

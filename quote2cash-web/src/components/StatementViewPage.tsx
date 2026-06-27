@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import type { Statement, Invoice, Client } from '../types';
+import type { Statement, Invoice, Client, CreditNote } from '../types';
 import { formatAmount } from '../../formatters';
 import logo from '../assets/logo.png';
 import { generateStatementPDF } from './StatementPdfGenerator';
@@ -7,11 +7,12 @@ import { generateStatementPDF } from './StatementPdfGenerator';
 interface Props {
   statement: Statement;
   invoices: Invoice[];
+  creditNotes?: CreditNote[];
   onEdit: () => void;
   onBack: () => void;
 }
 
-export const StatementViewPage: React.FC<Props> = ({ statement, invoices, onEdit, onBack }) => {
+export const StatementViewPage: React.FC<Props> = ({ statement, invoices, creditNotes = [], onEdit, onBack }) => {
   const formatDate = (dateValue?: string | null) => {
     if (!dateValue) return '—';
     const d = new Date(dateValue);
@@ -32,23 +33,39 @@ export const StatementViewPage: React.FC<Props> = ({ statement, invoices, onEdit
     return map;
   }, [invoices]);
 
+  const creditNoteMap = useMemo(() => {
+    const map: Record<string, CreditNote> = {};
+    creditNotes.forEach(cn => { map[cn.id] = cn; });
+    return map;
+  }, [creditNotes]);
+
   const paymentsByInvoice = useMemo(() => {
     const totals: Record<string, number> = {};
     items.forEach((item: any) => {
       const id = item.invoiceId || item.InvoiceId;
-      totals[id] = (totals[id] || 0) + (item.paymentAmount || item.PaymentAmount || 0);
+      if (id) totals[id] = (totals[id] || 0) + (item.paymentAmount || item.PaymentAmount || 0);
     });
     return totals;
   }, [items]);
 
-  const uniqueInvoiceIds = useMemo(() => Array.from(new Set(items.map((i: any) => i.invoiceId || i.InvoiceId))) as string[], [items]);
+  const uniqueInvoiceIds = useMemo(() => Array.from(new Set(
+    items.filter((i: any) => !!(i.invoiceId || i.InvoiceId)).map((i: any) => i.invoiceId || i.InvoiceId)
+  )) as string[], [items]);
+
+  const creditNoteItems = useMemo(() => items.filter((i: any) => !!(i.creditNoteId || i.CreditNoteId)), [items]);
+  const uniqueCreditNoteIds = useMemo(() => Array.from(new Set(creditNoteItems.map((i: any) => i.creditNoteId || i.CreditNoteId))) as string[], [creditNoteItems]);
 
   const totalOutstanding = useMemo(() => {
-    return uniqueInvoiceIds.reduce((sum, id) => {
+    let outstanding = uniqueInvoiceIds.reduce((sum, id) => {
       const invAmount = invoiceMap[id]?.amount ?? 0;
       return sum + (invAmount - (paymentsByInvoice[id] || 0));
     }, 0);
-  }, [uniqueInvoiceIds, invoiceMap, paymentsByInvoice]);
+    // Deduct credit notes
+    uniqueCreditNoteIds.forEach(id => {
+      outstanding -= creditNoteMap[id]?.amount ?? 0;
+    });
+    return outstanding;
+  }, [uniqueInvoiceIds, invoiceMap, paymentsByInvoice, uniqueCreditNoteIds, creditNoteMap]);
 
   // Aging Analysis Calculations
   const agingBuckets = useMemo(() => {
@@ -60,6 +77,7 @@ export const StatementViewPage: React.FC<Props> = ({ statement, invoices, onEdit
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    // Aging only applies to invoices, not credit notes
     uniqueInvoiceIds.forEach(id => {
       const inv = invoiceMap[id];
       if (!inv) return;
@@ -69,7 +87,6 @@ export const StatementViewPage: React.FC<Props> = ({ statement, invoices, onEdit
       if (outstanding <= 0) return;
 
       const dueDate = new Date(inv.dueDate);
-      // dueDate.setDate(dueDate.getDate() + statement.dueDays);
       dueDate.setHours(0, 0, 0, 0);
 
       const diffTime = today.getTime() - dueDate.getTime();
@@ -91,7 +108,7 @@ export const StatementViewPage: React.FC<Props> = ({ statement, invoices, onEdit
 
   const handleDownloadPdf = async () => {
     try {
-      await generateStatementPDF(statement, invoices);
+      await generateStatementPDF(statement, invoices, creditNotes);
     } catch (error) {
       console.error("Error generating Statement PDF:", error);
       alert("Failed to generate PDF. Please try again.");
@@ -194,22 +211,38 @@ export const StatementViewPage: React.FC<Props> = ({ statement, invoices, onEdit
                 <div style={{ padding: '8px 6px', fontWeight: 'bold', textAlign: 'right' }}>Invoice Amount</div>
                 <div style={{ padding: '8px 6px', fontWeight: 'bold', textAlign: 'right' }}>Outstanding</div>
               </div>
-              {uniqueInvoiceIds.length > 0 ? (
-                uniqueInvoiceIds.map(id => {
-                  const inv = invoiceMap[id];
-                  const paid = paymentsByInvoice[id] || 0;
-                  const outstanding = (inv?.amount ?? 0) - paid;
-                  return (
-                    <div key={id} className="items-table-row" style={{ display: 'grid', gridTemplateColumns: '120px 140px 140px 100px 1fr 120px', gap: '0', borderTop: '1px solid #eee' }}>
-                      <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{inv?.invoiceNumber || '—'}</div>
-                      <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{formatDate(inv?.dueDate)}</div>
-                      <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{inv?.description || '—'}</div>
-                      <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{inv?.quote?.poNumber || '—'}</div>
-                      <div style={{ padding: '8px 6px', textAlign: 'right', lineHeight: '1.2' }}>{formatAmount(inv?.amount ?? 0)}</div>
-                      <div style={{ padding: '8px 6px', textAlign: 'right', lineHeight: '1.2', fontWeight: 'bold', color: outstanding > 0 ? '#dc2626' : '#22c55e' }}>{formatAmount(outstanding)}</div>
-                    </div>
-                  );
-                })
+              {(uniqueInvoiceIds.length > 0 || uniqueCreditNoteIds.length > 0) ? (
+                <>
+                  {uniqueInvoiceIds.map(id => {
+                    const inv = invoiceMap[id];
+                    const paid = paymentsByInvoice[id] || 0;
+                    const outstanding = (inv?.amount ?? 0) - paid;
+                    return (
+                      <div key={`inv-${id}`} className="items-table-row" style={{ display: 'grid', gridTemplateColumns: '120px 140px 140px 100px 1fr 120px', gap: '0', borderTop: '1px solid #eee' }}>
+                        <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{inv?.invoiceNumber || '—'}</div>
+                        <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{formatDate(inv?.dueDate)}</div>
+                        <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>INVOICE</div>
+                        <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{inv?.quote?.poNumber || '—'}</div>
+                        <div style={{ padding: '8px 6px', textAlign: 'right', lineHeight: '1.2' }}>{formatAmount(inv?.amount ?? 0)}</div>
+                        <div style={{ padding: '8px 6px', textAlign: 'right', lineHeight: '1.2', fontWeight: 'bold', color: outstanding > 0 ? '#dc2626' : '#22c55e' }}>{formatAmount(outstanding)}</div>
+                      </div>
+                    );
+                  })}
+                  {uniqueCreditNoteIds.map(id => {
+                    const cn = creditNoteMap[id];
+                    const cnAmount = cn?.amount ?? 0;
+                    return (
+                      <div key={`cn-${id}`} className="items-table-row" style={{ display: 'grid', gridTemplateColumns: '120px 140px 140px 100px 1fr 120px', gap: '0', borderTop: '1px solid #eee', background: 'rgba(16,185,129,0.05)' }}>
+                        <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{cn?.creditNoteNumber || '—'}</div>
+                        <div style={{ padding: '8px 6px', lineHeight: '1.2' }}></div>
+                        <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>CREDIT NOTE</div>
+                        <div style={{ padding: '8px 6px', lineHeight: '1.2' }}></div>
+                        <div style={{ padding: '8px 6px', textAlign: 'right', lineHeight: '1.2', color: '#10b981' }}>{formatAmount(cnAmount)}</div>
+                        <div style={{ padding: '8px 6px', textAlign: 'right', lineHeight: '1.2', fontWeight: 'bold', color: '#10b981' }}>({formatAmount(cnAmount)})</div>
+                      </div>
+                    );
+                  })}
+                </>
               ) : (
                 <div style={{ padding: '16px' }}>No items available.</div>
               )}

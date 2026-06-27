@@ -1,11 +1,11 @@
 // quote2cash-web/src/components/StatementPdfGenerator.tsx
 import { jsPDF } from 'jspdf';
 import { autoTable } from 'jspdf-autotable';
-import type { Statement, Invoice, Client } from '../types';
+import type { Statement, Invoice, Client, CreditNote } from '../types';
 import { formatAmount } from '../../formatters';
 import logo from '../assets/logo.png';
 
-export const generateStatementPDF = async (statement: Statement, invoices: Invoice[]) => {
+export const generateStatementPDF = async (statement: Statement, invoices: Invoice[], creditNotes: CreditNote[] = []) => {
   const doc = new jsPDF({
     orientation: 'p',
     unit: 'mm',
@@ -168,39 +168,66 @@ export const generateStatementPDF = async (statement: Statement, invoices: Invoi
   const invoiceMap: Record<string, Invoice> = {};
   invoices.forEach(inv => { invoiceMap[inv.id] = inv; });
 
+  const creditNoteMap: Record<string, CreditNote> = {};
+  creditNotes.forEach(cn => { creditNoteMap[cn.id] = cn; });
+
   const paymentsByInvoice: Record<string, number> = {};
   items.forEach((item: any) => {
     const id = item.invoiceId || item.InvoiceId;
-    paymentsByInvoice[id] = (paymentsByInvoice[id] || 0) + (item.paymentAmount || item.PaymentAmount || 0);
+    if (id) paymentsByInvoice[id] = (paymentsByInvoice[id] || 0) + (item.paymentAmount || item.PaymentAmount || 0);
   });
 
-  const uniqueInvoiceIds = Array.from(new Set(items.map((i: any) => i.invoiceId || i.InvoiceId))) as string[];
+  const uniqueInvoiceIds = Array.from(new Set(
+    items.filter((i: any) => !!(i.invoiceId || i.InvoiceId)).map((i: any) => i.invoiceId || i.InvoiceId)
+  )) as string[];
 
-  const tableRows = uniqueInvoiceIds.map(id => {
+  const uniqueCreditNoteIds = Array.from(new Set(
+    items.filter((i: any) => !!(i.creditNoteId || i.CreditNoteId)).map((i: any) => i.creditNoteId || i.CreditNoteId)
+  )) as string[];
+
+  // Invoice rows
+  const invoiceRows = uniqueInvoiceIds.map(id => {
     const inv = invoiceMap[id];
     const paid = paymentsByInvoice[id] || 0;
     const outstanding = (inv?.amount ?? 0) - paid;
     const poNumber = (inv as any)?.quote?.poNumber || (inv as any)?.Quote?.PoNumber || '—';
-    const documentType = (inv as any)?.description || (inv as any)?.description || '—';
+    const documentType = (inv as any)?.description || '—';
     return [
       inv?.invoiceNumber || '—',
       formatDate(inv?.dueDate),
-      documentType,
+      'INVOICE',
       poNumber,
       formatAmount(inv?.amount ?? 0),
       formatAmount(outstanding)
     ];
   });
 
-  const totalOutstanding = uniqueInvoiceIds.reduce((sum, id) => {
+  // Credit Note rows
+  const creditNoteRows = uniqueCreditNoteIds.map(id => {
+    const cn = creditNoteMap[id];
+    const cnAmount = cn?.amount ?? 0;
+    return [
+      cn?.creditNoteNumber || '—',
+      '',
+      'CREDIT NOTE',
+      '',
+      formatAmount(cnAmount),
+      `(${formatAmount(cnAmount)})`
+    ];
+  });
+
+  const tableRows = [...invoiceRows, ...creditNoteRows];
+
+  let totalOutstanding = uniqueInvoiceIds.reduce((sum, id) => {
     const invAmount = invoiceMap[id]?.amount ?? 0;
     return sum + (invAmount - (paymentsByInvoice[id] || 0));
   }, 0);
+  uniqueCreditNoteIds.forEach(id => { totalOutstanding -= creditNoteMap[id]?.amount ?? 0; });
 
   // --- AutoTable Generation for Statement Items ---
   autoTable(doc, {
     startY: currentY,
-    head: [['Document No', 'Due Date', 'Document Type', 'PO Number', 'Invoice Amount', 'Oustanding']],
+    head: [['Document No', 'Due Date', 'Document Type', 'PO Number', 'Amount', 'Outstanding']],
     body: tableRows,
     theme: 'grid',
     styles: {
@@ -218,12 +245,12 @@ export const generateStatementPDF = async (statement: Statement, invoices: Invoi
       lineWidth: 0.1,
     },
     columnStyles: {
-      0: { cellWidth: 30 },                  // INVOICE #
-      1: { cellWidth: 35 },                  // DUE DATE
-      2: { cellWidth: 35 },                  // Document Type
-      3: { cellWidth: 25 },                  // VENDOR #
-      4: { cellWidth: 'auto', halign: 'right' }, // INVOICE AMOUNT
-      5: { cellWidth: 35, halign: 'right' },    // OUTSTANDING
+      0: { cellWidth: 28 },
+      1: { cellWidth: 30 },
+      2: { cellWidth: 28 },
+      3: { cellWidth: 20 },
+      4: { cellWidth: 'auto', halign: 'right' },
+      5: { cellWidth: 28, halign: 'right' },
     },
     margin: margin,
   });

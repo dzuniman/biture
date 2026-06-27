@@ -21,6 +21,10 @@ import type {
   QuoteUomUpdateRequest,
   JobCard,
   JobCardCreateRequest,
+  DeliveryNote,
+  DeliveryNoteCreateRequest,
+  CreditNote,
+  CreditNoteCreateRequest,
   Cost,
   CostCreateRequest,
   DocumentResponse
@@ -292,6 +296,66 @@ export const updateJobCard = async (id: string, jobCard: JobCardCreateRequest): 
 
 export const deleteJobCard = async (id: string): Promise<void> => {
   await api.delete(`/jobcards/${id}`);
+};
+
+// Delivery Notes
+export const getDeliveryNoteNextNumber = async (): Promise<string> => {
+  const response = await api.get('/deliverynotes/nextNumber');
+  return response.data;
+};
+
+export const getDeliveryNotes = async (): Promise<DeliveryNote[]> => {
+  const response = await api.get('/deliverynotes');
+  return response.data;
+};
+
+export const getDeliveryNote = async (id: string): Promise<DeliveryNote> => {
+  const response = await api.get(`/deliverynotes/${id}`);
+  return response.data;
+};
+
+export const createDeliveryNote = async (deliveryNote: DeliveryNoteCreateRequest): Promise<DeliveryNote> => {
+  const response = await api.post('/deliverynotes', deliveryNote);
+  return response.data;
+};
+
+export const updateDeliveryNote = async (id: string, deliveryNote: DeliveryNoteCreateRequest): Promise<DeliveryNote> => {
+  const response = await api.put(`/deliverynotes/${id}`, deliveryNote);
+  return response.data;
+};
+
+export const deleteDeliveryNote = async (id: string): Promise<void> => {
+  await api.delete(`/deliverynotes/${id}`);
+};
+
+// Credit Notes
+export const getCreditNoteNextNumber = async (): Promise<string> => {
+  const response = await api.get('/creditnotes/nextNumber');
+  return response.data;
+};
+
+export const getCreditNotes = async (): Promise<CreditNote[]> => {
+  const response = await api.get('/creditnotes');
+  return response.data;
+};
+
+export const getCreditNote = async (id: string): Promise<CreditNote> => {
+  const response = await api.get(`/creditnotes/${id}`);
+  return response.data;
+};
+
+export const createCreditNote = async (creditNote: CreditNoteCreateRequest): Promise<CreditNote> => {
+  const response = await api.post('/creditnotes', creditNote);
+  return response.data;
+};
+
+export const updateCreditNote = async (id: string, creditNote: CreditNoteCreateRequest): Promise<CreditNote> => {
+  const response = await api.put(`/creditnotes/${id}`, creditNote);
+  return response.data;
+};
+
+export const deleteCreditNote = async (id: string): Promise<void> => {
+  await api.delete(`/creditnotes/${id}`);
 };
 
 // Costs

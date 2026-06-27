@@ -8,7 +8,8 @@ namespace Quote2Cash.Domain.Entities
     {
         public Guid Id { get; set; }
         public Guid StatementId { get; set; }
-        public Guid InvoiceId { get; set; }
+        public Guid? InvoiceId { get; set; }
+        public Guid? CreditNoteId { get; set; }
         public decimal PaymentAmount { get; set; }
         public string Description { get; set; } = string.Empty;
         public DateTime PaymentDate { get; set; }
@@ -20,5 +21,9 @@ namespace Quote2Cash.Domain.Entities
         // Linked invoice for navigation and data integrity
         [ForeignKey("InvoiceId")]
         public Invoice? Invoice { get; set; }
+
+        // Linked credit note for navigation and data integrity
+        [ForeignKey("CreditNoteId")]
+        public CreditNote? CreditNote { get; set; }
     }
 }
