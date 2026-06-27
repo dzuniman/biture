@@ -123,6 +123,7 @@ namespace Quote2Cash.Persistence.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.StatementNumber).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.CreatedAt).IsRequired();
+                entity.Property(e => e.DueDays).IsRequired();
 
                 entity.HasOne(e => e.Client)
                       .WithMany(c => c.Statements)

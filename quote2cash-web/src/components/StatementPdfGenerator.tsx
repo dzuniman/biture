@@ -112,6 +112,8 @@ export const generateStatementPDF = async (statement: Statement, invoices: Invoi
   detailsY += 1;
   addDetailRow('STATEMENT DATE:', formatDate(statement.createdAt || (statement as any).CreatedAt));
   detailsY += 1;
+  addDetailRow("TYPE:", `${statement.dueDays || (statement as any).dueDays} DAYS`);
+  detailsY += 1;
   addDetailRow('VENDOR NUMBER:', client?.vendorNumber || '-');
 
   // --- Customer Box (Right) ---

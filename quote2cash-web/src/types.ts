@@ -211,11 +211,13 @@ export interface StatementItem {
   paymentAmount: number;
   description: string;
   paymentDate: string;
+  dueDays: string;
 }
 
 export interface Statement {
   id: string;
   statementNumber: string;
+  dueDays: string;
   client?: Client | null;
   createdAt: string; 
   items: StatementItem[];

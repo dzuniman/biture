@@ -24,6 +24,7 @@ interface Props {
 export const StatementForm: React.FC<Props> = ({ invoices, clients, initialData, onSuccess, onCancel }) => {
   const [formData, setFormData] = useState({
     statementNumber: initialData?.statementNumber || initialData?.StatementNumber || '',
+    dueDays: initialData?.dueDays || initialData?.dueDays || '',
     clientId: initialData?.clientId || initialData?.ClientId || '',
   });
 
@@ -109,6 +110,7 @@ export const StatementForm: React.FC<Props> = ({ invoices, clients, initialData,
     try {
       const payload = {
         statementNumber: formData.statementNumber,
+        dueDays: formData.dueDays,
         clientId: formData.clientId,
         items: items.map(item => ({
           invoiceId: item.invoiceId,
@@ -151,7 +153,7 @@ export const StatementForm: React.FC<Props> = ({ invoices, clients, initialData,
         <div className="grid-2">
           <label>
             Due (Days)
-            <input type="number" required value={formData.statementNumber} onChange={e => setFormData({...formData, statementNumber: e.target.value})} />
+            <input type="number" required value={formData.dueDays} onChange={e => setFormData({...formData, dueDays: e.target.value})} />
           </label>
         </div>
         <div className="line-items" style={{ marginTop: '20px' }}>

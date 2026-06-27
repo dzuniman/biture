@@ -8,6 +8,7 @@ namespace Quote2Cash.Domain.Entities
     {
         public Guid Id { get; set; }
         public string StatementNumber { get; set; } = string.Empty;
+        public int DueDays { get; set; } = 30;
         public Guid ClientId { get; set; }
         
         [ForeignKey("ClientId")]
