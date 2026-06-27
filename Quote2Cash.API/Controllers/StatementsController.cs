@@ -6,7 +6,7 @@ using Quote2Cash.Persistence.Data;
 namespace Quote2Cash.API.Controllers
 {
     public record StatementItemDto(Guid InvoiceId, decimal PaymentAmount, string Description, DateTime PaymentDate);
-    public record StatementRequestDto(string StatementNumber, Guid ClientId, StatementItemDto[] Items);
+    public record StatementRequestDto(string StatementNumber, int DueDays, Guid ClientId, StatementItemDto[] Items);
 
     [ApiController]
     [Route("api/[controller]")]
@@ -34,6 +34,7 @@ namespace Quote2Cash.API.Controllers
                 s.StatementNumber,
                 s.ClientId,
                 s.CreatedAt,
+                s.DueDays,
                 Client = s.Client != null ? new { 
                     s.Client.Id, 
                     s.Client.Name,
@@ -73,6 +74,7 @@ namespace Quote2Cash.API.Controllers
                 s.StatementNumber,
                 s.ClientId,
                 s.CreatedAt,
+                s.DueDays,
                 Client = s.Client,
                 Items = s.Items.Select(item => new {
                     item.Id,
@@ -119,6 +121,7 @@ namespace Quote2Cash.API.Controllers
                     StatementNumber = request.StatementNumber,
                     ClientId = request.ClientId,
                     CreatedAt = DateTime.UtcNow,
+                    DueDays = request.DueDays,
                     Items = request.Items.Select(item => new StatementItem
                     {
                         Id = Guid.NewGuid(),
@@ -149,6 +152,7 @@ namespace Quote2Cash.API.Controllers
 
                 existing.StatementNumber = request.StatementNumber;
                 existing.ClientId = request.ClientId;
+                existing.DueDays = request.DueDays;
 
                 var existingItems = existing.Items.ToList();
                 if (existingItems.Any())

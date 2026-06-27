@@ -153,6 +153,10 @@ export const StatementViewPage: React.FC<Props> = ({ statement, invoices, onEdit
                   <span className="view-value">{formatDate(statement.createdAt || (statement as any).CreatedAt)}</span>
                 </div>
                 <div className="view-row" style={{ marginBottom: '1px' }}>
+                  <span className="view-label">TYPE:</span>
+                  <span className="view-value">{statement.dueDays || (statement as any).dueDays} {" DAYS"}</span>
+                </div>
+                <div className="view-row" style={{ marginBottom: '1px' }}>
                   <span className="view-label">VENDOR NUMBER:</span>
                   <span className="view-value">{uniqueInvoiceIds.map(id => invoiceMap[id]?.client?.vendorNumber).find(p => !!p) || '—'}</span>
                 </div>
