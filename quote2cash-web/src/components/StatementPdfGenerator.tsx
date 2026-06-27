@@ -112,7 +112,7 @@ export const generateStatementPDF = async (statement: Statement, invoices: Invoi
   detailsY += 1;
   addDetailRow('STATEMENT DATE:', formatDate(statement.createdAt || (statement as any).CreatedAt));
   detailsY += 1;
-  addDetailRow("TYPE:", `${statement.dueDays || (statement as any).dueDays} DAYS`);
+  addDetailRow("ACCOUNT TYPE:", `${statement.dueDays || (statement as any).dueDays} DAYS`);
   detailsY += 1;
   addDetailRow('VENDOR NUMBER:', client?.vendorNumber || '-');
 
@@ -181,9 +181,11 @@ export const generateStatementPDF = async (statement: Statement, invoices: Invoi
     const paid = paymentsByInvoice[id] || 0;
     const outstanding = (inv?.amount ?? 0) - paid;
     const poNumber = (inv as any)?.quote?.poNumber || (inv as any)?.Quote?.PoNumber || '—';
+    const documentType = (inv as any)?.description || (inv as any)?.description || '—';
     return [
       inv?.invoiceNumber || '—',
       formatDate(inv?.dueDate),
+      documentType,
       poNumber,
       formatAmount(inv?.amount ?? 0),
       formatAmount(outstanding)
@@ -198,7 +200,7 @@ export const generateStatementPDF = async (statement: Statement, invoices: Invoi
   // --- AutoTable Generation for Statement Items ---
   autoTable(doc, {
     startY: currentY,
-    head: [['DOCUMENT NO', 'DUE DATE', 'PO NUMBER', 'INVOICE AMOUNT', 'OUTSTANDING']],
+    head: [['Document No', 'Due Date', 'Document Type', 'PO Number', 'Invoice Amount', 'Oustanding']],
     body: tableRows,
     theme: 'grid',
     styles: {
@@ -218,9 +220,10 @@ export const generateStatementPDF = async (statement: Statement, invoices: Invoi
     columnStyles: {
       0: { cellWidth: 30 },                  // INVOICE #
       1: { cellWidth: 35 },                  // DUE DATE
-      2: { cellWidth: 25 },                  // VENDOR #
-      3: { cellWidth: 'auto', halign: 'right' }, // INVOICE AMOUNT
-      4: { cellWidth: 35, halign: 'right' },    // OUTSTANDING
+      2: { cellWidth: 35 },                  // Document Type
+      3: { cellWidth: 25 },                  // VENDOR #
+      4: { cellWidth: 'auto', halign: 'right' }, // INVOICE AMOUNT
+      5: { cellWidth: 35, halign: 'right' },    // OUTSTANDING
     },
     margin: margin,
   });
