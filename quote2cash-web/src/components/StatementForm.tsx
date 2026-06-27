@@ -148,7 +148,12 @@ export const StatementForm: React.FC<Props> = ({ invoices, clients, initialData,
             </select>
           </label>
         </div>
-
+        <div className="grid-2">
+          <label>
+            Due (Days)
+            <input type="number" required value={formData.statementNumber} onChange={e => setFormData({...formData, statementNumber: e.target.value})} />
+          </label>
+        </div>
         <div className="line-items" style={{ marginTop: '20px' }}>
           <div className="section-title">
             <h3>Payment Items</h3>
