@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
 import type { Client } from '../types';
-import SearchBar from './SearchBar';
+import SearchBox from './SearchBox';
 import Pagination from './Pagination';
+import TableHeader from './TableHeader';
+import useTableSort from '../hooks/useTableSort';
 
 interface Props {
   clients: Client[];
@@ -35,8 +37,9 @@ export default function ClientsListPage({
     );
   }, [clients, searchTerm]);
 
-  const totalPages = Math.ceil(filteredClients.length / ITEMS_PER_PAGE);
-  const paginatedClients = filteredClients.slice(
+  const { sortedData, sortKey, sortDirection, setSort } = useTableSort(filteredClients);
+  const totalPages = Math.ceil(sortedData.length / ITEMS_PER_PAGE);
+  const paginatedClients = sortedData.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
@@ -58,7 +61,7 @@ export default function ClientsListPage({
         </button>
       </div>
 
-      <SearchBar
+      <SearchBox
         placeholder="Search clients by name, representative, or phone..."
         value={searchTerm}
         onChange={setSearchTerm}
@@ -68,11 +71,11 @@ export default function ClientsListPage({
         <table>
           <thead>
             <tr>
-              <th>Name</th>
-              <th>VAT Number</th>
-              <th>Vendor #</th>
-              <th>Representative</th>
-              <th>Phone</th>
+              <th><TableHeader columnKey="name" label="Name" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
+              <th><TableHeader columnKey="vatNumber" label="VAT Number" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
+              <th><TableHeader columnKey="vendorNumber" label="Vendor #" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
+              <th><TableHeader columnKey="representativeName" label="Representative" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
+              <th><TableHeader columnKey="representativeNumber" label="Phone" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
               <th className="actions-column">Actions</th>
             </tr>
           </thead>

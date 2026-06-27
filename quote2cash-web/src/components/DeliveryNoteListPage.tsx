@@ -1,7 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { DeliveryNote } from '../types';
-import SearchBar from './SearchBar';
+import SearchBox from './SearchBox';
+import TableHeader from './TableHeader';
 import Pagination from './Pagination';
+import useTableSort from '../hooks/useTableSort';
 
 interface Props {
   deliveryNotes: DeliveryNote[];
@@ -37,8 +39,9 @@ export default function DeliveryNoteListPage({
     );
   }, [deliveryNotes, searchTerm]);
 
-  const totalPages = Math.ceil(filteredDeliveryNotes.length / ITEMS_PER_PAGE);
-  const paginatedDeliveryNotes = filteredDeliveryNotes.slice(
+  const { sortedData, sortKey, sortDirection, setSort } = useTableSort(filteredDeliveryNotes);
+  const totalPages = Math.ceil(sortedData.length / ITEMS_PER_PAGE);
+  const paginatedDeliveryNotes = sortedData.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
@@ -67,7 +70,7 @@ export default function DeliveryNoteListPage({
         </div>
       </div>
 
-      <SearchBar
+      <SearchBox
         placeholder="Search delivery notes by number, quote, reference, description, or client..."
         value={searchTerm}
         onChange={setSearchTerm}
@@ -77,12 +80,12 @@ export default function DeliveryNoteListPage({
         <table>
           <thead>
             <tr>
-              <th>Delivery Note Number</th>
-              <th>Quote Number</th>
-              <th>Reference</th>
-              <th>Description</th>
-              <th>Client</th>
-              <th>Created</th>
+              <th><TableHeader columnKey="deliveryNoteNumber" label="Delivery Note Number" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
+              <th><TableHeader columnKey="quoteNumber" label="Quote Number" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
+              <th><TableHeader columnKey="reference" label="Reference" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
+              <th><TableHeader columnKey="description" label="Description" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
+              <th><TableHeader columnKey="client" label="Client" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
+              <th><TableHeader columnKey="createdAt" label="Created" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
               <th className="actions-column">Actions</th>
             </tr>
           </thead>
