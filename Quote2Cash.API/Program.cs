@@ -59,7 +59,9 @@ builder.Services.AddCors(options     =>
     {
         policy.WithOrigins(
             "https://quote2cash.onrender.com", // production frontend
-            "https://quote2cash-api.onrender.com", // production backend
+            "https://quote2cash-api.onrender.com",
+            "https://biture-api.onrender.com",
+            "https://biture.onrender.com", // production backend
             "http://localhost:4173"            // dev frontend
         )
         .AllowAnyHeader()
