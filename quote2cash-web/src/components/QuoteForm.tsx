@@ -150,7 +150,7 @@ export default function QuoteForm({
   const [items, setItems] = useState<QuoteItemCreateRequest[]>(initialData?.items?.length ? initialData.items : [blankItem]);
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   useEffect(() => {
     console.log('QuoteForm: Initializing form state. initialData:', initialData, 'isDuplicate:', isDuplicate, 'selectedClientId:', selectedClientId); // eslint-disable-line no-console
     if (initialData) {
@@ -190,8 +190,8 @@ export default function QuoteForm({
       getQuoteNextNumber(quotePrefix).then((res: NextNumberApiResponse | string) => { // Pass prefix
         console.log('QuoteForm: getQuoteNextNumber API response:', res); // eslint-disable-line no-console
         // Extract number from object response
-        const next = typeof res === 'object' && res !== null 
-          ? (res.nextQuoteNumber || res.NextQuoteNumber || res.nextNumber || res.NextNumber || res.nextInvoiceNumber) 
+        const next = typeof res === 'object' && res !== null
+          ? (res.nextQuoteNumber || res.NextQuoteNumber || res.nextNumber || res.NextNumber || res.nextInvoiceNumber)
           : res;
         if (next) {
           const rawStr = String(next);
@@ -361,7 +361,7 @@ export default function QuoteForm({
       return [...list, { id: option.id, value }];
     }, []);
   }, [descriptionOptions]);
-  
+
   const codeSuggestionOptions = useMemo(() => {
     return descriptionOptions.map((option: QuoteDescription) => ({ id: option.id, value: option.code }));
   }, [descriptionOptions]);
@@ -432,21 +432,37 @@ export default function QuoteForm({
             </button>
           </div>
         </label>
-        <label>
-          Quote number
-          <input
-            type="text"
-            value={isFetchingQuoteNumber ? 'Loading...' : quoteNumber} // NEW: Show loading state
-            onChange={(event) => {
-              setQuoteNumber(event.target.value);
-              setQuoteNumberError(null); // NEW: Clear error on manual input
-            }}
-            placeholder="Qyyyymm0000"
-            required
-            disabled={isFetchingQuoteNumber} // NEW: Disable input while loading
-          />
-          {quoteNumberError && <p style={{ color: 'red', fontSize: '0.8em' }}>{quoteNumberError}</p>} {/* NEW: Display error */}
-        </label>
+        <div className="grid-2">
+          <label>
+            Quote number
+            <input
+              type="text"
+              value={isFetchingQuoteNumber ? 'Loading...' : quoteNumber} // NEW: Show loading state
+              onChange={(event) => {
+                setQuoteNumber(event.target.value);
+                setQuoteNumberError(null); // NEW: Clear error on manual input
+              }}
+              placeholder="Qyyyymm0000"
+              required
+              disabled={isFetchingQuoteNumber} // NEW: Disable input while loading
+            />
+            {quoteNumberError && <p style={{ color: 'red', fontSize: '0.8em' }}>{quoteNumberError}</p>} {/* NEW: Display error */}
+          </label>
+          <label>
+            Margin
+            <input
+              type="number"
+              value={quoteNumber} // NEW: Show loading state
+              onChange={(event) => {
+                setQuoteNumber(event.target.value);
+                setQuoteNumberError(null); // NEW: Clear error on manual input
+              }}
+              placeholder="0"
+              required// NEW: Disable input while loading
+            />
+            {quoteNumberError && <p style={{ color: 'red', fontSize: '0.8em' }}>{quoteNumberError}</p>} {/* NEW: Display error */}
+          </label>
+        </div>
         <label>
           Reference
           <input value={reference} onChange={(event) => setReference(event.target.value)} required />
@@ -542,7 +558,7 @@ export default function QuoteForm({
                   required
                 />
                 <input
-                  type="number"
+                  type="text"
                   step="0.01"
                   value={item.unitPrice}
                   onChange={(event) => handleUpdateItem(index, 'unitPrice', event.target.value)}
