@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.Domain\\Quote2Cash.Domain.csproj": {}
+    "C:\\Staff\\Documents\\Other\\Vutivi\\Biture\\Code\\Quote2Cash\\Quote2Cash.Domain\\Quote2Cash.Domain.csproj": {}
   },
   "projects": {
-    "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.Domain\\Quote2Cash.Domain.csproj": {
+    "C:\\Staff\\Documents\\Other\\Vutivi\\Biture\\Code\\Quote2Cash\\Quote2Cash.Domain\\Quote2Cash.Domain.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.Domain\\Quote2Cash.Domain.csproj",
+        "projectUniqueName": "C:\\Staff\\Documents\\Other\\Vutivi\\Biture\\Code\\Quote2Cash\\Quote2Cash.Domain\\Quote2Cash.Domain.csproj",
         "projectName": "Quote2Cash.Domain",
-        "projectPath": "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.Domain\\Quote2Cash.Domain.csproj",
+        "projectPath": "C:\\Staff\\Documents\\Other\\Vutivi\\Biture\\Code\\Quote2Cash\\Quote2Cash.Domain\\Quote2Cash.Domain.csproj",
         "packagesPath": "C:\\Users\\DZUNI\\.nuget\\packages\\",
-        "outputPath": "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.Domain\\obj\\",
+        "outputPath": "C:\\Staff\\Documents\\Other\\Vutivi\\Biture\\Code\\Quote2Cash\\Quote2Cash.Domain\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
