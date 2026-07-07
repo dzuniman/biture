@@ -80,13 +80,12 @@ export default function JobCardViewPage({ jobCard, onEdit, onBack }: Props) {
             {/* Left: Company info + logo */}
             <div style={{ minWidth: '280px' }}>
               <div style={{ fontSize: '0.8rem', lineHeight: '1.5', marginBottom: '10px' }}>
-                <strong>EPEC SOLUTIONS (PTY) LTD</strong>
-                <div>Reg: 2012/118990/07 | VAT No: 4470275886</div>
-                <div>259 Kent Avenue, Randburg, Johannesburg, Gauteng, 2194</div>
-                <div>email: sales@epec.co.za | Phone: 065 835 4371</div>
+                <strong>BITURE (PTY) LTD &nbsp;&nbsp; Reg: K2013/194395/07 &nbsp;&nbsp; VAT No: 4480272220</strong>
+                  <div>Cnr Fred Versepute and Asparagus Road Midrand 1685</div>
+                  <div>Email: BetrothM@biture.co.za &nbsp;&nbsp; Tel: +2765 835 4371 | +2783 249 8510</div>
+                </div>
+                <img src={logo} alt="BITURE" className="company-logo" style={{ display: 'block', maxHeight: '150px', width: 'auto', minHeight: '30px' }} />
               </div>
-              <img src={logo} alt="Epec Solutions" style={{ display: 'block', maxHeight: '130px', width: 'auto' }} />
-            </div>
 
             {/* Right: JOB CARD details + client box */}
             <div style={{ textAlign: 'right', fontSize: '0.75rem', lineHeight: '1.4' }}>
@@ -175,24 +174,20 @@ export default function JobCardViewPage({ jobCard, onEdit, onBack }: Props) {
             </div>
           </div>
 
-          {/* ── APPROVAL / SIGNATURE ── */}
-          <div style={{ marginBottom: '8px', fontSize: '0.8rem' }}>
-                Received and Approved by: __________________________________________________________
+          <div className="view-section" style={{ marginTop: '20px', lineHeight: '2.0', borderTop: '1px solid #eee', paddingTop: '10px' }}>
+             
+              <div style={{ fontSize: '0.65rem', lineHeight: '1.2' }}>
+                <div style={{ marginBottom: '4px', fontWeight: 'bold' }}>OUR BANKING DETAILS ARE AS FOLLOWS:</div>
+                <div style={{ marginTop: '4px' }}>
+                  <div>Account Name: BITURE (PTY) LTD</div>
+                  <div>Bank: Standard Bank</div>
+                  <div>Account Number: 10142678536</div>
+                  <div>Branch Code: 051001</div>
+                  <div>Thank you for your Purchase Order. For product or services related purchases, the invoice will only be due once the goods have been delivered or the services rendered. Please confirm your payment by e-mailing your proof of payment or remittance advise to</div>
+                  <div>BetrothM@biture.co.za</div>
+                </div>
               </div>
-              <div className="print-only" style={{ height: '20px' }}></div>
-              <div style={{ marginBottom: '15px', fontSize: '0.8rem' }}>
-                Signature: ____________________________________________________________________________
-              </div>
-
-          {/* ── PAYMENT DETAILS ── */}
-          <div style={{ marginTop: '28px', border: '0px solid #000', borderRadius: '2px', padding: '0', fontSize: '0.75rem', lineHeight: '1.6' }}>
-            <div style={{ fontWeight: 'bold', marginBottom: '4px', fontSize: '0.8rem', letterSpacing: '0.5px' }}>PAYMENT DETAILS</div>
-            <div>Bank: Nedbank</div>
-            <div>Account Name: EPEC SOLUTIONS (PTY) LTD</div>
-            <div>Account No: 1223326799</div>
-            <div>Account Type: Cheque</div>
-            <div>Branch Code: 198765</div>
-          </div>
+            </div>  
 
           {/* ── ACTION BUTTONS (screen only) ── */}
           <div className="no-print" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-start', marginTop: '28px' }}>

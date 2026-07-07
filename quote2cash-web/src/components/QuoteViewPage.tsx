@@ -166,11 +166,11 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
             <div className="quote-view-left">
               <div className="company-block">
                 <div className="company-lines" style={{ fontSize: '0.8rem', lineHeight: '1.5', marginBottom: '8px' }}>
-                  <strong>EPEC SOLUTIONS (PTY) LTD &nbsp;&nbsp; Reg: 2012/118990/07 &nbsp;&nbsp; VAT No: 4470275886</strong>
-                  <div>259 Kent Avenue, Randburg, Johannesburg, Gauteng, 2194</div>
-                  <div>email: sales@epec.co.za &nbsp;&nbsp; Phone: 065 835 4371</div>
+                  <strong>BITURE (PTY) LTD &nbsp;&nbsp; Reg: K2013/194395/07 &nbsp;&nbsp; VAT No: 4480272220</strong>
+                  <div>Cnr Fred Versepute and Asparagus Road Midrand 1685</div>
+                  <div>Email: BetrothM@biture.co.za &nbsp;&nbsp; Tel: +2765 835 4371 | +2783 249 8510</div>
                 </div>
-                <img src={logo} alt="Epec Solutions" className="company-logo" style={{ display: 'block', maxHeight: '150px', width: 'auto', minHeight: '30px' }} />
+                <img src={logo} alt="BITURE" className="company-logo" style={{ display: 'block', maxHeight: '150px', width: 'auto', minHeight: '30px' }} />
               </div>
             </div>
 
@@ -281,22 +281,16 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
               </div>
               <div className="print-only" style={{ height: '20px' }}></div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem',marginBottom: '10px' }}>
-                <span>A written order is required should the quote be accepted</span>
-                <span>A soft copy of a purchase order should be forwarded to sales@epec.co.za</span>
-              </div>
-              <div className="print-only" style={{ height: '20px' }}></div>
-
+              
               <div style={{ fontSize: '0.65rem', lineHeight: '1.2' }}>
-                <div>THIS QUOTE IS SUBJECT TO THE FOLLOWING:</div>
+                <div style={{ marginBottom: '4px', fontWeight: 'bold' }}>OUR BANKING DETAILS ARE AS FOLLOWS:</div>
                 <div style={{ marginTop: '4px' }}>
-                  <div>1) This quote automatically expires after thirty (30) days irrespective of the valid date above.</div>
-                  <div>2) The standard terms and conditions of sale of EPEC (Pty) Ltd shall apply (such terms and conditions available on request)</div>
-                  <div>3) Delivery will be confirmed upon receipt of a purchase order.</div>
-                  <div>4) Errors and omissions are excluded</div>
-                  <div>5) Upon placing of order, please quote this quote number</div>
-                  <div>6) Payment terms must be adhered to - Upon default, customer will be re-invoiced at standard pricing.</div>
-                  <div>7) This quotation is conditional upon your signed acceptance thereof, including the terms and conditions referred above and that it is returned to EPEC (Pty) Ltd within thirty (30) working days.</div>
+                  <div>Account Name: BITURE (PTY) LTD</div>
+                  <div>Bank: Standard Bank</div>
+                  <div>Account Number: 10142678536</div>
+                  <div>Branch Code: 051001</div>
+                  <div>Thank you for your Purchase Order. For product or services related purchases, the invoice will only be due once the goods have been delivered or the services rendered. Please confirm your payment by e-mailing your proof of payment or remittance advise to</div>
+                  <div>BetrothM@biture.co.za</div>
                 </div>
               </div>
             </div>
