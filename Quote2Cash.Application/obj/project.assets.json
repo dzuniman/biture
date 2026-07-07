@@ -14,11 +14,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.Application\\Quote2Cash.Application.csproj",
+      "projectUniqueName": "C:\\Staff\\Documents\\Other\\Vutivi\\Biture\\Code\\Quote2Cash\\Quote2Cash.Application\\Quote2Cash.Application.csproj",
       "projectName": "Quote2Cash.Application",
-      "projectPath": "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.Application\\Quote2Cash.Application.csproj",
+      "projectPath": "C:\\Staff\\Documents\\Other\\Vutivi\\Biture\\Code\\Quote2Cash\\Quote2Cash.Application\\Quote2Cash.Application.csproj",
       "packagesPath": "C:\\Users\\DZUNI\\.nuget\\packages\\",
-      "outputPath": "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.Application\\obj\\",
+      "outputPath": "C:\\Staff\\Documents\\Other\\Vutivi\\Biture\\Code\\Quote2Cash\\Quote2Cash.Application\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

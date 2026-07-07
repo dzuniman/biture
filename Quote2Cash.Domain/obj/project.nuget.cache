@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "2273aa5ka0Y=",
+  "dgSpecHash": "kQT3r3oCxmo=",
   "success": true,
-  "projectFilePath": "C:\\Staff\\Documents\\Other\\Vutivi\\Quote2Cash\\Code\\Quote2Cash\\Quote2Cash.Domain\\Quote2Cash.Domain.csproj",
+  "projectFilePath": "C:\\Staff\\Documents\\Other\\Vutivi\\Biture\\Code\\Quote2Cash\\Quote2Cash.Domain\\Quote2Cash.Domain.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\DZUNI\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.25\\microsoft.aspnetcore.app.ref.8.0.25.nupkg.sha512"
   ],

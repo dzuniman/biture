@@ -53,14 +53,16 @@ builder.Services.AddAuthorization();
 builder.Services.AddPersistenceServices(builder.Configuration);
 
 // ✅ Configure CORS
-builder.Services.AddCors(options     =>
+builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy.WithOrigins(
-            "https://quote2cash.onrender.com", // production frontend
-            "https://quote2cash-api.onrender.com", // production backend
-            "http://localhost:4173"            // dev frontend
+            "https://quote2cash.onrender.com",
+            "https://quote2cash-api.onrender.com",
+            "https://biture-api.onrender.com",
+            "https://biture.onrender.com",
+            "http://localhost:4173"
         )
         .AllowAnyHeader()
         .AllowAnyMethod()
@@ -77,21 +79,8 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<Quote2CashDbContext>();
-    try
-    {
-        Console.WriteLine("🚀 Applying migrations...");
-        await context.Database.MigrateAsync();
-        Console.WriteLine("✅ Migrations applied successfully.");
-
-        Console.WriteLine("🌱 Seeding data...");
-        await SeedData.EnsureSeedDataAsync(context);
-        Console.WriteLine("✅ Seeding complete.");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"❌ Migration/Seeding failed: {ex}");
-        throw; // rethrow so you see the error in Render logs
-    }
+    await context.Database.MigrateAsync();
+    await SeedData.EnsureSeedDataAsync(context);
 }
 
 // Middleware order matters
@@ -100,40 +89,9 @@ app.UseSwaggerUI();
 
 app.UseStaticFiles();
 
-// ✅ Global error handler that still adds CORS headers
-app.Use(async (context, next) =>
-{
-    try
-    {
-        await next();
-    }
-    catch (Exception ex)
-    {
-        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-        context.Response.Headers.Add("Access-Control-Allow-Origin", context.Request.Headers["Origin"]);
-        context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Authorization");
-        context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-        await context.Response.WriteAsync($"Server error: {ex.Message}");
-    }
-});
+app.UseRouting();
 
-// ✅ Handle OPTIONS preflight explicitly
-app.Use(async (context, next) =>
-{
-    if (context.Request.Method == HttpMethods.Options)
-    {
-        context.Response.StatusCode = StatusCodes.Status200OK;
-        context.Response.Headers.Add("Access-Control-Allow-Origin", context.Request.Headers["Origin"]);
-        context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Authorization");
-        context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-        await context.Response.CompleteAsync();
-        return;
-    }
-    await next();
-});
-
-// ✅ CORS must be before auth
-app.UseCors("AllowFrontend");
+app.UseCors("AllowFrontend");   // ✅ CORS here
 
 app.UseAuthentication();
 app.UseAuthorization();
