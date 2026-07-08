@@ -40,13 +40,13 @@ export const generateCreditNotePDF = async (creditNote: CreditNote) => {
   let companyY = currentY;
   doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
-  doc.text('EPEC SOLUTIONS (PTY) LTD   Reg: 2012/118990/07   VAT No: 4470275886', margin, companyY);
+  doc.text('BITURE (PTY) LTD   Reg: K2013/194395/07   VAT No: 4480272220', margin, companyY);
   companyY += 4;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
-  doc.text('259 Kent Avenue, Randburg, Johannesburg, Gauteng, 2194', margin, companyY);
+  doc.text('Cnr Fred Versepute and Asparagus Road Midrand 1685', margin, companyY);
   companyY += 4;
-  doc.text('email: sales@epec.co.za   Phone: 065 835 4371', margin, companyY);
+  doc.text('Email: BetrothM@biture.co.za   Tel: +2765 835 4371 | +2783 249 8510', margin, companyY);
   companyY += 6;
 
   const logoHeight = 20;
@@ -153,16 +153,6 @@ export const generateCreditNotePDF = async (creditNote: CreditNote) => {
   doc.text(formatAmount(creditNote.amount), summaryX, currentY, { align: 'right' });
   currentY += 20;
 
-  // Signature Block
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const footerBlockHeight = 25;
-  currentY = Math.max(currentY, pageHeight - margin - footerBlockHeight);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.text('Issued and Approved by: __________________________________________________________', margin, currentY);
-  currentY += 8;
-  doc.text('Signature: ________________________________________________________________________', margin, currentY);
 
   // Save
   doc.save(`CreditNote_${creditNote.creditNoteNumber || 'N-A'}.pdf`);

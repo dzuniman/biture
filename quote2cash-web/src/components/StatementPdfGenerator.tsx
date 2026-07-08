@@ -58,14 +58,14 @@ export const generateStatementPDF = async (statement: Statement, invoices: Invoi
   // Company Info
   doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
-  doc.text('EPEC SOLUTIONS (PTY) LTD   Reg: 2012/118990/07   VAT No: 4470275886', companyInfoStartX, companyInfoY);
+  doc.text('BITURE (PTY) LTD   Reg: K2013/194395/07   VAT No: 4480272220', companyInfoStartX, companyInfoY);
   companyInfoY += 4;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
-  doc.text('259 Kent Avenue, Randburg, Johannesburg, Gauteng, 2194', companyInfoStartX, companyInfoY);
+  doc.text('Cnr Fred Versepute and Asparagus Road Midrand 1685', companyInfoStartX, companyInfoY);
   companyInfoY += 4;
-  doc.text('email: sales@epec.co.za   Phone: 065 835 4371', companyInfoStartX, companyInfoY);
-  companyInfoY += 6;
+  doc.text('Email: BetrothM@biture.co.za   Tel: +2765 835 4371 | +2783 249 8510', companyInfoStartX, companyInfoY);
+  companyInfoY += 6; // Space before logo
 
   const logoHeight = 20;
   if (logoImg.complete && logoImg.naturalWidth > 0) {
@@ -352,20 +352,25 @@ export const generateStatementPDF = async (statement: Statement, invoices: Invoi
   // --- Payment Details ---
   currentY = Math.max(currentY + 2, pageHeight - margin - footerBlockHeight);
 
-  doc.setFontSize(8);
+  doc.setFontSize(6.5);
   doc.setFont('helvetica', 'bold');
-  doc.text('PAYMENT DETAILS:', margin, currentY);
-  currentY += 4;
+  doc.text('OUR BANKING DETAILS ARE AS FOLLOWS:', margin, currentY);
   doc.setFont('helvetica', 'normal');
-  doc.text('Bank: Nedbank', margin, currentY);
-  currentY += 3;
-  doc.text('Account Name: EPEC SOLUTIONS (PTY) LTD', margin, currentY);
-  currentY += 3;
-  doc.text('Account No: 1223326799', margin, currentY);
-  currentY += 3;
-  doc.text('Account Type: Cheque', margin, currentY);
-  currentY += 3;
-  doc.text('Branch Code: 198765', margin, currentY);
+  currentY += 4;
+  const terms = [
+    'Account Name: BITURE (PTY) LTD',
+    'Bank: Standard Bank',
+    'Account Number: 10142678536',
+    'Branch Code: 051001',
+    'Thank you for your Purchase Order. For product or services related purchases, the invoice will only be due once the goods have been delivered or the services rendered. Please confirm your payment by e-mailing your proof of payment or remittance advise to BetrothM@biture.co.za'
+  ];
+  terms.forEach(term => {
+    const wrappedTerm = doc.splitTextToSize(term, contentWidth);
+    wrappedTerm.forEach((line: string) => {
+      doc.text(line, margin, currentY);
+      currentY += 3;
+    });
+  });
 
   const filename = `Statement_${statement.statementNumber || 'N/A'}.pdf`;
   doc.save(filename);

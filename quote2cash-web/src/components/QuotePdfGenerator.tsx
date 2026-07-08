@@ -34,13 +34,13 @@ export const generateQuotePDF = async (quote: Quote) => {
   // Company Info
   doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
-  doc.text('EPEC SOLUTIONS (PTY) LTD   Reg: 2012/118990/07   VAT No: 4470275886', companyInfoStartX, companyInfoY);
+  doc.text('BITURE (PTY) LTD   Reg: K2013/194395/07   VAT No: 4480272220', companyInfoStartX, companyInfoY);
   companyInfoY += 4;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
-  doc.text('259 Kent Avenue, Randburg, Johannesburg, Gauteng, 2194', companyInfoStartX, companyInfoY);
+  doc.text('Cnr Fred Versepute and Asparagus Road Midrand 1685', companyInfoStartX, companyInfoY);
   companyInfoY += 4;
-  doc.text('email: sales@epec.co.za   Phone: 065 835 4371', companyInfoStartX, companyInfoY);
+  doc.text('Email: BetrothM@biture.co.za   Tel: +2765 835 4371 | +2783 249 8510', companyInfoStartX, companyInfoY);
   companyInfoY += 6; // Space before logo
 
   const logoHeight = 20;
@@ -187,6 +187,7 @@ export const generateQuotePDF = async (quote: Quote) => {
   currentY = Math.max((doc as any).lastAutoTable.finalY + 8, pageHeight - margin - totalFooterHeight);
 
   // 5. Summary
+  currentY += 14;
   const summaryX = pageWidth - margin;
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal'); // Ensure normal font for labels
@@ -209,29 +210,26 @@ export const generateQuotePDF = async (quote: Quote) => {
   // 6. Approval and Terms
   currentY = Math.max(currentY + 5, pageHeight - margin - footerBlockHeight);
 
+  currentY += 10;
+  
   doc.setFontSize(8);
   doc.text('Received and Approved by: __________________________________________________________', margin, currentY);
   currentY += 8;
   doc.text('Signature: ________________________________________________________________________', margin, currentY);
   currentY += 10;
   doc.setFontSize(7);
-  doc.text('A written order is required should the quote be accepted', margin, currentY);
-  doc.text('A soft copy of a purchase order should be forwarded to sales@epec.co.za', pageWidth - margin, currentY, { align: 'right' });
-  
-  currentY += 8;
+
   doc.setFontSize(6.5);
   doc.setFont('helvetica', 'bold');
-  doc.text('THIS QUOTE IS SUBJECT TO THE FOLLOWING:', margin, currentY);
+  doc.text('OUR BANKING DETAILS ARE AS FOLLOWS:', margin, currentY);
   doc.setFont('helvetica', 'normal');
   currentY += 4;
   const terms = [
-    '1) This quote automatically expires after thirty (30) days irrespective of the valid date above.',
-    '2) The standard terms and conditions of sale of EPEC (Pty) Ltd shall apply (such terms and conditions available on request)',
-    '3) Delivery will be confirmed upon receipt of a purchase order.',
-    '4) Errors and omissions are excluded.',
-    '5) Upon placing of order, please quote this quote number.',
-    '6) Payment terms must be adhered to.',
-    '7) This quotation is conditional upon your signed acceptance and return within 30 days.'
+    'Account Name: BITURE (PTY) LTD',
+    'Bank: Standard Bank',
+    'Account Number: 10142678536',
+    'Branch Code: 051001',
+    'Thank you for your Purchase Order. For product or services related purchases, the invoice will only be due once the goods have been delivered or the services rendered. Please confirm your payment by e-mailing your proof of payment or remittance advise to BetrothM@biture.co.za'
   ];
   terms.forEach(term => {
     const wrappedTerm = doc.splitTextToSize(term, contentWidth);
