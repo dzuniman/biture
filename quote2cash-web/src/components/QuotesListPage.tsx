@@ -108,6 +108,7 @@ export default function QuotesListPage({
                   <TableHeader columnKey="reference" label="Reference" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
                   <TableHeader columnKey="clientName" label="Client" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
                   <TableHeader columnKey="date" label="Date" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
+                  <TableHeader columnKey="margin" label="Margin" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
                   <TableHeader columnKey="total" label="Total" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
                   <th>Actions</th>
                 </tr>
@@ -119,6 +120,7 @@ export default function QuotesListPage({
                     <td>{quote.reference || '—'}</td>
                     <td>{quote.client?.name ?? '—'}</td>
                     <td>{new Date(quote.date).toLocaleDateString()}</td>
+                    <td>{quote.margin != null ? `${quote.margin}%` : '—'}</td>
                     <td>{formatAmount(quote.total)}</td>
                     <td className="actions-row">
                       <button type="button" onClick={() => onView(quote)}>

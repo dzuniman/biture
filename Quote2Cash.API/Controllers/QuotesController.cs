@@ -6,7 +6,7 @@ using Quote2Cash.Persistence.Data;
 namespace Quote2Cash.API.Controllers
 {
     public record QuoteItemDto(int ItemNumber, decimal Quantity, string Code, string Uom, string Description, decimal UnitPrice, decimal TotalPrice);
-    public record QuoteCreateDto(Guid? ClientId, string QuoteNumber, string Reference, DateTime Date, int ValidityDays, QuoteItemDto[] Items, string? PONumber);
+    public record QuoteCreateDto(Guid? ClientId, string QuoteNumber, string Reference, DateTime Date, int ValidityDays, QuoteItemDto[] Items, string? PONumber, decimal Margin = 0);
 
     [ApiController]
     [Route("api/[controller]")]
@@ -62,6 +62,7 @@ namespace Quote2Cash.API.Controllers
                 VendorNumber = q.Client?.VendorNumber ?? string.Empty,
                 q.ClientId,
                 q.PONumber,
+                q.Margin,
                 Client = q.Client != null ? new { q.Client.Id, q.Client.Name, q.Client.VatNumber } : null,
                 SubTotal = q.SubTotal,
                 Vat = q.Vat,
@@ -93,6 +94,7 @@ namespace Quote2Cash.API.Controllers
                 VendorNumber = quote.Client?.VendorNumber ?? string.Empty,
                 quote.ClientId,
                 quote.PONumber,
+                quote.Margin,
                 Client = quote.Client != null ? new { quote.Client.Id, quote.Client.Name, quote.Client.AddressLine1, quote.Client.AddressLine2, quote.Client.AddressLine3, quote.Client.AddressLine4, quote.Client.RepresentativeName, quote.Client.RepresentativeNumber, quote.Client.VendorNumber, quote.Client.VatNumber } : null,
                 Items = quote.Items.Select(item => new
                 {
@@ -126,6 +128,7 @@ namespace Quote2Cash.API.Controllers
                 Date = quoteDate,
                 ValidityDays = request.ValidityDays,
                 PONumber = request.PONumber,
+                Margin = request.Margin,
                 Items = request.Items.Select(item => new QuoteItem
                 {
                     Id = Guid.NewGuid(),
@@ -152,6 +155,7 @@ namespace Quote2Cash.API.Controllers
                 VendorNumber = quote.Client?.VendorNumber ?? string.Empty,
                 quote.ClientId,
                 quote.PONumber,
+                quote.Margin,
                 Client = (object?)null,
                 Items = quote.Items.Select(item => new
                 {
@@ -189,6 +193,7 @@ namespace Quote2Cash.API.Controllers
             quote.Date = DateTime.SpecifyKind(request.Date, DateTimeKind.Utc);
             quote.ValidityDays = request.ValidityDays;
             quote.PONumber = request.PONumber;
+            quote.Margin = request.Margin;
 
             var existingItems = quote.Items.ToList();
             if (existingItems.Any())

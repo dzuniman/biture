@@ -148,6 +148,7 @@ export default function QuoteForm({
   const [date, setDate] = useState(initialData?.date ? initialData.date.slice(0, 10) : today);
   const [validityDays, setValidityDays] = useState(initialData?.validityDays.toString() ?? '30');
   const [items, setItems] = useState<QuoteItemCreateRequest[]>(initialData?.items?.length ? initialData.items : [blankItem]);
+  const [margin, setMargin] = useState<number>(initialData?.margin ?? 0);
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -160,6 +161,7 @@ export default function QuoteForm({
       setPoNumber(initialData.poNumber ?? '');
       setDate(initialData.date ? initialData.date.slice(0, 10) : today);
       setValidityDays(initialData.validityDays.toString());
+      setMargin(initialData.margin ?? 0);
       const sorted = [...(initialData.items || [])].sort((a, b) => a.itemNumber - b.itemNumber);
       setItems(sorted.length ? sorted : [blankItem]);
     } else { // This block runs for a brand new quote or when duplicating
@@ -169,6 +171,7 @@ export default function QuoteForm({
       setPoNumber('');
       setDate(today);
       setValidityDays('30');
+      setMargin(0);
       setItems([blankItem]);
     }
   }, [initialData, today, isDuplicate, selectedClientId]); // Re-added selectedClientId to dependencies
@@ -243,7 +246,8 @@ export default function QuoteForm({
       } else if (field === 'quantity') {
         item.quantity = Math.max(0, Number(value));
       } else if (field === 'unitPrice') {
-        item.unitPrice = Number(value);
+        const basePrice = Number(value);
+        item.unitPrice = margin > 0 ? parseFloat((basePrice * (1 + margin / 100)).toFixed(2)) : basePrice;
       } else if (field === 'code') {
         item.code = value;
         const matched = findDescriptionByCode(value);
@@ -377,6 +381,27 @@ export default function QuoteForm({
 
   const total = useMemo(() => parseFloat((subTotal + vat).toFixed(2)), [subTotal, vat]);
 
+  const handleMarginChange = (value: string) => {
+    const newMargin = Math.max(0, Number(value));
+    setMargin(newMargin);
+    // Reapply margin to all current items based on their stored totalPrice/quantity ratio
+    setItems((current) =>
+      current.map((item) => {
+        // Derive the base unit price (without margin) by reversing the previous margin
+        const prevMultiplier = 1 + margin / 100;
+        const baseUnitPrice = margin > 0 ? item.unitPrice / prevMultiplier : item.unitPrice;
+        const newUnitPrice = newMargin > 0
+          ? parseFloat((baseUnitPrice * (1 + newMargin / 100)).toFixed(2))
+          : parseFloat(baseUnitPrice.toFixed(2));
+        return {
+          ...item,
+          unitPrice: newUnitPrice,
+          totalPrice: parseFloat((item.quantity * newUnitPrice).toFixed(2))
+        };
+      })
+    );
+  };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSaving(true);
@@ -388,6 +413,7 @@ export default function QuoteForm({
       poNumber: poNumber.trim() || undefined,
       date: date || new Date().toISOString(),
       validityDays: Number(validityDays),
+      margin,
       items: items.map((item) => ({
         itemNumber: item.itemNumber,
         quantity: item.quantity,
@@ -449,18 +475,16 @@ export default function QuoteForm({
             {quoteNumberError && <p style={{ color: 'red', fontSize: '0.8em' }}>{quoteNumberError}</p>} {/* NEW: Display error */}
           </label>
           <label>
-            Margin
+            Margin (%)
             <input
               type="number"
-              value={quoteNumber} // NEW: Show loading state
-              onChange={(event) => {
-                setQuoteNumber(event.target.value);
-                setQuoteNumberError(null); // NEW: Clear error on manual input
-              }}
+              min="0"
+              max="100"
+              step="0.01"
+              value={margin}
+              onChange={(event) => handleMarginChange(event.target.value)}
               placeholder="0"
-              required// NEW: Disable input while loading
             />
-            {quoteNumberError && <p style={{ color: 'red', fontSize: '0.8em' }}>{quoteNumberError}</p>} {/* NEW: Display error */}
           </label>
         </div>
         <label>
