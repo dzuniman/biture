@@ -36,7 +36,13 @@ import {
   getCreditNote,
   createCreditNote,
   updateCreditNote,
-  deleteCreditNote
+  deleteCreditNote,
+  getCosts,
+  getCost,
+  createCost,
+  updateCost,
+  deleteCost,
+  duplicateCost
 } from './api';
 import type {
   Client,
@@ -54,7 +60,9 @@ import type {
   DeliveryNote,
   DeliveryNoteCreateRequest,
   CreditNote,
-  CreditNoteCreateRequest
+  CreditNoteCreateRequest,
+  Cost,
+  CostCreateRequest
 } from './types';
 import { useAuth } from './AuthContext';
 import { Login } from './components/Login';
@@ -81,10 +89,12 @@ import DeliveryNoteViewPage from './components/DeliveryNoteViewPage';
 import CreditNoteListPage from './components/CreditNoteListPage';
 import CreditNoteForm from './components/CreditNoteForm';
 import CreditNoteViewPage from './components/CreditNoteViewPage';
+import CostsListPage from './components/CostsListPage';
+import CostForm from './components/CostForm';
 import logo from './assets/logo.png';
 
 
-type Section = 'dashboard' | 'clients' | 'quotes' | 'invoices' | 'admin' | 'statements' | 'jobcards' | 'deliverynotes' | 'creditnotes';
+type Section = 'dashboard' | 'clients' | 'quotes' | 'invoices' | 'admin' | 'statements' | 'jobcards' | 'deliverynotes' | 'creditnotes' | 'costs';
 type ClientView = 'list' | 'manage' | 'view';
 type QuoteView = 'list' | 'manage' | 'view';
 type InvoiceView = 'list' | 'manage' | 'view';
@@ -110,6 +120,9 @@ function App() {
   const [jobCards, setJobCards] = useState<JobCard[]>([]);
   const [deliveryNotes, setDeliveryNotes] = useState<DeliveryNote[]>([]);
   const [creditNotes, setCreditNotes] = useState<CreditNote[]>([]);
+  const [costs, setCosts] = useState<Cost[]>([]);
+  const [editingCost, setEditingCost] = useState<Cost | null>(null);
+  const [costView, setCostView] = useState<'list' | 'manage'>('list');
   const [documents, setDocuments] = useState<DocumentResponse[]>([]);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [editingQuote, setEditingQuote] = useState<Quote | null>(null);
@@ -154,7 +167,7 @@ function App() {
     try {
       setError(null);
       setIsLoading(true);
-      const [clientsData, quotesData, descriptionsData, usersData, invoicesData, statementsData, documentsData, jobCardsData, deliveryNotesData, creditNotesData] = await Promise.all([
+      const [clientsData, quotesData, descriptionsData, usersData, invoicesData, statementsData, documentsData, jobCardsData, deliveryNotesData, creditNotesData, costsData] = await Promise.all([
         getClients(),
         getQuotes(),
         getQuoteDescriptions(),
@@ -164,7 +177,8 @@ function App() {
         getDocuments(),
         getJobCards(),
         getDeliveryNotes(),
-        getCreditNotes()
+        getCreditNotes(),
+        getCosts()
       ]);
       setClients(clientsData);
       setQuotes(quotesData);
@@ -176,6 +190,7 @@ function App() {
       setJobCards(jobCardsData);
       setDeliveryNotes(deliveryNotesData);
       setCreditNotes(creditNotesData);
+      setCosts(costsData);
     } catch (err: any) {
       setError(getErrorMessage(err, 'Unable to load data. Confirm the API is running.'));
     } finally {
@@ -806,6 +821,87 @@ function App() {
     finally { setIsLoading(false); }
   };
 
+  // --- Cost Handlers ---
+  const handleCreateCost = async (payload: CostCreateRequest) => {
+    try {
+      setError(null);
+      setIsLoading(true);
+      await createCost(payload);
+      clearCostState();
+      await loadAll();
+      setSection('costs');
+      setCostView('list');
+    } catch (err: any) {
+      setError(getErrorMessage(err, 'Unable to save cost.'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUpdateCost = async (id: string, payload: CostCreateRequest) => {
+    try {
+      setError(null);
+      setIsLoading(true);
+      await updateCost(id, payload);
+      clearCostState();
+      await loadAll();
+      setCostView('list');
+    } catch (err: any) {
+      setError(getErrorMessage(err, 'Unable to update cost.'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteCost = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this cost sheet?')) {
+      try {
+        setError(null);
+        setIsLoading(true);
+        await deleteCost(id);
+        await loadAll();
+      } catch (err: any) {
+        setError(getErrorMessage(err, 'Unable to delete cost.'));
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  const handleEditCost = async (cost: Cost) => {
+    try {
+      setIsLoading(true);
+      const fullCost = await getCost(cost.id);
+      setEditingCost(fullCost);
+      setCostView('manage');
+      setSection('costs');
+    } catch (err: any) {
+      setError(getErrorMessage(err, 'Unable to load cost for editing.'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDuplicateCost = async (cost: Cost) => {
+    try {
+      setError(null);
+      setIsLoading(true);
+      await duplicateCost(cost.id);
+      await loadAll();
+      setSection('costs');
+      setCostView('list');
+    } catch (err: any) {
+      setError(getErrorMessage(err, 'Unable to duplicate cost.'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const clearCostState = () => {
+    setEditingCost(null);
+    setCostView('list');
+  };
+
   // Dashboard Calculations
   const totalQuoteValue = quotes.reduce((sum, q) => sum + (Number(q.total) || 0), 0);
   const totalInvoiceValue = invoices.reduce((sum, inv) => sum + (Number(inv.amount) || 0), 0);
@@ -846,6 +942,7 @@ function App() {
               clearJobCardState();
               clearDeliveryNoteState();
               clearCreditNoteState();
+              clearCostState();
             }}
             style={{ cursor: 'pointer' }}
           >
@@ -1109,6 +1206,17 @@ function App() {
             </button>
             <button
               type="button"
+              className={`nav-button ${section === 'costs' ? 'active' : ''}`}
+              onClick={() => {
+                setSection('costs');
+                setCostView('list');
+                clearCostState();
+              }}
+            >
+              Costs
+            </button>
+            <button
+              type="button"
               className={`nav-button ${section === 'admin' ? 'active' : ''}`}
               onClick={() => {
                 setSection('admin');
@@ -1226,6 +1334,30 @@ function App() {
           creditNote={viewingCreditNote}
           onEdit={() => handleEditCreditNote(viewingCreditNote)}
           onBack={() => setCreditNoteView('list')}
+        />
+      )}
+
+      {!isLoading && section === 'costs' && costView === 'list' && (
+        <CostsListPage
+          costs={costs}
+          onEdit={handleEditCost}
+          onDelete={handleDeleteCost}
+          onDuplicate={handleDuplicateCost}
+          onCreateNew={() => {
+            clearCostState();
+            setCostView('manage');
+          }}
+        />
+      )}
+
+      {!isLoading && section === 'costs' && costView === 'manage' && (
+        <CostForm
+          initialData={editingCost ?? undefined}
+          onSubmit={editingCost
+            ? (payload) => handleUpdateCost(editingCost.id, payload)
+            : handleCreateCost
+          }
+          onCancel={() => setCostView('list')}
         />
       )}
 

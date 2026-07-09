@@ -382,3 +382,8 @@ export const updateCost = async (id: string, cost: CostCreateRequest): Promise<C
 export const deleteCost = async (id: string): Promise<void> => {
   await api.delete(`/costs/${id}`);
 };
+
+export const duplicateCost = async (id: string): Promise<Cost> => {
+  const response = await api.post(`/costs/${id}/duplicate`);
+  return response.data;
+};
