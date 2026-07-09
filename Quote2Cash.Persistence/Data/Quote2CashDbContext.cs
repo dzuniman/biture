@@ -20,6 +20,7 @@ namespace Quote2Cash.Persistence.Data
         public DbSet<DeliveryNote> DeliveryNotes { get; set; } = null!;
         public DbSet<CreditNote> CreditNotes { get; set; } = null!;
         public DbSet<Cost> Costs { get; set; } = null!;
+        public DbSet<CostQuoteItem> CostQuoteItems { get; set; } = null!;
         public DbSet<Invoice> Invoices { get; set; } = null!;
         public DbSet<Statement> Statements { get; set; } = null!;
         public DbSet<StatementItem> StatementItems { get; set; } = null!;
@@ -100,13 +101,29 @@ namespace Quote2Cash.Persistence.Data
             modelBuilder.Entity<Cost>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Category).IsRequired().HasMaxLength(150);
                 entity.Property(e => e.Description).HasMaxLength(1000);
-                entity.Property(e => e.Amount).HasPrecision(18, 2);
-                entity.Property(e => e.Status).IsRequired().HasMaxLength(100);
-                entity.Property(e => e.IncurredAt).IsRequired();
-                entity.HasOne(e => e.Client).WithMany(c => c.Costs).HasForeignKey(e => e.ClientId);
-                entity.HasOne(e => e.JobCard).WithMany().HasForeignKey(e => e.JobCardId);
+                entity.Property(e => e.Margin).HasPrecision(5, 2);
+                entity.Property(e => e.Date).IsRequired();
+            });
+
+            modelBuilder.Entity<CostQuoteItem>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.ItemNumber).IsRequired();
+                entity.Property(e => e.Quantity).HasPrecision(18, 2);
+                entity.Property(e => e.Uom).HasMaxLength(100);
+                entity.Property(e => e.Description).HasMaxLength(1000);
+                entity.Property(e => e.UnitPrice).HasPrecision(18, 2);
+                entity.Property(e => e.SupplierName).HasMaxLength(500);
+                entity.Property(e => e.SupplierDescription).HasMaxLength(1000);
+                entity.Property(e => e.SupplierCost).HasPrecision(18, 2);
+                entity.Property(e => e.OtherName).HasMaxLength(500);
+                entity.Property(e => e.OtherDescription).HasMaxLength(1000);
+                entity.Property(e => e.OtherCost).HasPrecision(18, 2);
+                entity.HasOne(e => e.Cost)
+                      .WithMany(c => c.Items)
+                      .HasForeignKey(e => e.CostId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<Invoice>(entity =>

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Quote2Cash.Persistence.Data;
@@ -11,9 +12,11 @@ using Quote2Cash.Persistence.Data;
 namespace Quote2Cash.Persistence.Migrations
 {
     [DbContext(typeof(Quote2CashDbContext))]
-    partial class Quote2CashDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260709144407_RecreateCostTables")]
+    partial class RecreateCostTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

@@ -199,15 +199,30 @@ export interface CreditNote {
   createdAt: string;
 }
 
+export interface CostQuoteItem {
+  id: string;
+  costId: string;
+  itemNumber: number;
+  quantity: number;
+  uom: string;
+  description: string;
+  unitPrice: number;
+  supplierName: string;
+  supplierDescription: string;
+  supplierCost: number;
+  otherName: string;
+  otherDescription: string;
+  otherCost: number;
+}
+
 export interface Cost {
   id: string;
-  client?: Client | null;
-  jobCard?: { id: string; jobCardNumber: string } | null;
-  category: string;
   description: string;
-  amount: number;
-  status: string;
-  incurredAt: string;
+  margin: number;
+  date: string;
+  items: CostQuoteItem[];
+  itemCount?: number;
+  totalQuoteAmount?: number;
 }
 
 export interface InvoiceQuote {
@@ -282,14 +297,25 @@ export interface CreditNoteCreateRequest {
   amount: number;
 }
 
-export interface CostCreateRequest {
-  clientId?: string | null;
-  jobCardId?: string | null;
-  category: string;
+export interface CostQuoteItemCreateRequest {
+  itemNumber: number;
+  quantity: number;
+  uom: string;
   description: string;
-  amount: number;
-  status: string;
-  incurredAt: string;
+  unitPrice: number;
+  supplierName: string;
+  supplierDescription: string;
+  supplierCost: number;
+  otherName: string;
+  otherDescription: string;
+  otherCost: number;
+}
+
+export interface CostCreateRequest {
+  description: string;
+  margin: number;
+  date: string;
+  items: CostQuoteItemCreateRequest[];
 }
 
 export interface InvoiceCreateRequest {
