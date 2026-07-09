@@ -85,6 +85,7 @@ export interface Quote {
   vat: number;
   total: number;
   poNumber?: string | null;
+  margin: number;
 }
 
 export interface QuoteCreateRequest {
@@ -95,6 +96,7 @@ export interface QuoteCreateRequest {
   validityDays: number;
   items: QuoteItemCreateRequest[];
   poNumber?: string | null;
+  margin?: number;
 }
 
 export interface QuoteUom {

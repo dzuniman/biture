@@ -9,7 +9,7 @@ public class Quote2CashDbContextFactory : IDesignTimeDbContextFactory<Quote2Cash
         var optionsBuilder = new DbContextOptionsBuilder<Quote2CashDbContext>();
 
         // Use your local dev connection string here
-        optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=Quote2Cash;Username=postgres;Password=password");
+        optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=Biture;Username=postgres;Password=password");
 
         return new Quote2CashDbContext(optionsBuilder.Options);
     }

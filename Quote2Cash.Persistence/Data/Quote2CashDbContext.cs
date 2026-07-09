@@ -61,6 +61,7 @@ namespace Quote2Cash.Persistence.Data
                 entity.Property(e => e.ValidityDays).IsRequired();
                 entity.Property(e => e.Description).HasMaxLength(2000);
                 entity.Property(e => e.PONumber).HasMaxLength(100);
+                entity.Property(e => e.Margin).HasPrecision(5, 2).HasDefaultValue(0m);
                 entity.HasOne(e => e.Client).WithMany(c => c.Quotes).HasForeignKey(e => e.ClientId);
             });
 
