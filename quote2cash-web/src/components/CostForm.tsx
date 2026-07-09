@@ -1,4 +1,5 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import * as XLSX from 'xlsx';
 import { formatAmount } from '../../formatters';
 import type { Cost, CostCreateRequest, CostQuoteItem } from '../types';
 
@@ -67,6 +68,7 @@ export default function CostForm({ initialData, onSubmit, onCancel }: Props) {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [items, setItems] = useState<ItemRow[]>([newRow(0)]);
   const [isSaving, setIsSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (initialData) {
@@ -122,6 +124,95 @@ export default function CostForm({ initialData, onSubmit, onCancel }: Props) {
       })
     );
   };
+
+  // ── Excel helpers ──────────────────────────────────────────
+  const EXPECTED_HEADERS = [
+    'quantity', 'uom', 'description', 'unitprice',
+    'suppliername', 'supplierdescription', 'suppliercost',
+    'othername', 'otherdescription', 'othercost',
+  ];
+
+  const handleDownloadTemplate = () => {
+    const headers = [
+      'Quantity', 'UOM', 'Description', 'UnitPrice',
+      'SupplierName', 'SupplierDescription', 'SupplierCost',
+      'OtherName', 'OtherDescription', 'OtherCost',
+    ];
+    const ws = XLSX.utils.aoa_to_sheet([headers]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Cost Items');
+    XLSX.writeFile(wb, 'cost_items_template.xlsx');
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+        const json: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+        if (json.length < 2) {
+          alert('The Excel file is empty or has no data rows.');
+          return;
+        }
+
+        const headers = json[0].map((h: any) => String(h ?? '').trim().toLowerCase().replace(/\s+/g, ''));
+        const missing = EXPECTED_HEADERS.filter(h => !headers.includes(h));
+        if (missing.length > 0) {
+          alert(`Missing columns: ${missing.join(', ')}\n\nDownload the template to get the correct format.`);
+          return;
+        }
+
+        const gi = (col: string) => headers.indexOf(col);
+        const str = (v: any) => (v != null && String(v).trim() !== '' ? String(v).trim() : '');
+        const num = (v: any) => (v != null && String(v).trim() !== '' ? String(parseFloat(String(v)) || 0) : '0');
+
+        const imported: ItemRow[] = [];
+        for (let i = 1; i < json.length; i++) {
+          const row = json[i] as any[];
+          // Skip completely empty rows
+          if (!row || row.every(cell => cell == null || String(cell).trim() === '')) continue;
+          imported.push({
+            _id: `upload-${Date.now()}-${i}`,
+            itemNumber: String(imported.length + 1),
+            quantity:            num(row[gi('quantity')]),
+            uom:                 str(row[gi('uom')]),
+            description:         str(row[gi('description')]),
+            unitPrice:           num(row[gi('unitprice')]),
+            supplierName:        str(row[gi('suppliername')]),
+            supplierDescription: str(row[gi('supplierdescription')]),
+            supplierCost:        num(row[gi('suppliercost')]),
+            otherName:           str(row[gi('othername')]),
+            otherDescription:    str(row[gi('otherdescription')]),
+            otherCost:           num(row[gi('othercost')]),
+          });
+        }
+
+        if (imported.length === 0) {
+          alert('No valid data rows found in the file.');
+          return;
+        }
+
+        // Append to existing items and re-number
+        setItems(prev => {
+          const base = prev.filter(r => r.description || n(r.unitPrice) > 0); // keep non-empty
+          const combined = [...base, ...imported].map((r, idx) => ({ ...r, itemNumber: String(idx + 1) }));
+          return combined;
+        });
+      } catch {
+        alert('Failed to read the Excel file. Make sure it is a valid .xlsx or .xls file.');
+      } finally {
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+  // ────────────────────────────────────────────────────────────
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -289,6 +380,38 @@ export default function CostForm({ initialData, onSubmit, onCancel }: Props) {
               required
             />
           </label>
+        </div>
+
+        {/* ── Items toolbar ── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', flex: 1 }}>
+            Items ({items.length})
+          </span>
+          <button
+            type="button"
+            className="cf-add-btn"
+            style={{ margin: 0 }}
+            onClick={handleDownloadTemplate}
+            title="Download a blank Excel template"
+          >
+            ⬇ Template
+          </button>
+          <button
+            type="button"
+            className="cf-add-btn"
+            style={{ margin: 0, borderColor: '#22c55e', color: '#22c55e' }}
+            onClick={() => fileInputRef.current?.click()}
+            title="Upload items from Excel"
+          >
+            📂 Upload Excel
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls"
+            style={{ display: 'none' }}
+            onChange={handleFileUpload}
+          />
         </div>
 
         {/* ── Item cards ── */}
