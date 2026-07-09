@@ -91,7 +91,40 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-app.UseCors("AllowFrontend");   // ✅ CORS here
+// ✅ Handle OPTIONS preflight requests explicitly
+app.Use(async (context, next) =>
+{
+    if (context.Request.Method == HttpMethods.Options)
+    {
+        context.Response.StatusCode = StatusCodes.Status200OK;
+        context.Response.Headers.Add("Access-Control-Allow-Origin", "https://biture.onrender.com");
+        context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        await context.Response.CompleteAsync();
+        return;
+    }
+    await next();
+});
+
+// ✅ Ensure CORS headers are applied globally
+app.UseCors("AllowFrontend");
+
+// ✅ Ensure errors also return CORS headers
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (Exception ex)
+    {
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        context.Response.Headers.Add("Access-Control-Allow-Origin", "https://biture.onrender.com");
+        context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        await context.Response.WriteAsync($"Server error: {ex.Message}");
+    }
+});
 
 app.UseAuthentication();
 app.UseAuthorization();
