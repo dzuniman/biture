@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { formatAmount } from '../../formatters';
-import type { Cost, CostCreateRequest, CostQuoteItem, CostQuoteItemCreateRequest } from '../types';
+import type { Cost, CostCreateRequest, CostQuoteItem } from '../types';
 
 interface Props {
   initialData?: Cost;
@@ -8,47 +8,62 @@ interface Props {
   onCancel?: () => void;
 }
 
-interface ItemRow extends CostQuoteItemCreateRequest {
-  _id: string; // local key
+// Store all numeric fields as strings so controlled inputs work correctly while typing decimals
+interface ItemRow {
+  _id: string;
+  itemNumber: string;
+  quantity: string;
+  uom: string;
+  description: string;
+  unitPrice: string;
+  supplierName: string;
+  supplierDescription: string;
+  supplierCost: string;
+  otherName: string;
+  otherDescription: string;
+  otherCost: string;
 }
+
+const n = (v: string | number) => parseFloat(String(v)) || 0;
 
 const newRow = (index: number): ItemRow => ({
   _id: `${Date.now()}-${index}`,
-  itemNumber: index + 1,
-  quantity: 1,
+  itemNumber: String(index + 1),
+  quantity: '1',
   uom: '',
   description: '',
-  unitPrice: 0,
+  unitPrice: '0',
   supplierName: '',
   supplierDescription: '',
-  supplierCost: 0,
+  supplierCost: '0',
   otherName: '',
   otherDescription: '',
-  otherCost: 0,
+  otherCost: '0',
 });
 
 function calcRow(item: ItemRow, margin: number) {
-  const qty = Number(item.quantity) || 0;
-  const unitPrice = Number(item.unitPrice) || 0;
-  const supplierCost = Number(item.supplierCost) || 0;
-  const otherCost = Number(item.otherCost) || 0;
+  const qty = n(item.quantity);
+  const unitPrice = n(item.unitPrice);
+  const supplierCost = n(item.supplierCost);
+  const otherCost = n(item.otherCost);
+  const m = n(margin);
 
   const totalPrice = unitPrice * qty;
-  const unitRev = unitPrice * (margin / 100) + unitPrice;
+  const unitRev = unitPrice * (m / 100) + unitPrice;
   const totalRev = unitRev * qty;
   const supplierCostExc = qty > 0 ? supplierCost / qty : 0;
   const totalSupplierCostExc = supplierCostExc * qty;
   const totalSupplierCostInc = totalSupplierCostExc * 1.15;
   const gp = totalRev - totalSupplierCostExc;
 
-  return { totalPrice, unitRev, totalRev, supplierCostExc, totalSupplierCostExc, totalSupplierCostInc, gp };
+  return { totalPrice, unitRev, totalRev, supplierCostExc, totalSupplierCostExc, totalSupplierCostInc, gp, otherCost };
 }
 
 const VAT_RATE = 0.15;
 
 export default function CostForm({ initialData, onSubmit, onCancel }: Props) {
   const [description, setDescription] = useState('');
-  const [margin, setMargin] = useState(0);
+  const [marginStr, setMarginStr] = useState('0');
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [items, setItems] = useState<ItemRow[]>([newRow(0)]);
   const [isSaving, setIsSaving] = useState(false);
@@ -56,23 +71,23 @@ export default function CostForm({ initialData, onSubmit, onCancel }: Props) {
   useEffect(() => {
     if (initialData) {
       setDescription(initialData.description || '');
-      setMargin(Number(initialData.margin) || 0);
+      setMarginStr(String(initialData.margin ?? 0));
       setDate(initialData.date ? initialData.date.slice(0, 10) : new Date().toISOString().slice(0, 10));
       if (initialData.items && initialData.items.length > 0) {
         setItems(
           initialData.items.map((item: CostQuoteItem, i: number) => ({
             _id: `existing-${item.id ?? i}`,
-            itemNumber: item.itemNumber,
-            quantity: item.quantity,
+            itemNumber: String(item.itemNumber),
+            quantity: String(item.quantity),
             uom: item.uom,
             description: item.description,
-            unitPrice: item.unitPrice,
+            unitPrice: String(item.unitPrice),
             supplierName: item.supplierName,
             supplierDescription: item.supplierDescription,
-            supplierCost: item.supplierCost,
+            supplierCost: String(item.supplierCost),
             otherName: item.otherName,
             otherDescription: item.otherDescription,
-            otherCost: item.otherCost,
+            otherCost: String(item.otherCost),
           }))
         );
       } else {
@@ -80,11 +95,13 @@ export default function CostForm({ initialData, onSubmit, onCancel }: Props) {
       }
     } else {
       setDescription('');
-      setMargin(0);
+      setMarginStr('0');
       setDate(new Date().toISOString().slice(0, 10));
       setItems([newRow(0)]);
     }
   }, [initialData]);
+
+  const margin = n(marginStr);
 
   const handleAddRow = () => {
     setItems((prev) => [...prev, newRow(prev.length)]);
@@ -97,11 +114,11 @@ export default function CostForm({ initialData, onSubmit, onCancel }: Props) {
     });
   };
 
-  const handleUpdateItem = (id: string, field: keyof CostQuoteItemCreateRequest, value: string | number) => {
+  const handleUpdateItem = (id: string, field: keyof Omit<ItemRow, '_id'>, value: string) => {
     setItems((prev) =>
       prev.map((row) => {
         if (row._id !== id) return row;
-        return { ...row, [field]: typeof value === 'string' && field !== 'uom' && field !== 'description' && field !== 'supplierName' && field !== 'supplierDescription' && field !== 'otherName' && field !== 'otherDescription' ? Number(value) : value };
+        return { ...row, [field]: value };
       })
     );
   };
@@ -112,16 +129,28 @@ export default function CostForm({ initialData, onSubmit, onCancel }: Props) {
     try {
       await onSubmit({
         description: description.trim(),
-        margin: Number(margin),
+        margin: n(marginStr),
         date: new Date(date).toISOString(),
-        items: items.map(({ _id: _, ...rest }) => rest),
+        items: items.map(({ _id: _ignored, ...row }) => ({
+          itemNumber: n(row.itemNumber),
+          quantity: n(row.quantity),
+          uom: row.uom,
+          description: row.description,
+          unitPrice: n(row.unitPrice),
+          supplierName: row.supplierName,
+          supplierDescription: row.supplierDescription,
+          supplierCost: n(row.supplierCost),
+          otherName: row.otherName,
+          otherDescription: row.otherDescription,
+          otherCost: n(row.otherCost),
+        })),
       });
     } finally {
       setIsSaving(false);
     }
   };
 
-  // Aggregate summary
+  // Live aggregate totals — recomputed on every render from current state
   const totals = items.reduce(
     (acc, item) => {
       const c = calcRow(item, margin);
@@ -129,7 +158,7 @@ export default function CostForm({ initialData, onSubmit, onCancel }: Props) {
       acc.totalRev += c.totalRev;
       acc.totalSupplierCostExc += c.totalSupplierCostExc;
       acc.totalSupplierCostInc += c.totalSupplierCostInc;
-      acc.totalOther += (Number(item.otherCost) || 0);
+      acc.totalOther += c.otherCost;
       acc.gp += c.gp;
       return acc;
     },
@@ -147,59 +176,89 @@ export default function CostForm({ initialData, onSubmit, onCancel }: Props) {
   return (
     <div className="page-section">
       <style>{`
-        .cost-form-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
-        .cost-form-header h2 { margin: 0; font-size: 1.6rem; color: #e6e6e6; }
-        .cost-form-header p { margin: 4px 0 0; color: #9ca3af; }
-        .cost-meta-grid { display: grid; grid-template-columns: 1fr 180px 180px; gap: 16px; margin-bottom: 24px; }
-        .cost-meta-grid label { display: flex; flex-direction: column; gap: 6px; font-size: 0.85rem; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; }
-        .cost-meta-grid input { padding: 10px 12px; border-radius: 8px; border: 1px solid #374151; background: #1f2937; color: #f3f4f6; font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
-        .cost-meta-grid input:focus { border-color: #3b82f6; }
-        .cost-items-wrapper { background: #111827; border-radius: 12px; border: 1px solid #1f2937; overflow: hidden; margin-bottom: 24px; }
-        .cost-items-scroll { overflow-x: auto; }
-        .cost-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; min-width: 2200px; }
-        .cost-table th { background: #1e2a3a; color: #6b7280; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 10px 8px; text-align: center; border-bottom: 1px solid #2d3748; white-space: nowrap; font-size: 0.72rem; }
-        .cost-table th.input-col { background: #172030; }
-        .cost-table th.calc-col { background: #1a2535; color: #60a5fa; }
-        .cost-table td { padding: 6px 4px; border-bottom: 1px solid #1f2937; vertical-align: middle; text-align: center; }
-        .cost-table td input { width: 100%; min-width: 70px; padding: 6px 8px; background: #1f2937; border: 1px solid #374151; border-radius: 6px; color: #f3f4f6; font-size: 0.8rem; text-align: right; outline: none; transition: border-color 0.2s; box-sizing: border-box; }
-        .cost-table td input[type="text"] { text-align: left; }
-        .cost-table td input:focus { border-color: #3b82f6; background: #243447; }
-        .cost-table .calc-val { color: #93c5fd; font-weight: 600; font-size: 0.78rem; }
-        .cost-table .gp-pos { color: #4ade80; }
-        .cost-table .gp-neg { color: #f87171; }
-        .cost-table .btn-remove { background: transparent; border: 1px solid #ef4444; color: #ef4444; border-radius: 6px; padding: 4px 8px; cursor: pointer; font-size: 0.75rem; transition: all 0.2s; }
-        .cost-table .btn-remove:hover { background: #ef4444; color: white; }
-        .add-row-btn { margin: 12px; display: inline-flex; align-items: center; gap: 6px; background: #1f2937; border: 1px dashed #374151; color: #6b7280; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s; }
-        .add-row-btn:hover { border-color: #3b82f6; color: #3b82f6; background: #1a2535; }
-        .cost-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px; }
-        .summary-card { background: #111827; border: 1px solid #1f2937; border-radius: 12px; overflow: hidden; }
-        .summary-card-title { background: #1e2a3a; padding: 10px 16px; font-size: 0.8rem; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid #2d3748; }
-        .summary-table { width: 100%; border-collapse: collapse; }
-        .summary-table td { padding: 8px 16px; font-size: 0.85rem; color: #e5e7eb; border-bottom: 1px solid #1f2937; }
-        .summary-table td:last-child { text-align: right; font-weight: 600; }
-        .summary-table tr.total-row td { color: #f9fafb; font-weight: 700; font-size: 0.9rem; background: #1a2535; }
-        .summary-table tr.grand-row td { color: #60a5fa; font-weight: 800; font-size: 0.95rem; background: #1c2a3e; }
-        .summary-table tr.gp-summary-row td { color: #4ade80; font-weight: 800; font-size: 0.95rem; }
-        .cost-form-actions { display: flex; gap: 12px; justify-content: flex-end; padding-top: 16px; }
-        .cost-form-actions button { padding: 12px 28px; border-radius: 10px; font-size: 0.95rem; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s; }
-        .btn-save { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; }
-        .btn-save:hover:not(:disabled) { background: linear-gradient(135deg, #1d4ed8, #1e40af); transform: translateY(-1px); }
-        .btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
-        .btn-cancel { background: #1f2937; color: #9ca3af; border: 1px solid #374151 !important; }
-        .btn-cancel:hover { background: #374151; color: #f3f4f6; }
-        .section-divider { font-size: 0.72rem; font-weight: 700; color: #4b5563; text-transform: uppercase; letter-spacing: 0.08em; padding: 6px 8px; background: #0f172a; border-bottom: 1px solid #1f2937; text-align: left; }
+        /* ── Header ── */
+        .cf-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
+        .cf-header h2 { margin: 0; font-size: 1.6rem; color: #e6e6e6; }
+        .cf-header p  { margin: 4px 0 0; color: #9ca3af; }
+
+        /* ── Meta row ── */
+        .cf-meta { display: grid; grid-template-columns: 1fr 160px 160px; gap: 16px; margin-bottom: 28px; }
+        .cf-meta label { display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+        .cf-meta input { padding: 10px 14px; border-radius: 8px; border: 1px solid #374151; background: #1f2937; color: #f3f4f6; font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
+        .cf-meta input:focus { border-color: #3b82f6; }
+
+        /* ── Items area ── */
+        .cf-items-list { display: flex; flex-direction: column; gap: 16px; margin-bottom: 28px; }
+
+        /* ── Item card ── */
+        .cf-item-card { background: #111827; border: 1px solid #1e2a3a; border-radius: 14px; overflow: hidden; }
+        .cf-item-card-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; background: #162032; border-bottom: 1px solid #1e2a3a; }
+        .cf-item-label { font-size: 0.8rem; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.06em; }
+        .cf-item-num { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #1d4ed8; color: white; font-size: 0.8rem; font-weight: 800; margin-right: 8px; }
+        .cf-btn-remove { background: transparent; border: 1px solid #ef4444; color: #ef4444; border-radius: 6px; padding: 4px 10px; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: all 0.2s; }
+        .cf-btn-remove:hover { background: #ef4444; color: white; }
+
+        /* ── 3-column section layout ── */
+        .cf-item-sections { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; border-bottom: 1px solid #1e2a3a; }
+        .cf-section { padding: 14px 16px; border-right: 1px solid #1e2a3a; }
+        .cf-section:last-child { border-right: none; }
+        .cf-section-title { font-size: 0.72rem; font-weight: 800; color: #4b5563; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #1f2937; }
+        .cf-section-title.supplier { color: #7c3aed; }
+        .cf-section-title.other { color: #0891b2; }
+        .cf-section-title.item { color: #1d4ed8; }
+
+        /* ── Field inside a section ── */
+        .cf-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+        .cf-field:last-child { margin-bottom: 0; }
+        .cf-field label { font-size: 0.73rem; font-weight: 600; color: #6b7280; }
+        .cf-field input { padding: 7px 10px; border-radius: 6px; border: 1px solid #2d3748; background: #1a2535; color: #f3f4f6; font-size: 0.85rem; outline: none; width: 100%; box-sizing: border-box; transition: border-color 0.2s, background 0.2s; }
+        .cf-field input:focus { border-color: #3b82f6; background: #1e2d42; }
+        .cf-field input[type="number"] { text-align: right; }
+
+        /* ── Calculated row at bottom of card ── */
+        .cf-calc-strip { display: flex; flex-wrap: wrap; gap: 0; background: #0f172a; border-top: 1px solid #1e2a3a; }
+        .cf-calc-cell { flex: 1; min-width: 120px; padding: 8px 14px; border-right: 1px solid #1e2a3a; }
+        .cf-calc-cell:last-child { border-right: none; }
+        .cf-calc-cell .c-label { font-size: 0.68rem; font-weight: 700; color: #4b5563; text-transform: uppercase; letter-spacing: 0.06em; }
+        .cf-calc-cell .c-value { font-size: 0.85rem; font-weight: 700; color: #93c5fd; margin-top: 2px; }
+        .cf-calc-cell .c-value.gp-pos { color: #4ade80; }
+        .cf-calc-cell .c-value.gp-neg { color: #f87171; }
+
+        /* ── Add row button ── */
+        .cf-add-btn { display: inline-flex; align-items: center; gap: 8px; background: #1f2937; border: 1px dashed #374151; color: #6b7280; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: all 0.2s; margin-bottom: 8px; }
+        .cf-add-btn:hover { border-color: #3b82f6; color: #3b82f6; background: #1a2535; }
+
+        /* ── Summary grid ── */
+        .cf-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .cf-summary-card { background: #111827; border: 1px solid #1e2a3a; border-radius: 12px; overflow: hidden; }
+        .cf-summary-title { background: #162032; padding: 10px 16px; font-size: 0.75rem; font-weight: 800; color: #6b7280; text-transform: uppercase; letter-spacing: 0.07em; border-bottom: 1px solid #1e2a3a; }
+        .cf-summary-table { width: 100%; border-collapse: collapse; }
+        .cf-summary-table td { padding: 9px 16px; font-size: 0.85rem; color: #d1d5db; border-bottom: 1px solid #1a2535; }
+        .cf-summary-table td:last-child { text-align: right; font-weight: 700; }
+        .cf-summary-table tr.cf-grand td { background: #1c2a3e; color: #60a5fa; font-weight: 800; font-size: 0.9rem; }
+        .cf-summary-table tr.cf-gp td { background: #0f2014; font-weight: 800; font-size: 0.9rem; }
+
+        /* ── Actions ── */
+        .cf-actions { display: flex; gap: 12px; justify-content: flex-end; padding-top: 8px; }
+        .cf-actions button { padding: 12px 28px; border-radius: 10px; font-size: 0.95rem; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s; }
+        .cf-btn-save { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; }
+        .cf-btn-save:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,99,235,0.4); }
+        .cf-btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
+        .cf-btn-cancel { background: #1f2937; color: #9ca3af; border: 1px solid #374151 !important; }
+        .cf-btn-cancel:hover { background: #374151; color: #f3f4f6; }
       `}</style>
 
       <form onSubmit={handleSubmit}>
-        <div className="cost-form-header">
+        {/* ── Page header ── */}
+        <div className="cf-header">
           <div>
             <h2>{initialData ? 'Edit Cost Sheet' : 'New Cost Sheet'}</h2>
-            <p>{initialData ? 'Update your cost analysis' : 'Create a new pricing analysis'}</p>
+            <p>{initialData ? 'Update your cost analysis' : 'Create a new pricing and cost analysis'}</p>
           </div>
         </div>
 
-        {/* Header fields */}
-        <div className="cost-meta-grid">
+        {/* ── Cost meta ── */}
+        <div className="cf-meta">
           <label>
             Description
             <input
@@ -217,8 +276,8 @@ export default function CostForm({ initialData, onSubmit, onCancel }: Props) {
               step="0.01"
               min="0"
               max="100"
-              value={margin}
-              onChange={(e) => setMargin(Number(e.target.value))}
+              value={marginStr}
+              onChange={(e) => setMarginStr(e.target.value)}
             />
           </label>
           <label>
@@ -232,261 +291,232 @@ export default function CostForm({ initialData, onSubmit, onCancel }: Props) {
           </label>
         </div>
 
-        {/* Items table */}
-        <div className="cost-items-wrapper">
-          <div className="cost-items-scroll">
-            <table className="cost-table">
-              <thead>
-                <tr>
-                  <th colSpan={11} className="input-col section-divider" style={{ textAlign: 'left' }}>📝 Input Fields</th>
-                  <th colSpan={7} className="calc-col section-divider" style={{ textAlign: 'left', color: '#60a5fa' }}>📊 Calculated Fields</th>
-                  <th rowSpan={1} style={{ background: '#111827', borderBottom: '1px solid #2d3748' }}></th>
-                </tr>
-                <tr>
-                  {/* Input columns */}
-                  <th className="input-col">#</th>
-                  <th className="input-col">Qty</th>
-                  <th className="input-col">UOM</th>
-                  <th className="input-col">Description</th>
-                  <th className="input-col">Unit Price</th>
-                  <th className="input-col">Supplier</th>
-                  <th className="input-col">Supplier Desc.</th>
-                  <th className="input-col">Supplier Cost</th>
-                  <th className="input-col">Other</th>
-                  <th className="input-col">Other Desc.</th>
-                  <th className="input-col">Other Cost</th>
-                  {/* Calculated columns */}
-                  <th className="calc-col">Total Price</th>
-                  <th className="calc-col">Unit Rev</th>
-                  <th className="calc-col">Total Rev</th>
-                  <th className="calc-col">Supplier Cost Exc</th>
-                  <th className="calc-col">Total Sup. Exc</th>
-                  <th className="calc-col">Total Sup. Inc</th>
-                  <th className="calc-col">GP</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item) => {
-                  const c = calcRow(item, margin);
-                  return (
-                    <tr key={item._id}>
-                      <td>
-                        <input
-                          type="number"
-                          value={item.itemNumber}
-                          onChange={(e) => handleUpdateItem(item._id, 'itemNumber', e.target.value)}
-                          style={{ minWidth: 40, width: 50 }}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={item.quantity}
-                          onChange={(e) => handleUpdateItem(item._id, 'quantity', e.target.value)}
-                          style={{ minWidth: 60, width: 70 }}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="text"
-                          value={item.uom}
-                          onChange={(e) => handleUpdateItem(item._id, 'uom', e.target.value)}
-                          placeholder="e.g. EA"
-                          style={{ minWidth: 50, width: 60 }}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="text"
-                          value={item.description}
-                          onChange={(e) => handleUpdateItem(item._id, 'description', e.target.value)}
-                          placeholder="Item description"
-                          style={{ minWidth: 160, width: 200 }}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={item.unitPrice}
-                          onChange={(e) => handleUpdateItem(item._id, 'unitPrice', e.target.value)}
-                          style={{ minWidth: 80, width: 100 }}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="text"
-                          value={item.supplierName}
-                          onChange={(e) => handleUpdateItem(item._id, 'supplierName', e.target.value)}
-                          placeholder="Supplier"
-                          style={{ minWidth: 100, width: 120 }}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="text"
-                          value={item.supplierDescription}
-                          onChange={(e) => handleUpdateItem(item._id, 'supplierDescription', e.target.value)}
-                          placeholder="Description"
-                          style={{ minWidth: 120, width: 150 }}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={item.supplierCost}
-                          onChange={(e) => handleUpdateItem(item._id, 'supplierCost', e.target.value)}
-                          style={{ minWidth: 80, width: 100 }}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="text"
-                          value={item.otherName}
-                          onChange={(e) => handleUpdateItem(item._id, 'otherName', e.target.value)}
-                          placeholder="Other"
-                          style={{ minWidth: 80, width: 100 }}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="text"
-                          value={item.otherDescription}
-                          onChange={(e) => handleUpdateItem(item._id, 'otherDescription', e.target.value)}
-                          placeholder="Description"
-                          style={{ minWidth: 120, width: 150 }}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={item.otherCost}
-                          onChange={(e) => handleUpdateItem(item._id, 'otherCost', e.target.value)}
-                          style={{ minWidth: 80, width: 100 }}
-                        />
-                      </td>
-                      {/* Calculated fields */}
-                      <td className="calc-val">{formatAmount(c.totalPrice)}</td>
-                      <td className="calc-val">{formatAmount(c.unitRev)}</td>
-                      <td className="calc-val">{formatAmount(c.totalRev)}</td>
-                      <td className="calc-val">{formatAmount(c.supplierCostExc)}</td>
-                      <td className="calc-val">{formatAmount(c.totalSupplierCostExc)}</td>
-                      <td className="calc-val">{formatAmount(c.totalSupplierCostInc)}</td>
-                      <td className={`calc-val ${c.gp >= 0 ? 'gp-pos' : 'gp-neg'}`}>
-                        {formatAmount(c.gp)}
-                      </td>
-                      <td>
-                        <button
-                          type="button"
-                          className="btn-remove"
-                          onClick={() => handleRemoveRow(item._id)}
-                          title="Remove row"
-                        >
-                          ✕
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          <button type="button" className="add-row-btn" onClick={handleAddRow}>
-            + Add Row
-          </button>
+        {/* ── Item cards ── */}
+        <div className="cf-items-list">
+          {items.map((item, idx) => {
+            const c = calcRow(item, margin);
+            return (
+              <div className="cf-item-card" key={item._id}>
+                {/* Card header */}
+                <div className="cf-item-card-header">
+                  <span className="cf-item-label">
+                    <span className="cf-item-num">{idx + 1}</span>
+                    Item
+                  </span>
+                  <button
+                    type="button"
+                    className="cf-btn-remove"
+                    onClick={() => handleRemoveRow(item._id)}
+                  >
+                    ✕ Remove
+                  </button>
+                </div>
+
+                {/* 3-column sections */}
+                <div className="cf-item-sections">
+                  {/* Section 1: Item Info */}
+                  <div className="cf-section">
+                    <div className="cf-section-title item">📋 Item Info</div>
+                    <div className="cf-field">
+                      <label>Item #</label>
+                      <input
+                        type="number"
+                        value={item.itemNumber}
+                        onChange={(e) => handleUpdateItem(item._id, 'itemNumber', e.target.value)}
+                      />
+                    </div>
+                    <div className="cf-field">
+                      <label>Quantity</label>
+                      <input
+                        type="number"
+                        step="any"
+                        value={item.quantity}
+                        onChange={(e) => handleUpdateItem(item._id, 'quantity', e.target.value)}
+                      />
+                    </div>
+                    <div className="cf-field">
+                      <label>UOM</label>
+                      <input
+                        type="text"
+                        value={item.uom}
+                        onChange={(e) => handleUpdateItem(item._id, 'uom', e.target.value)}
+                        placeholder="e.g. EA"
+                      />
+                    </div>
+                    <div className="cf-field">
+                      <label>Description</label>
+                      <input
+                        type="text"
+                        value={item.description}
+                        onChange={(e) => handleUpdateItem(item._id, 'description', e.target.value)}
+                        placeholder="Item description"
+                      />
+                    </div>
+                    <div className="cf-field">
+                      <label>Unit Price</label>
+                      <input
+                        type="number"
+                        step="any"
+                        value={item.unitPrice}
+                        onChange={(e) => handleUpdateItem(item._id, 'unitPrice', e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Section 2: Supplier */}
+                  <div className="cf-section">
+                    <div className="cf-section-title supplier">🏭 Supplier</div>
+                    <div className="cf-field">
+                      <label>Supplier Name</label>
+                      <input
+                        type="text"
+                        value={item.supplierName}
+                        onChange={(e) => handleUpdateItem(item._id, 'supplierName', e.target.value)}
+                        placeholder="Supplier name"
+                      />
+                    </div>
+                    <div className="cf-field">
+                      <label>Supplier Description</label>
+                      <input
+                        type="text"
+                        value={item.supplierDescription}
+                        onChange={(e) => handleUpdateItem(item._id, 'supplierDescription', e.target.value)}
+                        placeholder="Description"
+                      />
+                    </div>
+                    <div className="cf-field">
+                      <label>Supplier Cost (Total)</label>
+                      <input
+                        type="number"
+                        step="any"
+                        value={item.supplierCost}
+                        onChange={(e) => handleUpdateItem(item._id, 'supplierCost', e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Section 3: Other */}
+                  <div className="cf-section">
+                    <div className="cf-section-title other">📦 Other</div>
+                    <div className="cf-field">
+                      <label>Other Name</label>
+                      <input
+                        type="text"
+                        value={item.otherName}
+                        onChange={(e) => handleUpdateItem(item._id, 'otherName', e.target.value)}
+                        placeholder="Other name"
+                      />
+                    </div>
+                    <div className="cf-field">
+                      <label>Other Description</label>
+                      <input
+                        type="text"
+                        value={item.otherDescription}
+                        onChange={(e) => handleUpdateItem(item._id, 'otherDescription', e.target.value)}
+                        placeholder="Description"
+                      />
+                    </div>
+                    <div className="cf-field">
+                      <label>Other Cost</label>
+                      <input
+                        type="number"
+                        step="any"
+                        value={item.otherCost}
+                        onChange={(e) => handleUpdateItem(item._id, 'otherCost', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Calculated values strip */}
+                <div className="cf-calc-strip">
+                  <div className="cf-calc-cell">
+                    <div className="c-label">Total Price</div>
+                    <div className="c-value">{formatAmount(c.totalPrice)}</div>
+                  </div>
+                  <div className="cf-calc-cell">
+                    <div className="c-label">Unit Rev</div>
+                    <div className="c-value">{formatAmount(c.unitRev)}</div>
+                  </div>
+                  <div className="cf-calc-cell">
+                    <div className="c-label">Total Rev</div>
+                    <div className="c-value">{formatAmount(c.totalRev)}</div>
+                  </div>
+                  <div className="cf-calc-cell">
+                    <div className="c-label">Sup. Cost Exc</div>
+                    <div className="c-value">{formatAmount(c.supplierCostExc)}</div>
+                  </div>
+                  <div className="cf-calc-cell">
+                    <div className="c-label">Total Sup. Exc</div>
+                    <div className="c-value">{formatAmount(c.totalSupplierCostExc)}</div>
+                  </div>
+                  <div className="cf-calc-cell">
+                    <div className="c-label">Total Sup. Inc</div>
+                    <div className="c-value">{formatAmount(c.totalSupplierCostInc)}</div>
+                  </div>
+                  <div className="cf-calc-cell">
+                    <div className="c-label">GP</div>
+                    <div className={`c-value ${c.gp >= 0 ? 'gp-pos' : 'gp-neg'}`}>
+                      {formatAmount(c.gp)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
-        {/* Summary tables */}
-        <div className="cost-summary-grid">
+        <button type="button" className="cf-add-btn" onClick={handleAddRow}>
+          + Add Item
+        </button>
+
+        {/* ── Summary tables ── */}
+        <div className="cf-summary-grid">
           {/* Quote Summary */}
-          <div className="summary-card">
-            <div className="summary-card-title">📄 Quote Summary (excl. VAT)</div>
-            <table className="summary-table">
+          <div className="cf-summary-card">
+            <div className="cf-summary-title">📄 Quote Summary</div>
+            <table className="cf-summary-table">
               <tbody>
-                <tr>
-                  <td>Sub Total</td>
-                  <td>{formatAmount(totals.quoteSubTotal)}</td>
-                </tr>
-                <tr>
-                  <td>VAT (15%)</td>
-                  <td>{formatAmount(quoteVat)}</td>
-                </tr>
-                <tr className="grand-row">
-                  <td>Grand Total</td>
-                  <td>{formatAmount(quoteGrandTotal)}</td>
-                </tr>
+                <tr><td>Sub Total</td><td>{formatAmount(totals.quoteSubTotal)}</td></tr>
+                <tr><td>VAT (15%)</td><td>{formatAmount(quoteVat)}</td></tr>
+                <tr className="cf-grand"><td>Grand Total</td><td>{formatAmount(quoteGrandTotal)}</td></tr>
               </tbody>
             </table>
           </div>
 
           {/* Supplier Summary */}
-          <div className="summary-card">
-            <div className="summary-card-title">🏭 Supplier Cost Summary</div>
-            <table className="summary-table">
+          <div className="cf-summary-card">
+            <div className="cf-summary-title">🏭 Supplier Summary</div>
+            <table className="cf-summary-table">
               <tbody>
-                <tr>
-                  <td>Sub Total (Exc. VAT)</td>
-                  <td>{formatAmount(totals.totalSupplierCostExc)}</td>
-                </tr>
-                <tr>
-                  <td>VAT (15%)</td>
-                  <td>{formatAmount(supplierVat)}</td>
-                </tr>
-                <tr className="grand-row">
-                  <td>Grand Total (Inc. VAT)</td>
-                  <td>{formatAmount(totals.totalSupplierCostInc)}</td>
-                </tr>
+                <tr><td>Sub Total (Exc. VAT)</td><td>{formatAmount(totals.totalSupplierCostExc)}</td></tr>
+                <tr><td>VAT (15%)</td><td>{formatAmount(supplierVat)}</td></tr>
+                <tr className="cf-grand"><td>Grand Total (Inc. VAT)</td><td>{formatAmount(totals.totalSupplierCostInc)}</td></tr>
               </tbody>
             </table>
           </div>
 
-          {/* Other Cost Summary */}
-          <div className="summary-card">
-            <div className="summary-card-title">📦 Other Cost Summary</div>
-            <table className="summary-table">
+          {/* Other Summary */}
+          <div className="cf-summary-card">
+            <div className="cf-summary-title">📦 Other Summary</div>
+            <table className="cf-summary-table">
               <tbody>
-                <tr>
-                  <td>Sub Total</td>
-                  <td>{formatAmount(totals.totalOther)}</td>
-                </tr>
-                <tr>
-                  <td>VAT (15%)</td>
-                  <td>{formatAmount(otherVat)}</td>
-                </tr>
-                <tr className="grand-row">
-                  <td>Grand Total</td>
-                  <td>{formatAmount(otherGrandTotal)}</td>
-                </tr>
+                <tr><td>Sub Total</td><td>{formatAmount(totals.totalOther)}</td></tr>
+                <tr><td>VAT (15%)</td><td>{formatAmount(otherVat)}</td></tr>
+                <tr className="cf-grand"><td>Grand Total</td><td>{formatAmount(otherGrandTotal)}</td></tr>
               </tbody>
             </table>
           </div>
 
-          {/* Revenue Summary */}
-          <div className="summary-card">
-            <div className="summary-card-title">💹 Revenue Summary ({margin}% Margin)</div>
-            <table className="summary-table">
+          {/* Revenue & GP Summary */}
+          <div className="cf-summary-card">
+            <div className="cf-summary-title">💹 Revenue Summary ({marginStr}% Margin)</div>
+            <table className="cf-summary-table">
               <tbody>
-                <tr>
-                  <td>Sub Total Revenue</td>
-                  <td>{formatAmount(totals.totalRev)}</td>
-                </tr>
-                <tr>
-                  <td>VAT (15%)</td>
-                  <td>{formatAmount(revVat)}</td>
-                </tr>
-                <tr className="grand-row">
-                  <td>Grand Total Revenue</td>
-                  <td>{formatAmount(revGrandTotal)}</td>
-                </tr>
-                <tr className={totals.gp >= 0 ? 'gp-summary-row' : 'total-row'}>
+                <tr><td>Sub Total Revenue</td><td>{formatAmount(totals.totalRev)}</td></tr>
+                <tr><td>VAT (15%)</td><td>{formatAmount(revVat)}</td></tr>
+                <tr className="cf-grand"><td>Grand Total Revenue</td><td>{formatAmount(revGrandTotal)}</td></tr>
+                <tr className="cf-gp">
                   <td>Gross Profit (GP)</td>
                   <td style={{ color: totals.gp >= 0 ? '#4ade80' : '#f87171' }}>
                     {formatAmount(totals.gp)}
@@ -497,14 +527,14 @@ export default function CostForm({ initialData, onSubmit, onCancel }: Props) {
           </div>
         </div>
 
-        {/* Form actions */}
-        <div className="cost-form-actions">
+        {/* ── Actions ── */}
+        <div className="cf-actions">
           {onCancel && (
-            <button type="button" className="btn-cancel" onClick={onCancel}>
+            <button type="button" className="cf-btn-cancel" onClick={onCancel}>
               Cancel
             </button>
           )}
-          <button type="submit" className="btn-save" disabled={isSaving}>
+          <button type="submit" className="cf-btn-save" disabled={isSaving}>
             {isSaving ? 'Saving…' : initialData ? 'Update Cost Sheet' : 'Save Cost Sheet'}
           </button>
         </div>
