@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from "react";
 import type { Quote, Client } from '../types'; // Ensure Client type is imported
 import { formatAmount } from '../../formatters';
 import logo from '../assets/logo.png';
@@ -8,310 +9,68 @@ interface Props {
   onEdit: () => void;
   onDuplicate: () => void;
   onBack: () => void;
-} 
+}
 
 export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Props) {
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const updatePdf = async () => {
+      const url = await generateQuotePDF(quote);
+      setPdfUrl(url);
+    };
+    updatePdf();
+  }, [quote]);
+
+  const handleDownloadQuotePdf = async () => {
+    try {
+      await generateQuotePDF(quote, true); // save mode
+    } catch (err) {
+      console.error("Quote PDF save failed:", err);
+      alert("Could not save Quote PDF. Please check the console for errors.");
+    }
+  };
+
   const formattedDate = new Date(quote.date).toLocaleDateString('en-ZA', {
     year: 'numeric',
     month: 'long',
     day: 'numeric'
   });
 
-  const validUntil = new Date(quote.date);
-  validUntil.setDate(validUntil.getDate() + quote.validityDays);
-  const formattedValidUntil = validUntil.toLocaleDateString('en-ZA', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
-
-  const handleDownloadQuotePdf = async () => {
-    try {
-      // Correctly call the generateQuotePDF function with the 'quote' prop
-      await generateQuotePDF(quote);
-    } catch (err) {
-      console.error("Quote PDF Generation failed:", err);
-      alert("Could not generate Quote PDF. Please check the console for errors.");
-    }
-  };
 
   return (
     <div className="page-section">
-      <style dangerouslySetInnerHTML={{ __html: `
-        .print-only { display: none !important; }
-        @media print {
-          .no-print, .section-header { display: none !important; }
-          .print-only { display: block !important; }
-          body { background: white !important; margin: 0 !important; padding: 0 !important; }
-          .page-section, .view-container, .view-card, .view-section, .items-table, .items-table-header, .items-table-row, .summary-row, .summary-total {
-            border: none !important;
-            box-shadow: none !important;
-            background: none !important;
-          }
-          .page-section { padding: 0 !important; margin: 0 !important; }
-          .view-container { padding: 0 !important; margin: 0 !important; width: 100% !important; }
-          .view-card { 
-            padding: 20px !important; /* Maintain internal padding for content */
-            width: 100% !important;
-            margin: 0 !important;
-            font-size: 9pt !important;
-            display: flex !important;
-            flex-direction: column !important;
-            min-height: 26.7cm !important;
-            box-sizing: border-box !important;
-          }
-          .company-lines { font-size: 7.5pt !important; line-height: 1.1 !important; }
-          .company-logo { max-height: 60px !important; }
-          .quote-view-header { border-bottom: 0.5pt solid #ccc !important; padding-bottom: 12px !important; margin-bottom: 15px !important; }
-          .quote-view-right { font-size: 6.5pt !important; line-height: 1.1 !important; }
-          .quote-view-right h3 { font-size: 7.5pt !important; margin-bottom: 1px !important; }
-          .view-row .view-label, .view-row .view-value { font-size: 6.5pt !important; }
-          .view-section h3 { font-size: 8pt !important; margin-bottom: 4px !important; }
-          .view-row, .company-lines, .view-section div, .summary-row, .items-table-row div { 
-            line-height: 1.2 !important; 
-            margin-bottom: 0 !important; 
-            padding-top: 1px !important;
-            padding-bottom: 1px !important;
-          }
-          .items-table div { font-size: 7.5pt !important; }
-          .summary-row span, .summary-row strong { font-size: 8.5pt !important; }
-          .summary-total { 
-            font-size: 10pt !important; 
-            margin-top: 8px !important; 
-            border-top: 1.5pt solid #333 !important; 
-            padding-top: 4px !important; 
-          }
-          .quote-view-main > .view-section:nth-of-type(2) {
-            border-bottom: 0.5pt solid #ccc !important;
-            padding-bottom: 10px !important;
-            margin-bottom: 10px !important;
-          }
-          .items-table-header, .items-table-row {
-            display: grid !important;
-            grid-template-columns: 25px 40px 55px 45px 1fr 100px 100px !important;
-            gap: 8px !important;
-            align-items: start !important;
-            border-bottom: 0.5pt solid #ccc !important;
-            padding-bottom: 4px !important;
-            margin-bottom: 4px !important;
-          }
-          .items-table-header { 
-            background-color: #f3f4f6 !important; 
-            border-bottom: 1.5pt solid #333 !important;
-            -webkit-print-color-adjust: exact; 
-            print-color-adjust: exact; 
-          }
-          .items-table-header div { font-weight: bold !important; }
-          .summary-section {
-            margin-left: auto !important; /* Push to the right */
-            width: fit-content !important; /* Shrink to content width */
-          }
-          .quote-details-block .view-row {
-            line-height: 1.2 !important;
-            margin-bottom: 2px !important;
-          }
-          .items-table {
-            border-left: none !important; /* Managed by cell borders */
-            border-right: none !important; /* Managed by cell borders */
-            border-radius: 0 !important;
-            overflow: visible !important; /* Ensure content is not clipped */
-          }
-          .items-table-header {
-            background-color: #f3f4f6 !important;
-          }
-          .items-table-header div,
-          .items-table-row div {
-            border-left: 1px solid #000 !important;
-            padding: 8px 6px !important;
-          }
-          .items-table-header div:last-child,
-          .items-table-row div:last-child {
-            border-right: 1px solid #000 !important;
-            /* Ensure right border is drawn for the last column */
-            border-right: 0.5pt solid #ccc !important;
-          }
-          .items-table-row {
-            border-bottom: none !important;
-          }
-          .view-section[style*="border-top"] { 
-            border-top: none !important; /* Explicitly remove the UI border */
-            margin-top: 10px !important; 
-            line-height: 1.1 !important; 
-            font-size: 6.5pt !important; 
-          }
-          .view-section[style*="border-top"] div { font-size: 6.5pt !important; }
-          @page { size: A4; margin: 1.5cm 1cm; }
-          .items-table-header, .items-table-row {
-            grid-template-columns: 0.5fr 0.5fr 0.7fr 0.7fr 3fr 1fr 1fr !important; /* More flexible widths */
-            gap: 4px !important; /* Reduce gap for tighter fit */
-          }
-          .items-table-header div, .items-table-row div {
-            border-left: 0.5pt solid #ccc !important; /* Consistent border style */
-          }
-        }
-      ` }} />
       <div className="section-header no-print">
         <div>
           <h2>{quote.reference}</h2>
-          <p>Quote Number{quote.quoteNumber}</p>
+          <p>Quote Number: {quote.quoteNumber}</p>
         </div>
         <button onClick={onBack} className="btn-secondary no-print">
           ← Back to Quotes
         </button>
+        <button onClick={onEdit} className="btn-primary" type="button">
+          Edit Quote
+        </button>
+        <button onClick={onDuplicate} className="btn-secondary" type="button">
+          Duplicate Quote
+        </button>
+        <button
+          onClick={handleDownloadQuotePdf} // Call the corrected handler
+          className="btn-secondary"
+          type="button"
+        >
+          Download PDF
+        </button>
       </div>
-
-      <div className="view-container">
-        <div className="view-card" style={{ color: '#000', display: 'flex', flexDirection: 'column', minHeight: '29.7cm', boxSizing: 'border-box' }}>
-          <div className="quote-view-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
-            <div className="quote-view-left">
-              <div className="company-block">
-                <div className="company-lines" style={{ fontSize: '0.8rem', lineHeight: '1.5', marginBottom: '8px' }}>
-                  <strong>BITURE (PTY) LTD &nbsp;&nbsp; Reg: K2013/194395/07 &nbsp;&nbsp; VAT No: 4480272220</strong>
-                  <div>Cnr Fred Versepute and Asparagus Road Midrand 1685</div>
-                  <div>Email: BetrothM@biture.co.za &nbsp;&nbsp; Tel: +2765 835 4371 | +2783 249 8510</div>
-                </div>
-                <img src={logo} alt="BITURE" className="company-logo" style={{ display: 'block', maxHeight: '150px', width: 'auto', minHeight: '30px' }} />
-              </div>
-            </div>
-
-            <div className="quote-view-right" style={{ textAlign: 'right', fontSize: '0.75rem', lineHeight: '1' }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '1px', lineHeight: '1' }}>SALES QUOTATION</div>
-
-              <div className="quote-details-block" style={{ fontSize: '0.75rem', lineHeight: '1', marginBottom: '2px' }}>
-                <div className="view-row" style={{ marginBottom: '1px', lineHeight: '0' }}>
-                  <span className="view-label">QUOTE NUMBER:</span>
-                  <span className="view-value">{quote.quoteNumber}</span>
-                </div>
-                <div className="view-row" style={{ marginBottom: '1px', lineHeight: '0' }}>
-                  <span className="view-label">REFERENCE:</span>
-                  <span className="view-value">{quote.reference}</span>
-                </div>
-                <div className="view-row" style={{ marginBottom: '1px', lineHeight: '0' }}>
-                  <span className="view-label">DATE:</span>
-                  <span className="view-value">{formattedDate}</span>
-                </div>
-                <div className="view-row" style={{ marginBottom: '1px', lineHeight: '0' }}>
-                  <span className="view-label">VALIDITY:</span>
-                  <span className="view-value">{quote.validityDays} Days</span>
-                </div>
-                <div className="view-row" style={{ marginBottom: '1px', lineHeight: '0' }}>
-                  <span className="view-label">VENDOR NUMBER:</span>
-                  <span className="view-value">{quote.vendorNumber}</span>
-                </div>
-                {quote.poNumber && (
-                  <div className="view-row" style={{ marginBottom: '1px', lineHeight: '0' }}>
-                    <span className="view-label">PO NUMBER:</span>
-                    <span className="view-value">{quote.poNumber}</span>
-                  </div>
-                )}
-              </div>
-
-              {quote.client && (
-                <div className="customer-box" style={{ border: '1px solid #000', padding: '6px', marginTop: '8px', fontSize: '0.75rem', lineHeight: '1.2' }}>
-                  <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>BILL TO:</div>
-                  {quote.client.name && <div style={{ marginBottom: '2px' }}>{quote.client.name}</div>}
-                  {quote.client.addressLine1 && <div style={{ marginBottom: '2px' }}>{quote.client.addressLine1}</div>}
-                  {quote.client.addressLine2 && <div style={{ marginBottom: '2px' }}>{quote.client.addressLine2}</div>}
-                  {quote.client.addressLine3 && <div style={{ marginBottom: '2px' }}>{quote.client.addressLine3}</div>}
-                  {quote.client.addressLine4 && <div style={{ marginBottom: '2px' }}>{quote.client.addressLine4}</div>}
-                  {quote.client.vatNumber && <div style={{ marginBottom: '2px' }}>VAT No: {quote.client.vatNumber}</div>}
-                  {quote.client.email && <div style={{ marginBottom: '2px' }}>Email: {quote.client.email}</div>}
-                  <div style={{ marginBottom: '2px' }}>{quote.client.representativeName || '—'}</div>
-                  <div style={{ marginBottom: '2px' }}>{quote.client.representativeNumber || '—'}</div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="quote-view-main" style={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
-            <div className="view-section">
-              <div className="items-table" style={{ border: '1px solid #000', borderRadius: '2px', overflow: 'hidden' }}>
-                <div className="items-table-header" style={{ display: 'grid', gridTemplateColumns: '50px 40px 55px 45px 1fr 100px 100px', gap: '0', background: '#f3f4f6', borderBottom: '1px solid #000' }}>
-                  <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>ITEM</div>
-                  <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>QTY</div>
-                  <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>CODE</div>
-                  <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>UOM</div>
-                  <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>DESCRIPTION</div>
-                  <div style={{ padding: '8px 6px', fontWeight: 'bold', textAlign: 'right' }}>UNIT PRICE</div>
-                  <div style={{ padding: '8px 6px', fontWeight: 'bold', textAlign: 'right' }}>TOTAL</div>
-                </div>
-                {quote.items.slice().sort((a, b) => {
-                  const aNum = Number(a.itemNumber);
-                  const bNum = Number(b.itemNumber);
-                  if (!Number.isNaN(aNum) && !Number.isNaN(bNum)) return aNum - bNum;
-                  return a.itemNumber.toString().localeCompare(b.itemNumber.toString(), undefined, { numeric: true });
-                }).map((item) => (
-                  <div key={item.id} className="items-table-row" style={{ display: 'grid', gridTemplateColumns: '50px 40px 55px 45px 1fr 100px 100px', gap: '0' }}>
-                    <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{item.itemNumber}</div>
-                    <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{item.quantity}</div>
-                    <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{item.code || '—'}</div>
-                    <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{item.uom}</div>
-                    <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{item.description}</div>
-                    <div style={{ padding: '8px 6px', textAlign: 'right', lineHeight: '1.2' }}>{formatAmount(item.unitPrice)}</div>
-                    <div style={{ padding: '8px 6px', textAlign: 'right', lineHeight: '1.2' }}>{formatAmount(item.totalPrice)}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="view-section" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'auto', paddingTop: '12px' }}>
-              <div style={{ width: '220px' }}>
-                <div className="summary-row" style={{ justifyContent: 'space-between', lineHeight: '0', marginBottom: '0px' }}>
-                  <span className="summary-label">Sub Total</span>
-                  <span className="summary-value">{formatAmount(quote.subTotal)}</span>
-                </div>
-                <div className="summary-row" style={{ justifyContent: 'space-between', lineHeight: '0', marginBottom: '0px' }}>
-                  <span className="summary-label">VAT (15%)</span>
-                  <span className="summary-value">{formatAmount(quote.vat)}</span>
-                </div>
-                <div className="summary-row summary-total" style={{ justifyContent: 'space-between', lineHeight: '0', marginBottom: '0px' }}>
-                  <span className="summary-label">Total</span>
-                  <span className="summary-value">{formatAmount(quote.total)}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="view-section" style={{ marginTop: '20px', lineHeight: '2.0', borderTop: '1px solid #eee', paddingTop: '10px' }}>
-              <div style={{ marginBottom: '8px', fontSize: '0.8rem' }}>
-                Received and Approved by: __________________________________________________________
-              </div>
-              <div className="print-only" style={{ height: '20px' }}></div>
-              <div style={{ marginBottom: '15px', fontSize: '0.8rem' }}>
-                Signature: ____________________________________________________________________________
-              </div>
-              <div className="print-only" style={{ height: '20px' }}></div>
-
-              
-              <div style={{ fontSize: '0.65rem', lineHeight: '1.2' }}>
-                <div style={{ marginBottom: '4px', fontWeight: 'bold' }}>OUR BANKING DETAILS ARE AS FOLLOWS:</div>
-                <div style={{ marginTop: '4px' }}>
-                  <div>Account Name: BITURE (PTY) LTD</div>
-                  <div>Bank: Standard Bank</div>
-                  <div>Account Number: 10142678536</div>
-                  <div>Branch Code: 051001</div>
-                  <div>Thank you for your Purchase Order. For product or services related purchases, the invoice will only be due once the goods have been delivered or the services rendered. Please confirm your payment by e-mailing your proof of payment or remittance advise to</div>
-                  <div>BetrothM@biture.co.za</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="view-actions no-print">
-              <button onClick={onEdit} className="btn-primary" type="button">
-                Edit Quote
-              </button>
-              <button onClick={onDuplicate} className="btn-secondary" type="button">
-                Duplicate Quote
-              </button>
-              <button 
-                onClick={handleDownloadQuotePdf} // Call the corrected handler
-                className="btn-secondary"
-                type="button"
-              >
-                Download PDF
-              </button>
-            </div>
-          </div>
-        </div>
+      <div className="view-actions no-print">
+        {pdfUrl && (
+          <iframe
+            src={pdfUrl}
+            width="100%"
+            height="600px"
+            style={{ border: "1px solid #ccc", marginTop: "1rem" }}
+          />
+        )}
       </div>
     </div>
   );
