@@ -217,30 +217,11 @@ export const generateJobCardPDF = async (jobCard: JobCard, save: boolean = false
     const table = (doc as any).lastAutoTable;
     currentY = Math.max(table.finalY + 8, pageHeight - margin - totalFooterHeight);
     currentY += 10;
-
-    // Summary
-    const summaryX = pageWidth - margin;
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Sub Total', summaryX - 45, currentY);
-    doc.text(formatAmount(jobCard.quote?.subTotal), summaryX, currentY, { align: 'right' });
-    currentY += 4;
-    doc.text('VAT (15%)', summaryX - 45, currentY);
-    doc.text(formatAmount(jobCard.quote?.vat), summaryX, currentY, { align: 'right' });
-    currentY += 2;
-    doc.setLineWidth(0.5);
-    doc.setDrawColor(51, 51, 51);
-    doc.line(summaryX - 45, currentY, summaryX, currentY);
-    currentY += 5;
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Total', summaryX - 45, currentY);
-    doc.text(formatAmount(jobCard.quote?.total), summaryX, currentY, { align: 'right' });
     doc.setFont('helvetica', 'normal');
 
     // Approval + Terms
     currentY = Math.max(currentY + 5, pageHeight - margin - footerBlockHeight);
-    currentY += -14;
+    currentY += -0;
     doc.setFontSize(8);
     doc.text('Received and Approved by: __________________________________________________________', margin, currentY);
     currentY += 8;
