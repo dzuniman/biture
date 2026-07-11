@@ -11,8 +11,7 @@ export const generateQuotePDF = async (quote: Quote, save: boolean = false) => {
     format: 'a4'
   });
 
-
-
+  // Get all row items
   let allRows = quote.items
     .slice()
     .sort((a, b) => {
