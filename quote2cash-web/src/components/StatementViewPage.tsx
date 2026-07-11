@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import type { Statement, Invoice, Client, CreditNote } from '../types';
 import { formatAmount } from '../../formatters';
 import logo from '../assets/logo.png';
@@ -13,6 +13,25 @@ interface Props {
 }
 
 export const StatementViewPage: React.FC<Props> = ({ statement, invoices, creditNotes = [], onEdit, onBack }) => {
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const updatePdf = async () => {
+      const url = await generateStatementPDF(statement, invoices, creditNotes);
+      setPdfUrl(url);
+    };
+    updatePdf();
+  }, [statement, invoices, creditNotes]);
+
+  const handleDownloadStatementPdf = async () => {
+    try {
+      await generateStatementPDF(statement, invoices, creditNotes, true); // save mode
+    } catch (err) {
+      console.error("Quote PDF save failed:", err);
+      alert("Could not save Quote PDF. Please check the console for errors.");
+    }
+  };
+
   const formatDate = (dateValue?: string | null) => {
     if (!dateValue) return '—';
     const d = new Date(dateValue);
@@ -24,282 +43,32 @@ export const StatementViewPage: React.FC<Props> = ({ statement, invoices, credit
     });
   };
 
-  const client: Client | null = statement.client || (statement as any).Client;
-  const items = statement.items || (statement as any).Items || [];
-
-  const invoiceMap = useMemo(() => {
-    const map: Record<string, Invoice> = {};
-    invoices.forEach(inv => { map[inv.id] = inv; });
-    return map;
-  }, [invoices]);
-
-  const creditNoteMap = useMemo(() => {
-    const map: Record<string, CreditNote> = {};
-    creditNotes.forEach(cn => { map[cn.id] = cn; });
-    return map;
-  }, [creditNotes]);
-
-  const paymentsByInvoice = useMemo(() => {
-    const totals: Record<string, number> = {};
-    items.forEach((item: any) => {
-      const id = item.invoiceId || item.InvoiceId;
-      if (id) totals[id] = (totals[id] || 0) + (item.paymentAmount || item.PaymentAmount || 0);
-    });
-    return totals;
-  }, [items]);
-
-  const uniqueInvoiceIds = useMemo(() => Array.from(new Set(
-    items.filter((i: any) => !!(i.invoiceId || i.InvoiceId)).map((i: any) => i.invoiceId || i.InvoiceId)
-  )) as string[], [items]);
-
-  const creditNoteItems = useMemo(() => items.filter((i: any) => !!(i.creditNoteId || i.CreditNoteId)), [items]);
-  const uniqueCreditNoteIds = useMemo(() => Array.from(new Set(creditNoteItems.map((i: any) => i.creditNoteId || i.CreditNoteId))) as string[], [creditNoteItems]);
-
-  const totalOutstanding = useMemo(() => {
-    let outstanding = uniqueInvoiceIds.reduce((sum, id) => {
-      const invAmount = invoiceMap[id]?.amount ?? 0;
-      return sum + (invAmount - (paymentsByInvoice[id] || 0));
-    }, 0);
-    // Deduct credit notes
-    uniqueCreditNoteIds.forEach(id => {
-      outstanding -= creditNoteMap[id]?.amount ?? 0;
-    });
-    return outstanding;
-  }, [uniqueInvoiceIds, invoiceMap, paymentsByInvoice, uniqueCreditNoteIds, creditNoteMap]);
-
-  // Aging Analysis Calculations
-  const agingBuckets = useMemo(() => {
-    let current = 0;
-    let overdue30 = 0;
-    let overdue60 = 0;
-    let overdue90 = 0;
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    // Aging only applies to invoices, not credit notes
-    uniqueInvoiceIds.forEach(id => {
-      const inv = invoiceMap[id];
-      if (!inv) return;
-
-      const paid = paymentsByInvoice[id] || 0;
-      const outstanding = (inv?.amount ?? 0) - paid;
-      if (outstanding <= 0) return;
-
-      const dueDate = new Date(inv.dueDate);
-      dueDate.setHours(0, 0, 0, 0);
-
-      const diffTime = today.getTime() - dueDate.getTime();
-      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-      if (diffDays < 30) {
-        current += outstanding;
-      } else if (diffDays >= 30 && diffDays < 60) {
-        overdue30 += outstanding;
-      } else if (diffDays >= 60 && diffDays < 90) {
-        overdue60 += outstanding;
-      } else {
-        overdue90 += outstanding;
-      }
-    });
-
-    return { current, overdue30, overdue60, overdue90 };
-  }, [uniqueInvoiceIds, invoiceMap, paymentsByInvoice]);
-
-  const handleDownloadPdf = async () => {
-    try {
-      await generateStatementPDF(statement, invoices, creditNotes);
-    } catch (error) {
-      console.error("Error generating Statement PDF:", error);
-      alert("Failed to generate PDF. Please try again.");
-    }
-  };
-
   return (
     <div className="page-section">
-      <style dangerouslySetInnerHTML={{
-        __html: `
-        .print-only { display: none !important; }
-        @media print {
-          .no-print, .section-header { display: none !important; }
-          body { background: white !important; margin: 0 !important; padding: 0 !important; }
-          .view-container, .view-card, .view-section, .items-table, .items-table-header, .items-table-row, .summary-row { border: none !important; box-shadow: none !important; background: none !important; }
-          .view-card { padding: 20px !important; width: 100% !important; margin: 0 !important; font-size: 9pt !important; display: flex !important; flex-direction: column !important; min-height: 26.7cm !important; box-sizing: border-box !important; }
-          .items-table-header, .items-table-row { display: grid !important; grid-template-columns: 120px 140px 100px 1fr 120px !important; gap: 4px !important; }
-          .items-table-header div, .items-table-row div { border-left: 0.5pt solid #ccc !important; padding: 6px !important; }
-          .items-table-header div:last-child, .items-table-row div:last-child { border-right: 0.5pt solid #ccc !important; }
-          .aging-table-header, .aging-table-row { display: grid !important; grid-template-columns: 1fr 1fr 1fr 1fr !important; gap: 4px !important; }
-          .aging-table-header div, .aging-table-row div { border-left: 0.5pt solid #ccc !important; padding: 6px !important; }
-          .aging-table-header div:last-child, .aging-table-row div:last-child { border-right: 0.5pt solid #ccc !important; }
-          @page { size: A4; margin: 1.5cm 1cm; }
-        }
-      ` }} />
       <div className="section-header no-print">
         <div>
           <h2>{statement.statementNumber || (statement as any).StatementNumber}</h2>
-          <p>Statement details for {client?.name ?? 'selected client'}</p>
+          <p>Statement Number: {statement.statementNumber ?? 'selected client'}</p>
         </div>
-        <div>
-          <button onClick={onBack} className="btn-secondary no-print">
-            ← Back to Statements
-          </button>
-        </div>
+        <button onClick={onBack} className="btn-secondary no-print">
+          ← Back to Statements
+        </button>
+        <button type="button" onClick={onEdit} className="btn-primary">
+          Edit Statement
+        </button>
+        <button type="button" onClick={handleDownloadStatementPdf} className="btn-secondary">
+          Download PDF
+        </button>
       </div>
-      <div className="view-container">
-        <div className="view-card" style={{ color: '#000', display: 'flex', flexDirection: 'column', minHeight: '29.7cm', boxSizing: 'border-box' }}>
-          <div className="quote-view-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '24px', marginBottom: '18px' }}>
-            <div className="quote-view-left" style={{ minWidth: '280px' }}>
-              <div className="company-block">
-                <div className="company-lines" style={{ fontSize: '0.8rem', lineHeight: '1.5', marginBottom: '8px' }}>
-                  <strong>BITURE (PTY) LTD &nbsp;&nbsp; Reg: K2013/194395/07 &nbsp;&nbsp; VAT No: 4480272220</strong>
-                  <div>Cnr Fred Versepute and Asparagus Road Midrand 1685</div>
-                  <div>Email: BetrothM@biture.co.za &nbsp;&nbsp; Tel: +2765 835 4371 | +2783 249 8510</div>
-                </div>
-                <img src={logo} alt="BITURE" className="company-logo" style={{ display: 'block', maxHeight: '150px', width: 'auto', minHeight: '30px' }} />
-              </div>
-            </div>
-            <div className="quote-view-right" style={{ textAlign: 'right', fontSize: '0.75rem', lineHeight: '1' }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '1px', lineHeight: '1' }}>STATEMENT OF ACCOUNT</div>
-              <div className="quote-details-block" style={{ fontSize: '0.75rem', lineHeight: '0', marginBottom: '2px' }}>
-                <div className="view-row" style={{ marginBottom: '1px' }}>
-                  <span className="view-label">STATEMENT NO:</span>
-                  <span className="view-value">{statement.statementNumber || (statement as any).StatementNumber}</span>
-                </div>
-                <div className="view-row" style={{ marginBottom: '1px' }}>
-                  <span className="view-label">STATEMENT DATE:</span>
-                  <span className="view-value">{formatDate(statement.createdAt || (statement as any).CreatedAt)}</span>
-                </div>
-                <div className="view-row" style={{ marginBottom: '1px' }}>
-                  <span className="view-label">ACCOUNT TYPE:</span>
-                  <span className="view-value">{statement.dueDays || (statement as any).dueDays} {" DAYS"}</span>
-                </div>
-                <div className="view-row" style={{ marginBottom: '1px' }}>
-                  <span className="view-label">VENDOR NUMBER:</span>
-                  <span className="view-value">{uniqueInvoiceIds.map(id => invoiceMap[id]?.client?.vendorNumber).find(p => !!p) || '—'}</span>
-                </div>
-                {client ? (
-                  <div className="customer-box" style={{ border: '1px solid #000', padding: '8px', marginTop: '8px', fontSize: '0.75rem', lineHeight: '1.4', minHeight: '80px', textAlign: 'left' }}>
-                    <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>BILL TO:</div>
-                    {client.name && <div style={{ marginBottom: '2px' }}>{client.name}</div>}
-                    {client.addressLine1 && <div style={{ marginBottom: '2px' }}>{client.addressLine1}</div>}
-                    {client.addressLine2 && <div style={{ marginBottom: '2px' }}>{client.addressLine2}</div>}
-                    {client.addressLine3 && <div style={{ marginBottom: '2px' }}>{client.addressLine3}</div>}
-                    {client.addressLine4 && <div style={{ marginBottom: '2px' }}>{client.addressLine4}</div>}
-                    {client.vatNumber && <div style={{ marginBottom: '2px' }}>VAT No: {client.vatNumber}</div>}
-                    {client.email && <div style={{ marginBottom: '2px' }}>Email: {client.email}</div>}
-                    <div style={{ marginBottom: '2px' }}>{client.representativeName || '—'}</div>
-                    <div style={{ marginBottom: '2px' }}>{client.representativeNumber || '—'}</div>
-                  </div>
-                ) : (
-                  <div className="customer-box" style={{ border: '1px solid #000', padding: '6px', marginTop: '8px', fontSize: '0.75rem', textAlign: 'left' }}>
-                    <div style={{ fontWeight: 'bold' }}>BILL TO:</div>
-                    <div>No client information available.</div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="view-section" style={{ marginTop: '24px' }}>
-            <div className="items-table" style={{ border: '1px solid #000', borderRadius: '2px', overflow: 'hidden' }}>
-              <div className="items-table-header" style={{ display: 'grid', gridTemplateColumns: '120px 140px 140px 100px 1fr 120px', gap: '0', background: '#f3f4f6', borderBottom: '1px solid #000', padding: '0' }}>
-                <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>Document No</div>
-                <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>Due Date</div>
-                <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>Document Type</div>
-                <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>PO Number</div>
-                <div style={{ padding: '8px 6px', fontWeight: 'bold', textAlign: 'right' }}>Invoice Amount</div>
-                <div style={{ padding: '8px 6px', fontWeight: 'bold', textAlign: 'right' }}>Outstanding</div>
-              </div>
-              {(uniqueInvoiceIds.length > 0 || uniqueCreditNoteIds.length > 0) ? (
-                <>
-                  {uniqueInvoiceIds.map(id => {
-                    const inv = invoiceMap[id];
-                    const paid = paymentsByInvoice[id] || 0;
-                    const outstanding = (inv?.amount ?? 0) - paid;
-                    return (
-                      <div key={`inv-${id}`} className="items-table-row" style={{ display: 'grid', gridTemplateColumns: '120px 140px 140px 100px 1fr 120px', gap: '0', borderTop: '1px solid #eee' }}>
-                        <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{inv?.invoiceNumber || '—'}</div>
-                        <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{formatDate(inv?.dueDate)}</div>
-                        <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>INVOICE</div>
-                        <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{inv?.quote?.poNumber || '—'}</div>
-                        <div style={{ padding: '8px 6px', textAlign: 'right', lineHeight: '1.2' }}>{formatAmount(inv?.amount ?? 0)}</div>
-                        <div style={{ padding: '8px 6px', textAlign: 'right', lineHeight: '1.2', fontWeight: 'bold', color: outstanding > 0 ? '#dc2626' : '#22c55e' }}>{formatAmount(outstanding)}</div>
-                      </div>
-                    );
-                  })}
-                  {uniqueCreditNoteIds.map(id => {
-                    const cn = creditNoteMap[id];
-                    const cnAmount = cn?.amount ?? 0;
-                    return (
-                      <div key={`cn-${id}`} className="items-table-row" style={{ display: 'grid', gridTemplateColumns: '120px 140px 140px 100px 1fr 120px', gap: '0', borderTop: '1px solid #eee', background: 'rgba(16,185,129,0.05)' }}>
-                        <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{cn?.creditNoteNumber || '—'}</div>
-                        <div style={{ padding: '8px 6px', lineHeight: '1.2' }}></div>
-                        <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>CREDIT NOTE</div>
-                        <div style={{ padding: '8px 6px', lineHeight: '1.2' }}></div>
-                        <div style={{ padding: '8px 6px', textAlign: 'right', lineHeight: '1.2', color: '#10b981' }}>{formatAmount(cnAmount)}</div>
-                        <div style={{ padding: '8px 6px', textAlign: 'right', lineHeight: '1.2', fontWeight: 'bold', color: '#10b981' }}>({formatAmount(cnAmount)})</div>
-                      </div>
-                    );
-                  })}
-                </>
-              ) : (
-                <div style={{ padding: '16px' }}>No items available.</div>
-              )}
-            </div>
-          </div>
-
-          <div className="view-section" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'auto', paddingTop: '20px' }}>
-            <div style={{ width: '250px' }}>
-              <div className="summary-row" style={{ lineHeight: '0', display: 'flex', justifyContent: 'space-between', fontSize: '1.05rem' }}>
-                <span>Total Outstanding</span>
-                <strong style={{ color: totalOutstanding > 0 ? '#dc2626' : '#22c55e' }}>{formatAmount(totalOutstanding)}</strong>
-              </div>
-            </div>
-          </div>
-
-          {/* Aging Analysis section */}
-          <div className="view-section" style={{ marginTop: '24px' }}>
-            <h3 style={{ fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '8px', borderBottom: '1px solid #000', paddingBottom: '4px' }}>PAYMENT ANALYSIS</h3>
-            <div style={{ border: '1px solid #000', borderRadius: '2px', overflow: 'hidden' }}>
-              <div className="aging-table-header" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', background: '#f3f4f6', borderBottom: '1px solid #000', padding: '0', textAlign: 'right' }}>
-                <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>Current</div>
-                <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>30 Days Overdue</div>
-                <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>60 Days Overdue</div>
-                <div style={{ padding: '8px 6px', fontWeight: 'bold' }}>90+ Days Overdue</div>
-              </div>
-              <div className="aging-table-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '0', textAlign: 'right' }}>
-                <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{formatAmount(agingBuckets.current)}</div>
-                <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{formatAmount(agingBuckets.overdue30)}</div>
-                <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{formatAmount(agingBuckets.overdue60)}</div>
-                <div style={{ padding: '8px 6px', lineHeight: '1.2' }}>{formatAmount(agingBuckets.overdue90)}</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="view-section" style={{ marginTop: '20px', lineHeight: '2.0', borderTop: '1px solid #eee', paddingTop: '10px' }}>
-             
-              <div style={{ fontSize: '0.65rem', lineHeight: '1.2' }}>
-                <div style={{ marginBottom: '4px', fontWeight: 'bold' }}>OUR BANKING DETAILS ARE AS FOLLOWS:</div>
-                <div style={{ marginTop: '4px' }}>
-                  <div>Account Name: BITURE (PTY) LTD</div>
-                  <div>Bank: Standard Bank</div>
-                  <div>Account Number: 10142678536</div>
-                  <div>Branch Code: 051001</div>
-                  <div>Thank you for your Purchase Order. For product or services related purchases, the invoice will only be due once the goods have been delivered or the services rendered. Please confirm your payment by e-mailing your proof of payment or remittance advise to</div>
-                  <div>BetrothM@biture.co.za</div>
-                </div>
-              </div>
-            </div>
-
-          <div className="no-print" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-start', marginTop: '20px' }}>
-            <button type="button" onClick={onEdit} className="btn-primary">
-              Edit Statement
-            </button>
-            <button type="button" onClick={handleDownloadPdf} className="btn-secondary">
-              Download PDF
-            </button>
-          </div>
-        </div>
+      <div className="view-actions no-print" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-start', marginTop: '20px' }}>
+        {pdfUrl && (
+          <iframe
+            src={pdfUrl}
+            width="100%"
+            height="600px"
+            style={{ border: "1px solid #ccc", marginTop: "1rem" }}
+          />
+        )}
       </div>
     </div>
   );

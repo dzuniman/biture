@@ -224,7 +224,7 @@ export const generateQuotePDF = async (quote: Quote, save: boolean = false) => {
     // --- Summary + Footer + Payment Box (runs on every page) ---
     const table = (doc as any).lastAutoTable;
     currentY = Math.max(table.finalY + 8, pageHeight - margin - totalFooterHeight);
-    currentY += 14;
+    currentY += 10;
 
     // Summary
     const summaryX = pageWidth - margin;
