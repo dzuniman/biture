@@ -11,6 +11,17 @@ export const generateQuotePDF = async (quote: Quote, save: boolean = false) => {
     format: 'a4'
   });
 
+  // Pre-load logo image
+  const logoImg = new Image();
+  logoImg.src = logo;
+  await new Promise((resolve) => {
+    logoImg.onload = resolve;
+    logoImg.onerror = () => {
+      console.error("PDF Generator: Could not load logo image from", logo);
+      resolve(null);
+    };
+  });
+
   // Get all row items
   let allRows = quote.items
     .slice()
@@ -51,63 +62,96 @@ export const generateQuotePDF = async (quote: Quote, save: boolean = false) => {
 
     const margin = 5;
     const pageWidth = doc.internal.pageSize.getWidth();
-    const contentWidth = pageWidth - (margin * 2);
-    let currentY = margin; // Unified Y cursor for sequential content flow
+    let currentY = margin;
 
-    // Pre-load logo image
-    const logoImg = new Image();
-    logoImg.src = logo;
-    await new Promise((resolve) => {
-      logoImg.onload = resolve;
-      logoImg.onerror = () => {
-        console.error("PDF Generator: Could not load logo image from", logo);
-        resolve(null);
-      };
-    });
+    // --- Company Info (Top Left) ---
+    const companyInfoX = margin;
+    let companyInfoY = currentY - 10;
 
-    // --- Top Section: Logo (Left), Company Info (next to logo), Quote Details (Right) ---
-    const companyInfoStartX = margin;
-    let companyInfoY = currentY;
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text('BITURE (PTY) LTD   Reg: K2013/194395/07   VAT No: 4480272220', companyInfoX, companyInfoY + 12);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.text('Cnr Fred Versepute and Asparagus Road Midrand 1685', companyInfoX, companyInfoY + 16);
+    doc.text('Email: BetrothM@biture.co.za   Tel: +27 65 835 4371 | +27 83 249 8510', companyInfoX, companyInfoY + 20);
 
-    // Logo (top left)
+    // --- Logo (Top Right) ---
     const logoHeight = 15;
     let logoWidth = 0;
     if (logoImg.complete && logoImg.naturalWidth > 0) {
       const aspectRatio = logoImg.naturalWidth / logoImg.naturalHeight;
       logoWidth = logoHeight * aspectRatio;
-      doc.addImage(logoImg, 'PNG', companyInfoStartX, companyInfoY, logoWidth, logoHeight);
+      doc.addImage(logoImg, 'PNG', pageWidth - margin - logoWidth, currentY - 2, logoWidth, logoHeight);
     }
-    companyInfoY += 5; // small offset for text alignment
 
-    // Company Info (next to logo)
-    const companyTextX = companyInfoStartX;
-    let companyTextY = companyInfoY + 12;
+    let customerBoxY = companyInfoY + 23;
+    const boxWidth = 70;
+    const boxHeight = 33; // fixed height to match Tax Invoice block
+    const boxX = companyInfoX;
 
-    doc.setFontSize(8);
+    doc.setLineWidth(0.2);
+    doc.rect(boxX, customerBoxY, boxWidth, boxHeight);
+
     doc.setFont('helvetica', 'bold');
-    doc.text('BITURE (PTY) LTD   Reg: K2013/194395/07   VAT No: 4480272220', companyTextX, companyTextY);
-    companyTextY += 4;
-    doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
-    doc.text('Cnr Fred Versepute and Asparagus Road Midrand 1685', companyTextX, companyTextY);
-    companyTextY += 4;
-    doc.text('Email: BetrothM@biture.co.za   Tel: +2765 835 4371 | +2783 249 8510', companyTextX, companyTextY);
+    doc.text('BILL TO:', boxX + 2, customerBoxY + 4);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    let custTextY = customerBoxY + 7;
+
+    if (quote.client) {
+      // Build client lines WITHOUT representative
+      const clientLines = [
+        quote.client.name,
+        quote.client.addressLine1,
+        quote.client.addressLine2,
+        quote.client.addressLine3,
+        quote.client.addressLine4,
+        quote.client.vatNumber ? `VAT No: ${quote.client.vatNumber}` : null,
+        quote.client.email ? `Email: ${quote.client.email}` : null
+      ].filter(Boolean);
+
+      // Draw normal client lines
+      clientLines.forEach(line => {
+        doc.text(line!, boxX + 2, custTextY);
+        custTextY += 3;
+      });
+
+      // Draw representative line separately (name left, number right, separator in middle)
+      if (quote.client.representativeName || quote.client.representativeNumber) {
+        const repLineY = custTextY;
+        const separatorX = boxX + (boxWidth / 2);
+
+        if (quote.client.representativeName) {
+          doc.text(quote.client.representativeName, boxX + 2, repLineY);
+        }
+
+        if (quote.client.representativeNumber) {
+          doc.text(quote.client.representativeNumber, boxX + boxWidth - 2, repLineY, { align: 'right' });
+        }
+
+        custTextY += 3;
+      }
+
+    }
 
     // Quote Details Block (Right)
     const quoteDetailsBlockWidth = 70;
     const quoteDetailsBlockX = pageWidth - margin - quoteDetailsBlockWidth;
-    let quoteDetailsY = currentY;
+    let quoteDetailsY = companyInfoY + logoHeight + 8;
 
     doc.setLineWidth(0.2);
-    doc.rect(quoteDetailsBlockX, quoteDetailsY, quoteDetailsBlockWidth, 35); // box around sales quotation
+    doc.rect(quoteDetailsBlockX, quoteDetailsY, quoteDetailsBlockWidth, boxHeight); // box around sales quotation
 
     doc.setFontSize(7.5);
     doc.setFont('helvetica', 'bold');
-    doc.text('SALES QUOTATION', pageWidth - margin - 2, quoteDetailsY + 6, { align: 'right' });
+    doc.text('QUOTATION', pageWidth - margin - 2, quoteDetailsY + 4, { align: 'right' });
 
     doc.setFontSize(7);
-    doc.setFont('helvetica', 'normal');
-    let detailY = quoteDetailsY + 12;
+    doc.setFont('helvetica', 'bold');
+    let detailY = quoteDetailsY + 7;
 
     const addQuoteDetailRow = (label: string, value: string) => {
       // Label left-aligned
@@ -128,49 +172,9 @@ export const generateQuotePDF = async (quote: Quote, save: boolean = false) => {
     addQuoteDetailRow('VENDOR NUMBER:', quote.vendorNumber || '—');
     addQuoteDetailRow('PAGE:', `${currentPage} of ${totalPages}` || '—');
 
-    // Second Logo (below sales quotation block, far right)
-    const secondLogoY = quoteDetailsY + 40;
-    doc.addImage(logoImg, 'PNG', quoteDetailsBlockX, secondLogoY, logoWidth, logoHeight);
+    // --- Table Start ---
+    currentY = Math.max(customerBoxY + boxHeight, quoteDetailsY + boxHeight) + 5;
 
-    // Customer Box (below first logo, far left)
-    let customerBoxY = companyInfoY + logoHeight + 8;
-    const boxWidth = 70;
-    const boxX = companyInfoStartX;
-
-    if (quote.client) {
-      const clientLines = [
-        quote.client.name,
-        quote.client.addressLine1,
-        quote.client.addressLine2,
-        quote.client.addressLine3,
-        quote.client.addressLine4,
-        quote.client.vatNumber ? `VAT No: ${quote.client.vatNumber}` : null,
-        quote.client.email ? `Email: ${quote.client.email}` : null,
-        quote.client.representativeName ? `${quote.client.representativeName} | ${quote.client.representativeNumber}` : null
-      ].filter(Boolean);
-
-      const boxHeight = 6 + (clientLines.length * 3);
-
-      doc.setLineWidth(0.2);
-      doc.rect(boxX, customerBoxY, boxWidth, boxHeight);
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7.5);
-      doc.text('BILL TO:', boxX + 2, customerBoxY + 4);
-
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7);
-      let custTextY = customerBoxY + 7;
-
-      clientLines.forEach(line => {
-        doc.text(line!, boxX + 2, custTextY);
-        custTextY += 3;
-      });
-    }
-
-    // Update currentY for table start
-    currentY = Math.max(companyInfoY, secondLogoY + logoHeight);
-    currentY += 5;
     // Render this chunk as a table
     autoTable(doc, {
       startY: currentY,
@@ -220,6 +224,7 @@ export const generateQuotePDF = async (quote: Quote, save: boolean = false) => {
     // --- Summary + Footer + Payment Box (runs on every page) ---
     const table = (doc as any).lastAutoTable;
     currentY = Math.max(table.finalY + 8, pageHeight - margin - totalFooterHeight);
+    currentY += 14;
 
     // Summary
     const summaryX = pageWidth - margin;
@@ -269,10 +274,10 @@ export const generateQuotePDF = async (quote: Quote, save: boolean = false) => {
 
     let paymentTextY = paymentBoxY + 8;
     const paymentDetails = [
-      'Bank: Standard Bank',
-      'Branch: Midrand',
+      'Bank: STANDARD BANK',
+      'Branch: MIDRAND',
       'Branch Code: 123456',
-      'Account Name: Biture (Pty) Ltd',
+      'Account Name: BITURE (PTY) LTD',
       'Account Number: 9876543210',
       'SWIFT Code: SBZAZAJJ'
     ];
@@ -288,7 +293,6 @@ export const generateQuotePDF = async (quote: Quote, save: boolean = false) => {
       doc.addPage();
     }
   }
-
 
   if (save) {
     // Trigger a download
