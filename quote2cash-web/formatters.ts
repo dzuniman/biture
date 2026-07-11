@@ -3,12 +3,18 @@
  * Defaults to South African Rand (ZAR).
  */
 export const formatAmount = (value: number | string | undefined | null): string => {
-  if (value === undefined || value === null) return 'R 0.00';
-  
+  if (value === undefined || value === null) return 'R 0,00';
+
   const amount = typeof value === 'string' ? parseFloat(value) : value;
-  
-  return new Intl.NumberFormat('en-ZA', {
+
+  // Format absolute value only
+  const formattedAbs = new Intl.NumberFormat('en-ZA', {
     style: 'currency',
     currency: 'ZAR',
-  }).format(amount);
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(Math.abs(amount));
+
+  // Add minus sign manually if negative
+  return amount < 0 ? `-${formattedAbs}` : formattedAbs;
 };
