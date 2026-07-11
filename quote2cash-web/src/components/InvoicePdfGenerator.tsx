@@ -12,6 +12,27 @@ export const generateInvoicePDF = async (invoice: Invoice, save: boolean = false
     format: 'a4'
   });
 
+  const formatDate = (date?: Date) => {
+    // Handle null, undefined, invalid dates, or the "0001-01-01" default from the backend
+    if (!date || isNaN(date.getTime()) || date.getFullYear() <= 1) return '—';
+    return date.toLocaleDateString('en-ZA', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  // Pre-load logo image
+  const logoImg = new Image();
+  logoImg.src = logo;
+  await new Promise((resolve) => {
+    logoImg.onload = resolve;
+    logoImg.onerror = () => {
+      console.error("PDF Generator: Could not load logo image from", logo);
+      resolve(null);
+    };
+  });
+
   // Get all item rows
   const allRows = (invoice.quote?.items ?? []).slice().sort((a: QuoteItem, b: QuoteItem) => {
     const aNum = Number(a.itemNumber);
@@ -35,98 +56,116 @@ export const generateInvoicePDF = async (invoice: Invoice, save: boolean = false
   const summaryHeight = 20;
   const totalFooterHeight = summaryHeight + footerBlockHeight;
 
-  // Split into chunks of 24 rows
   for (let i = 0; i < allRows.length; i += MAX_ROWS_PER_PAGE) {
     const currentPage = Math.floor(i / MAX_ROWS_PER_PAGE) + 1;
     let chunk = allRows.slice(i, i + MAX_ROWS_PER_PAGE);
 
-    // Pad with empty rows if less than 24
     while (chunk.length < MAX_ROWS_PER_PAGE) {
       chunk.push(['', '', '', '', '', '', '']);
     }
 
     const margin = 5;
     const pageWidth = doc.internal.pageSize.getWidth();
-    const contentWidth = pageWidth - (margin * 2);
-    let currentY = margin; // Unified Y cursor for sequential content flow
+    let currentY = margin;
 
-    // Pre-load logo image
-    const logoImg = new Image();
-    logoImg.src = logo;
-    await new Promise((resolve) => {
-      logoImg.onload = resolve;
-      logoImg.onerror = () => {
-        console.error("PDF Generator: Could not load logo image from", logo);
-        resolve(null);
-      };
-    });
+    // --- Company Info (Top Left) ---
+    const companyInfoX = margin;
+    let companyInfoY = currentY - 10;
 
-    // --- Top Section: Logo (Left), Company Info (next to logo), Quote Details (Right) ---
-    const companyInfoStartX = margin;
-    let companyInfoY = currentY;
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text('BITURE (PTY) LTD   Reg: K2013/194395/07   VAT No: 4480272220', companyInfoX, companyInfoY + 12);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.text('Cnr Fred Versepute and Asparagus Road Midrand 1685', companyInfoX, companyInfoY + 16);
+    doc.text('Email: BetrothM@biture.co.za   Tel: +27 65 835 4371 | +27 83 249 8510', companyInfoX, companyInfoY + 20);
 
-    // Logo (top left)
+    // --- Logo (Top Right) ---
     const logoHeight = 15;
     let logoWidth = 0;
     if (logoImg.complete && logoImg.naturalWidth > 0) {
       const aspectRatio = logoImg.naturalWidth / logoImg.naturalHeight;
       logoWidth = logoHeight * aspectRatio;
-      doc.addImage(logoImg, 'PNG', companyInfoStartX, companyInfoY, logoWidth, logoHeight);
+      doc.addImage(logoImg, 'PNG', pageWidth - margin - logoWidth, currentY - 2, logoWidth, logoHeight);
     }
-    companyInfoY += 5; // small offset for text alignment
 
-    // Company Info (next to logo)
-    const companyTextX = companyInfoStartX;
-    let companyTextY = companyInfoY + 12;
-
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'bold');
-    doc.text('BITURE (PTY) LTD   Reg: K2013/194395/07   VAT No: 4480272220', companyTextX, companyTextY);
-    companyTextY += 4;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.5);
-    doc.text('Cnr Fred Versepute and Asparagus Road Midrand 1685', companyTextX, companyTextY);
-    companyTextY += 4;
-    doc.text('Email: BetrothM@biture.co.za   Tel: +2765 835 4371 | +2783 249 8510', companyTextX, companyTextY);
-
-    const formatDate = (date?: Date) => {
-      // Handle null, undefined, invalid dates, or the "0001-01-01" default from the backend
-      if (!date || isNaN(date.getTime()) || date.getFullYear() <= 1) return '—';
-      return date.toLocaleDateString('en-ZA', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-    };
-
-    // Invoice Details Block (Right)
-    const invoiceDetailsBlockWidth = 70;
-    const invoiceDetailsLabelColWidth = 25;
-    const invoiceDetailsValueColWidth = invoiceDetailsBlockWidth - invoiceDetailsLabelColWidth - 2;
-
-    const invoiceDetailsBlockX = pageWidth - margin - invoiceDetailsBlockWidth;
-    let invoiceDetailsY = currentY;
+    // --- Bill To Box (below company info) ---
+    let customerBoxY = companyInfoY + 23;
+    const boxWidth = 70;
+    const boxHeight = 33; // fixed height to match Tax Invoice block
+    const boxX = companyInfoX;
 
     doc.setLineWidth(0.2);
-    doc.rect(invoiceDetailsBlockX, invoiceDetailsY, invoiceDetailsBlockWidth, 35); // box around sales quotation
+    doc.rect(boxX, customerBoxY, boxWidth, boxHeight);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.text('BILL TO:', boxX + 2, customerBoxY + 4);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    let custTextY = customerBoxY + 7;
+
+    if (invoice.client) {
+      // Build client lines WITHOUT representative
+      const clientLines = [
+        invoice.client.name,
+        invoice.client.addressLine1,
+        invoice.client.addressLine2,
+        invoice.client.addressLine3,
+        invoice.client.addressLine4,
+        invoice.client.vatNumber ? `VAT No: ${invoice.client.vatNumber}` : null,
+        invoice.client.email ? `Email: ${invoice.client.email}` : null
+      ].filter(Boolean);
+
+      // Draw normal client lines
+      clientLines.forEach(line => {
+        doc.text(line!, boxX + 2, custTextY);
+        custTextY += 3;
+      });
+
+      // Draw representative line separately (name left, number right, separator in middle)
+      if (invoice.client.representativeName || invoice.client.representativeNumber) {
+        const repLineY = custTextY;
+        const separatorX = boxX + (boxWidth / 2);
+
+        if (invoice.client.representativeName) {
+          doc.text(invoice.client.representativeName, boxX + 2, repLineY);
+        }
+
+        if (invoice.client.representativeNumber) {
+          doc.text(invoice.client.representativeNumber, boxX + boxWidth - 2, repLineY, { align: 'right' });
+        }
+
+        custTextY += 3;
+      }
+
+    }
+
+    // --- Tax Invoice Block (below logo, same height as Bill To) ---
+    const invoiceDetailsBlockWidth = 70;
+    const invoiceDetailsBlockX = pageWidth - margin - invoiceDetailsBlockWidth;
+    const invoiceDetailsY = companyInfoY + logoHeight + 8;
+
+    doc.setLineWidth(0.2);
+    doc.rect(invoiceDetailsBlockX, invoiceDetailsY, invoiceDetailsBlockWidth, boxHeight);
 
     doc.setFontSize(7.5);
     doc.setFont('helvetica', 'bold');
-    doc.text('TAX INVOICE', pageWidth - margin - 2, invoiceDetailsY + 6, { align: 'right' });
+    doc.text('TAX INVOICE', pageWidth - margin - 2, invoiceDetailsY + 4, { align: 'right' });
 
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
-    let detailY = invoiceDetailsY + 12;
+    let detailY = invoiceDetailsY + 7;
 
     const addInvoiceDetailRow = (label: string, value: string) => {
       doc.setFont('helvetica', 'bold');
       doc.text(label, invoiceDetailsBlockX + 2, detailY);
 
-      // Value right-aligned
       doc.setFont('helvetica', 'normal');
       doc.text(value, invoiceDetailsBlockX + invoiceDetailsBlockWidth - 2, detailY, { align: 'right' });
 
-      detailY += 4; // move down for next row
+      detailY += 4;
     };
 
     addInvoiceDetailRow('INVOICE NUMBER:', invoice.invoiceNumber);
@@ -138,51 +177,8 @@ export const generateInvoicePDF = async (invoice: Invoice, save: boolean = false
     }
     addInvoiceDetailRow('PAGE:', `${currentPage} of ${totalPages}` || '—');
 
-    // Second Logo (below sales quotation block, far right)
-    const secondLogoY = invoiceDetailsY + 40;
-    doc.addImage(logoImg, 'PNG', invoiceDetailsBlockX, secondLogoY, logoWidth, logoHeight);
-
-    // Customer Box (below first logo, far left)
-    let customerBoxY = companyInfoY + logoHeight + 8;
-    const boxWidth = 70;
-    const boxX = companyInfoStartX;
-
-    if (invoice.client) {
-      const clientLines = [
-        invoice.client.name,
-        invoice.client.addressLine1,
-        invoice.client.addressLine2,
-        invoice.client.addressLine3,
-        invoice.client.addressLine4,
-        invoice.client.vatNumber ? `VAT No: ${invoice.client.vatNumber}` : null,
-        invoice.client.email ? `${invoice.client.email}` : null,
-        invoice.client.representativeName ? `${invoice.client.representativeName} | ${invoice.client.representativeNumber}` : null
-      ].filter(Boolean);
-
-      const boxHeight = 6 + (clientLines.length * 3);
-
-      doc.setLineWidth(0.2);
-      doc.rect(boxX, customerBoxY, boxWidth, boxHeight);
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7.5);
-      doc.text('BILL TO:', boxX + 2, customerBoxY + 4);
-
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7);
-      let custTextY = customerBoxY + 7;
-
-      clientLines.forEach(line => {
-        doc.text(line!, boxX + 2, custTextY);
-        custTextY += 3;
-      });
-    }
-
-    // Update currentY for table start
-    currentY = Math.max(companyInfoY, secondLogoY + logoHeight);
-    currentY += 5;
-
-    // --- Items Table ---
+    // --- Table Start ---
+    currentY = Math.max(customerBoxY + boxHeight, invoiceDetailsY + boxHeight) + 5;
 
     // Render this chunk as a table
     autoTable(doc, {
@@ -233,6 +229,7 @@ export const generateInvoicePDF = async (invoice: Invoice, save: boolean = false
     // --- Summary + Footer + Payment Box (runs on every page) ---
     const table = (doc as any).lastAutoTable;
     currentY = Math.max(table.finalY + 8, pageHeight - margin - totalFooterHeight);
+    currentY += 14;
 
     // Summary
     const summaryX = pageWidth - margin;
@@ -282,10 +279,10 @@ export const generateInvoicePDF = async (invoice: Invoice, save: boolean = false
 
     let paymentTextY = paymentBoxY + 8;
     const paymentDetails = [
-      'Bank: Standard Bank',
-      'Branch: Midrand',
+      'Bank: STANDARD BANK',
+      'Branch: MIDRAND',
       'Branch Code: 123456',
-      'Account Name: Biture (Pty) Ltd',
+      'Account Name: BITURE (PTY) LTD',
       'Account Number: 9876543210',
       'SWIFT Code: SBZAZAJJ'
     ];
