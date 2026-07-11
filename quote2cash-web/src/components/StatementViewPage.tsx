@@ -27,8 +27,8 @@ export const StatementViewPage: React.FC<Props> = ({ statement, invoices, credit
     try {
       await generateStatementPDF(statement, invoices, creditNotes, true); // save mode
     } catch (err) {
-      console.error("Quote PDF save failed:", err);
-      alert("Could not save Quote PDF. Please check the console for errors.");
+      console.error("Satement PDF save failed:", err);
+      alert("Could not save Statement PDF. Please check the console for errors.");
     }
   };
 

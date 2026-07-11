@@ -3,7 +3,7 @@ import type { CreditNote } from '../types';
 import { formatAmount } from '../../formatters';
 import logo from '../assets/logo.png';
 
-export const generateCreditNotePDF = async (creditNote: CreditNote) => {
+export const generateCreditNotePDF = async (creditNote: CreditNote, save: boolean = false) => {
   const doc = new jsPDF({
     orientation: 'p',
     unit: 'mm',
@@ -139,7 +139,7 @@ export const generateCreditNotePDF = async (creditNote: CreditNote) => {
   doc.text(descLines, margin + 2, currentY + 6);
   doc.setFont('helvetica', 'bold');
   doc.text(formatAmount(creditNote.amount), pageWidth - margin - 2, currentY + 6, { align: 'right' });
-  
+
   const textHeight = Math.max(descLines.length * 4, 10);
   currentY += textHeight + 6;
   doc.line(margin, currentY, pageWidth - margin, currentY);
@@ -153,7 +153,14 @@ export const generateCreditNotePDF = async (creditNote: CreditNote) => {
   doc.text(formatAmount(creditNote.amount), summaryX, currentY, { align: 'right' });
   currentY += 20;
 
-
-  // Save
-  doc.save(`CreditNote_${creditNote.creditNoteNumber || 'N-A'}.pdf`);
+  if (save) {
+    // Trigger a download
+    doc.save(`CreditNote_${creditNote.creditNoteNumber || 'N-A'}.pdf`);
+    return ""; // nothing needed for preview in this case
+  } else {
+    // Return blob URL for preview
+    const blob = doc.output("blob");
+    const pdfUrl = URL.createObjectURL(blob).toString();
+    return pdfUrl;
+  }
 };
