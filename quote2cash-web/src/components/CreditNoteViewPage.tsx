@@ -24,7 +24,7 @@ export default function CreditNoteViewPage({ creditNote, onEdit, onBack }: Props
 
   const handleDownloadCreditNotePdf = async () => {
     try {
-      await generateCreditNotePDF(creditNote); // save mode
+      await generateCreditNotePDF(creditNote, true); // save mode
     } catch (err) {
       console.error("Credit Note PDF save failed:", err);
       alert("Could not save Credit Note PDF. Please check the console for errors.");

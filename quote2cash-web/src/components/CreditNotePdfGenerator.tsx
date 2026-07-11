@@ -261,16 +261,16 @@ export const generateCreditNotePDF = async (creditNote: CreditNote, save: boolea
     if (i + MAX_ROWS_PER_PAGE < allRows.length) {
       doc.addPage();
     }
+  }
 
-    if (save) {
-      // Trigger a download
-      doc.save(`CreditNote_${creditNote.creditNoteNumber || 'N-A'}.pdf`);
-      return ""; // nothing needed for preview in this case
-    } else {
-      // Return blob URL for preview
-      const blob = doc.output("blob");
-      const pdfUrl = URL.createObjectURL(blob).toString();
-      return pdfUrl;
-    }
+  if (save) {
+    // Trigger a download
+    doc.save(`CreditNote_${creditNote.creditNoteNumber || 'N-A'}.pdf`);
+    return ""; // nothing needed for preview in this case
+  } else {
+    // Return blob URL for preview
+    const blob = doc.output("blob");
+    const pdfUrl = URL.createObjectURL(blob).toString();
+    return pdfUrl;
   }
 };
