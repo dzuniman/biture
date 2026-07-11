@@ -222,6 +222,7 @@ export const generateStatementPDF = async (statement: Statement, invoices: Invoi
     addStatementDetailRow('STATEMENT DATE:', formatDate(statement.createdAt || (statement as any).CreatedAt));
     addStatementDetailRow("ACCOUNT TYPE:", `${statement.dueDays || (statement as any).dueDays} DAYS`);
     addStatementDetailRow('VENDOR NUMBER:', client?.vendorNumber || '-');
+    addStatementDetailRow('PAGE:', `${currentPage} of ${totalPages}` || '—');
 
     let totalOutstanding = uniqueInvoiceIds.reduce((sum, id) => {
       const invAmount = invoiceMap[id]?.amount ?? 0;
@@ -287,7 +288,7 @@ export const generateStatementPDF = async (statement: Statement, invoices: Invoi
     const summaryX = pageWidth - margin;
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    doc.text('Total Outstanding:', summaryX - 45, currentY);
+    doc.text('Total Outstanding:', summaryX - 55, currentY);
     doc.text(formatAmount(totalOutstanding), summaryX, currentY, { align: 'right' });
     currentY += 6;
 

@@ -4,7 +4,7 @@ import type { JobCard, QuoteItem } from '../types';
 import { formatAmount } from '../../formatters';
 import logo from '../assets/logo.png';
 
-export const generateJobCardPDF = async (jobCard: JobCard) => {
+export const generateJobCardPDF = async (jobCard: JobCard, save: boolean = false) => {
   const doc = new jsPDF({
     orientation: 'p',
     unit: 'mm',
@@ -20,110 +20,18 @@ export const generateJobCardPDF = async (jobCard: JobCard) => {
     });
   };
 
-  const margin = 5;
-  const pageWidth = doc.internal.pageSize.getWidth();
-  let currentY = margin;
-
-  // Pre-load logo
+  // Pre-load logo image
   const logoImg = new Image();
   logoImg.src = logo;
-  try {
-    await new Promise((resolve) => {
-      if (logoImg.complete && logoImg.naturalWidth > 0) { resolve(null); return; }
-      logoImg.onload = () => resolve(null);
-      logoImg.onerror = () => resolve(null);
-    });
-  } catch { /* continue without logo */ }
+  await new Promise((resolve) => {
+    logoImg.onload = resolve;
+    logoImg.onerror = () => {
+      console.error("PDF Generator: Could not load logo image from", logo);
+      resolve(null);
+    };
+  });
 
-  // ── Company Info (left) ──
-  let companyY = currentY;
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'bold');
-  doc.text('BITURE (PTY) LTD   Reg: K2013/194395/07   VAT No: 4480272220', margin, companyY);
-  companyY += 4;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.5);
-  doc.text('Cnr Fred Versepute and Asparagus Road Midrand 1685', margin, companyY);
-  companyY += 4;
-  doc.text('Email: BetrothM@biture.co.za   Tel: +2765 835 4371 | +2783 249 8510', margin, companyY);
-  companyY += 6;
-
-  const logoHeight = 20;
-  if (logoImg.complete && logoImg.naturalWidth > 0) {
-    const aspect = logoImg.naturalWidth / logoImg.naturalHeight;
-    doc.addImage(logoImg, 'PNG', margin, companyY, logoHeight * aspect, logoHeight);
-  }
-  const finalCompanyY = companyY + logoHeight + 5;
-
-  // ── Job Card Details (right) ──
-  const detailBlockW = 75;
-  const detailBlockX = pageWidth - margin - detailBlockW;
-  let detailY = currentY;
-  const lineH = 3.5;
-
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'bold');
-  doc.text('JOB CARD', pageWidth - margin, detailY, { align: 'right' });
-  detailY += 5;
-
-  doc.setFontSize(7);
-  const addDetailRow = (label: string, value: string) => {
-    doc.setFont('helvetica', 'bold');
-    doc.text(label, detailBlockX, detailY);
-    doc.setFont('helvetica', 'normal');
-    const wrapped = doc.splitTextToSize(value, detailBlockW - 30);
-    wrapped.forEach((line: string) => {
-      doc.text(line, pageWidth - margin, detailY, { align: 'right' });
-      detailY += lineH;
-    });
-  };
-
-  addDetailRow('JOB CARD NUMBER:', jobCard.jobCardNumber);
-  addDetailRow('DATE:', formatDate(jobCard.createdAt ? new Date(jobCard.createdAt) : undefined));
-  addDetailRow('REFERENCE:', jobCard.reference || '—');
-  addDetailRow('PO NUMBER:', jobCard.quote?.poNumber || '—');
-
-  // ── Client Box (right) ──
-  const client = jobCard.quote?.client;
-  if (client) {
-    const boxW = 75;
-    const boxH = 34;
-    const boxX = pageWidth - margin - boxW;
-    const boxY = detailY + 4;
-    doc.setLineWidth(0.25);
-    doc.rect(boxX, boxY, boxW, boxH);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.5);
-    doc.text('SITE DETAILS:', boxX + 2, boxY + 4);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    let cy = boxY + 8;
-    const lines = [
-      client.name,
-      client.addressLine1,
-      client.addressLine2,
-      client.addressLine3,
-      client.addressLine4,
-      client.vatNumber ? `VAT No: ${client.vatNumber}` : null,
-      client.email ? `Email: ${client.email}` : null,
-      `${client.representativeName || '—'}`,
-      `${client.representativeNumber || '—'}`
-    ].filter(Boolean) as string[];
-    lines.forEach(line => { doc.text(line, boxX + 2, cy); cy += 3; });
-    detailY = boxY + boxH + 5;
-  }
-
-  currentY = Math.max(finalCompanyY, detailY);
-  currentY += 4;
-
-  // Horizontal divider
-  doc.setDrawColor(180, 180, 180);
-  doc.setLineWidth(0.3);
-  doc.line(margin, currentY, pageWidth - margin, currentY);
-  currentY += 5;
-
-  // ── Items Table — Item + Qty + Description only ──
-  const tableRows = (jobCard.quote?.items ?? [])
+  const allRows = (jobCard.quote?.items ?? [])
     .slice()
     .sort((a: QuoteItem, b: QuoteItem) => {
       const aNum = Number(a.itemNumber);
@@ -133,91 +41,259 @@ export const generateJobCardPDF = async (jobCard: JobCard) => {
     })
     .map((item: QuoteItem) => [item.itemNumber, item.quantity, item.description]);
 
-  autoTable(doc, {
-    startY: currentY,
-    head: [['ITEM', 'QTY', 'DESCRIPTION']],
-    body: tableRows,
-    theme: 'grid',
-    styles: {
-      font: 'helvetica',
-      fontSize: 8,
-      cellPadding: 2.5,
-      lineColor: [0, 0, 0],
-      lineWidth: 0.15,
-      textColor: [0, 0, 0],
-    },
-    headStyles: {
-      fillColor: [243, 244, 246],
-      textColor: [0, 0, 0],
-      fontStyle: 'bold',
-      lineWidth: 0.15,
-    },
-    columnStyles: {
-      0: { cellWidth: 12, halign: 'center' },
-      1: { cellWidth: 12, halign: 'center' },
-      2: { cellWidth: 'auto' },
-    },
-    margin: { left: margin, right: margin },
-  });
+  const MAX_ROWS_PER_PAGE = 24;
+  const totalPages = Math.ceil(allRows.length / MAX_ROWS_PER_PAGE);
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const footerBlockHeight = 55;
+  const summaryHeight = 20;
+  const totalFooterHeight = summaryHeight + footerBlockHeight;
 
-  currentY = (doc as any).lastAutoTable.finalY + 6;
+  for (let i = 0; i < allRows.length; i += MAX_ROWS_PER_PAGE) {
+    const currentPage = Math.floor(i / MAX_ROWS_PER_PAGE) + 1;
+    let chunk = allRows.slice(i, i + MAX_ROWS_PER_PAGE);
 
-  // ── Description Block ──
-  if (jobCard.description) {
+    while (chunk.length < MAX_ROWS_PER_PAGE) {
+      chunk.push(['', '', '', '', '', '', '']);
+    }
+
+    const margin = 5;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    let currentY = margin;
+
+    // --- Company Info (Top Left) ---
+    const companyInfoX = margin;
+    let companyInfoY = currentY - 10;
+
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text('BITURE (PTY) LTD   Reg: K2013/194395/07   VAT No: 4480272220', companyInfoX, companyInfoY + 12);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.text('Cnr Fred Versepute and Asparagus Road Midrand 1685', companyInfoX, companyInfoY + 16);
+    doc.text('Email: BetrothM@biture.co.za   Tel: +27 65 835 4371 | +27 83 249 8510', companyInfoX, companyInfoY + 20);
+
+    // --- Logo (Top Right) ---
+    const logoHeight = 15;
+    let logoWidth = 0;
+    if (logoImg.complete && logoImg.naturalWidth > 0) {
+      const aspectRatio = logoImg.naturalWidth / logoImg.naturalHeight;
+      logoWidth = logoHeight * aspectRatio;
+      doc.addImage(logoImg, 'PNG', pageWidth - margin - logoWidth, currentY - 2, logoWidth, logoHeight);
+    }
+
+    // --- Bill To Box (below company info) ---
+    let customerBoxY = companyInfoY + 23;
+    const boxWidth = 70;
+    const boxHeight = 33; // fixed height to match Tax Invoice block
+    const boxX = companyInfoX;
+
+    doc.setLineWidth(0.2);
+    doc.rect(boxX, customerBoxY, boxWidth, boxHeight);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.text('SITE DETAILS:', boxX + 2, customerBoxY + 4);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    let custTextY = customerBoxY + 7;
+
+    if (jobCard.quote?.client) {
+      // Build client lines WITHOUT representative
+      const clientLines = [
+        jobCard.quote.client.name,
+        jobCard.quote.client.addressLine1,
+        jobCard.quote.client.addressLine2,
+        jobCard.quote.client.addressLine3,
+        jobCard.quote.client.addressLine4,
+        jobCard.quote.client.vatNumber ? `VAT No: ${jobCard.quote.client.vatNumber}` : null,
+        jobCard.quote.client.email ? `Email: ${jobCard.quote.client.email}` : null
+      ].filter(Boolean);
+
+      // Draw normal client lines
+      clientLines.forEach(line => {
+        doc.text(line!, boxX + 2, custTextY);
+        custTextY += 3;
+      });
+
+      // Draw representative line separately (name left, number right, separator in middle)
+      if (jobCard.quote.client.representativeName || jobCard.quote.client.representativeNumber) {
+        const repLineY = custTextY;
+        const separatorX = boxX + (boxWidth / 2);
+
+        if (jobCard.quote.client.representativeName) {
+          doc.text(jobCard.quote.client.representativeName, boxX + 2, repLineY);
+        }
+
+        if (jobCard.quote.client.representativeNumber) {
+          doc.text(jobCard.quote.client.representativeNumber, boxX + boxWidth - 2, repLineY, { align: 'right' });
+        }
+
+        custTextY += 3;
+      }
+
+    }
+
+    // --- Job Card Block (below logo, same height as Bill To) ---
+    const jobCardDetailsBlockWidth = 70;
+    const jobCardDetailsBlockX = pageWidth - margin - jobCardDetailsBlockWidth;
+    const jobCardDetailsY = companyInfoY + logoHeight + 8;
+
+    doc.setLineWidth(0.2);
+    doc.rect(jobCardDetailsBlockX, jobCardDetailsY, jobCardDetailsBlockWidth, boxHeight);
+
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'bold');
+    doc.text('JOB CARD', pageWidth - margin - 2, jobCardDetailsY + 4, { align: 'right' });
+
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    let detailY = jobCardDetailsY + 7;
+
+    const addJobCardDetailRow = (label: string, value: string) => {
+      doc.setFont('helvetica', 'bold');
+      doc.text(label, jobCardDetailsBlockX + 2, detailY);
+
+      doc.setFont('helvetica', 'normal');
+      doc.text(value, jobCardDetailsBlockX + jobCardDetailsBlockWidth - 2, detailY, { align: 'right' });
+
+      detailY += 4;
+    };
+
+    addJobCardDetailRow('JOB CARD NUMBER:', jobCard.jobCardNumber);
+    addJobCardDetailRow('DATE:', formatDate(jobCard.createdAt ? new Date(jobCard.createdAt) : undefined));
+    addJobCardDetailRow('REFERENCE:', jobCard.reference || '—');
+    addJobCardDetailRow('VENDOR NUMBER:', jobCard.quote?.client?.vendorNumber || '—');
+    if (jobCard.quote?.poNumber) {
+      addJobCardDetailRow('PO NUMBER:', jobCard.quote.poNumber);
+    }
+    addJobCardDetailRow('PAGE:', `${currentPage} of ${totalPages}` || '—');
+
+    // --- Table Start ---
+    currentY = Math.max(customerBoxY + boxHeight, jobCardDetailsY + boxHeight) + 5;
+
+
+    autoTable(doc, {
+      startY: currentY,
+      head: [['ITEM', 'QTY', 'DESCRIPTION']],
+      body: chunk,
+      theme: 'plain',
+      styles: {
+        font: 'helvetica',
+        fontSize: 7.5,
+        cellPadding: 2,
+        textColor: [0, 0, 0],
+        lineColor: [0, 0, 0],
+        lineWidth: { top: 0, right: 0.1, bottom: 0, left: 0.1 }, // verticals only
+      },
+      headStyles: {
+        fillColor: [243, 244, 246],
+        textColor: [0, 0, 0],
+        fontStyle: 'bold',
+        lineWidth: { top: 0.2, right: 0.2, bottom: 0.2, left: 0.2 },
+        halign: 'center',
+        valign: 'middle',
+      },
+      columnStyles: {
+        0: { cellWidth: 12, halign: 'center' },
+        1: { cellWidth: 12, halign: 'center' },
+        2: { cellWidth: 'auto' },
+      }, didDrawCell: (data) => {
+        if (
+          data.section === 'body' &&
+          data.row.index === chunk.length - 1 &&
+          data.column.index === data.table.columns.length - 1
+        ) {
+          const y = data.cell.y + data.cell.height;
+          doc.setDrawColor(0, 0, 0);
+          doc.setLineWidth(0.2);
+          doc.line(margin, y, pageWidth - margin, y);
+        }
+      },
+      margin: margin,
+    });
+
+    // --- Summary + Footer + Payment Box (runs on every page) ---
+    const table = (doc as any).lastAutoTable;
+    currentY = Math.max(table.finalY + 8, pageHeight - margin - totalFooterHeight);
+    currentY += 10;
+
+    // Summary
+    const summaryX = pageWidth - margin;
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Sub Total', summaryX - 45, currentY);
+    doc.text(formatAmount(jobCard.quote?.subTotal), summaryX, currentY, { align: 'right' });
+    currentY += 4;
+    doc.text('VAT (15%)', summaryX - 45, currentY);
+    doc.text(formatAmount(jobCard.quote?.vat), summaryX, currentY, { align: 'right' });
+    currentY += 2;
+    doc.setLineWidth(0.5);
+    doc.setDrawColor(51, 51, 51);
+    doc.line(summaryX - 45, currentY, summaryX, currentY);
+    currentY += 5;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Total', summaryX - 45, currentY);
+    doc.text(formatAmount(jobCard.quote?.total), summaryX, currentY, { align: 'right' });
+    doc.setFont('helvetica', 'normal');
+
+    // Approval + Terms
+    currentY = Math.max(currentY + 5, pageHeight - margin - footerBlockHeight);
+    currentY += -14;
+    doc.setFontSize(8);
+    doc.text('Received and Approved by: __________________________________________________________', margin, currentY);
+    currentY += 8;
+    doc.text('Signature: ________________________________________________________________________', margin, currentY);
+
+    // Payment Details Box
+    const paymentBoxX = margin;
+    const paymentBoxY = pageHeight - 29;
+    const paymentBoxWidth = pageWidth - (margin * 2);
+    const paymentBoxHeight = 25;
+
+    doc.setLineWidth(0.2);
+    doc.rect(paymentBoxX, paymentBoxY, paymentBoxWidth, paymentBoxHeight);
+
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
-    doc.text('REMARKS:', margin, currentY);
+    doc.setTextColor(255, 0, 0);
+    doc.text('OUR BANKING DETAILS ARE AS FOLLOWS:', paymentBoxX + 4, paymentBoxY + 5);
+
+    doc.setTextColor(0, 0, 0);
     doc.setFont('helvetica', 'normal');
-    const descLines = doc.splitTextToSize(jobCard.description, pageWidth - margin * 2 - 28);
-    doc.text(descLines, margin + 28, currentY);
-    const descHeight = descLines.length * 4;
-    currentY += Math.max(descHeight, 5) + 4;
+    doc.setFontSize(7);
+
+    let paymentTextY = paymentBoxY + 8;
+    const paymentDetails = [
+      'Bank: STANDARD BANK',
+      'Branch: MIDRAND',
+      'Branch Code: 123456',
+      'Account Name: BITURE (PTY) LTD',
+      'Account Number: 9876543210',
+      'SWIFT Code: SBZAZAJJ'
+    ];
+    paymentDetails.forEach(line => {
+      doc.text(line, paymentBoxX + 4, paymentTextY);
+      paymentTextY += 3;
+    });
+
+    currentY = (doc as any).lastAutoTable.finalY + 10;
+
+    // Add new page if more chunks remain
+    if (i + MAX_ROWS_PER_PAGE < allRows.length) {
+      doc.addPage();
+    }
   }
 
-  // ── Summary (Sub-total / VAT / Total) ──
-  const subTotal = Number(jobCard.quote?.subTotal ?? 0);
-  const vat = Number(jobCard.quote?.vat ?? 0);
-  const total = subTotal + vat;
-  const summaryX = pageWidth - margin;
-  const labelX = summaryX - 50;
-
-  doc.setFontSize(8);
-  const addSummaryRow = (label: string, value: number, bold = false) => {
-    doc.setFont('helvetica', bold ? 'bold' : 'normal');
-    doc.text(label, labelX, currentY);
-    doc.text(formatAmount(value), summaryX, currentY, { align: 'right' });
-    currentY += 5;
-  };
-
-  // ── Received / Approved & Signature Lines ──
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const footerBlockHeight = 38;
-  currentY = Math.max(currentY + 5, pageHeight - margin - footerBlockHeight);
-
-
-  // ── Payment Details ──
-  currentY += 18;
-  const contentWidth = pageWidth - (margin * 2);
-  doc.setFontSize(6.5);
-  doc.setFont('helvetica', 'bold');
-  doc.text('OUR BANKING DETAILS ARE AS FOLLOWS:', margin, currentY);
-  doc.setFont('helvetica', 'normal');
-  currentY += 4;
-  const terms = [
-    'Account Name: BITURE (PTY) LTD',
-    'Bank: Standard Bank',
-    'Account Number: 10142678536',
-    'Branch Code: 051001',
-    'Thank you for your Purchase Order. For product or services related purchases, the invoice will only be due once the goods have been delivered or the services rendered. Please confirm your payment by e-mailing your proof of payment or remittance advise to BetrothM@biture.co.za'
-  ];
-  terms.forEach(term => {
-    const wrappedTerm = doc.splitTextToSize(term, contentWidth);
-    wrappedTerm.forEach((line: string) => {
-      doc.text(line, margin, currentY);
-      currentY += 3;
-    });
-  });
-
-  // Save
-  doc.save(`JobCard_${jobCard.jobCardNumber || 'N-A'}.pdf`);
+  if (save) {
+    // Trigger a download
+    doc.save(`JobCard_${jobCard.jobCardNumber || 'N-A'}.pdf`);
+    return ""; // nothing needed for preview in this case
+  } else {
+    // Return blob URL for preview
+    const blob = doc.output("blob");
+    const pdfUrl = URL.createObjectURL(blob).toString();
+    return pdfUrl;
+  }
 };
