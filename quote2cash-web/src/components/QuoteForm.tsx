@@ -28,6 +28,8 @@ interface Props {
 
 type SuggestionOption = { id: string; value: string };
 
+type QuoteFormItem = QuoteItemCreateRequest & { unitPricePreview: number };
+
 interface SuggestionInputProps {
   options: SuggestionOption[];
   value: string;
@@ -112,15 +114,22 @@ function SuggestionInput({
   );
 }
 
-const blankItem: QuoteItemCreateRequest = {
+const blankItem: QuoteFormItem = {
   itemNumber: 1,
   quantity: 1,
   code: '',
   uom: '',
   description: '',
   unitPrice: 0,
+  unitPricePreview: 0,
   totalPrice: 0
 };
+
+const getActualUnitPrice = (previewPrice: number, marginPercent: number) =>
+  parseFloat((previewPrice * (1 + marginPercent / 100)).toFixed(2));
+
+const getBaseUnitPrice = (actualPrice: number, marginPercent: number) =>
+  parseFloat((marginPercent > 0 ? actualPrice / (1 + marginPercent / 100) : actualPrice).toFixed(2));
 
 export default function QuoteForm({
   clients,
@@ -147,7 +156,7 @@ export default function QuoteForm({
   const [poNumber, setPoNumber] = useState(initialData?.poNumber ?? '');
   const [date, setDate] = useState(initialData?.date ? initialData.date.slice(0, 10) : today);
   const [validityDays, setValidityDays] = useState(initialData?.validityDays.toString() ?? '30');
-  const [items, setItems] = useState<QuoteItemCreateRequest[]>(initialData?.items?.length ? initialData.items : [blankItem]);
+  const [items, setItems] = useState<QuoteFormItem[]>(initialData?.items?.length ? initialData.items.map((item) => ({ ...item, unitPricePreview: getBaseUnitPrice(item.unitPrice, initialData?.margin ?? 0) })) : [blankItem]);
   const [margin, setMargin] = useState<number>(initialData?.margin ?? 0);
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -163,7 +172,7 @@ export default function QuoteForm({
       setValidityDays(initialData.validityDays.toString());
       setMargin(initialData.margin ?? 0);
       const sorted = [...(initialData.items || [])].sort((a, b) => a.itemNumber - b.itemNumber);
-      setItems(sorted.length ? sorted : [blankItem]);
+      setItems(sorted.length ? sorted.map((item) => ({ ...item, unitPricePreview: getBaseUnitPrice(item.unitPrice, initialData.margin ?? 0) })) : [blankItem]);
     } else { // This block runs for a brand new quote or when duplicating
       setClientId(selectedClientId ?? '');
       setQuoteNumber('');
@@ -229,7 +238,7 @@ export default function QuoteForm({
     return descriptionOptions.find((option) => option.code.trim().toLowerCase() === lookup);
   };
 
-  const reindexItems = (currentItems: QuoteItemCreateRequest[]) => {
+  const reindexItems = (currentItems: QuoteFormItem[]) => {
     return [...currentItems]
       .sort((a, b) => a.itemNumber - b.itemNumber)
       .map((item, index) => ({ ...item, itemNumber: index + 1 }));
@@ -247,7 +256,8 @@ export default function QuoteForm({
         item.quantity = Math.max(0, Number(value));
       } else if (field === 'unitPrice') {
         const basePrice = Number(value);
-        item.unitPrice = margin > 0 ? parseFloat((basePrice * (1 + margin / 100)).toFixed(2)) : basePrice;
+        item.unitPricePreview = basePrice;
+        item.unitPrice = getActualUnitPrice(basePrice, margin);
       } else if (field === 'code') {
         item.code = value;
         const matched = findDescriptionByCode(value);
@@ -280,6 +290,7 @@ export default function QuoteForm({
       uom: '',
       description: '',
       unitPrice: 0,
+      unitPricePreview: 0,
       totalPrice: 0,
     }]));
   };
@@ -320,16 +331,18 @@ export default function QuoteForm({
         return;
       }
 
-      const newItems: QuoteItemCreateRequest[] = [];
+      const newItems: QuoteFormItem[] = [];
       for (let i = 1; i < json.length; i++) {
         const row = json[i];
-        const item: QuoteItemCreateRequest = {
+        const preview = parseFloat(row[headers.indexOf('unit price')] || 0);
+        const item: QuoteFormItem = {
           itemNumber: 0, // Will be re-indexed later
           code: row[headers.indexOf('code')] || '',
           quantity: parseFloat(row[headers.indexOf('quantity')] || 0),
           uom: row[headers.indexOf('uom')] || '',
           description: row[headers.indexOf('description')] || '',
-          unitPrice: parseFloat(row[headers.indexOf('unit price')] || 0),
+          unitPricePreview: preview,
+          unitPrice: getActualUnitPrice(preview, margin),
           totalPrice: 0, // Calculated below
         };
         item.totalPrice = parseFloat((item.quantity * item.unitPrice).toFixed(2));
@@ -387,16 +400,13 @@ export default function QuoteForm({
     // Reapply margin to all current items based on their stored totalPrice/quantity ratio
     setItems((current) =>
       current.map((item) => {
-        // Derive the base unit price (without margin) by reversing the previous margin
-        const prevMultiplier = 1 + margin / 100;
-        const baseUnitPrice = margin > 0 ? item.unitPrice / prevMultiplier : item.unitPrice;
-        const newUnitPrice = newMargin > 0
-          ? parseFloat((baseUnitPrice * (1 + newMargin / 100)).toFixed(2))
-          : parseFloat(baseUnitPrice.toFixed(2));
+        const baseUnitPrice = getBaseUnitPrice(item.unitPrice, margin);
+        const newActual = getActualUnitPrice(baseUnitPrice, newMargin);
         return {
           ...item,
-          unitPrice: newUnitPrice,
-          totalPrice: parseFloat((item.quantity * newUnitPrice).toFixed(2))
+          unitPricePreview: parseFloat(baseUnitPrice.toFixed(2)),
+          unitPrice: newActual,
+          totalPrice: parseFloat((item.quantity * newActual).toFixed(2))
         };
       })
     );
@@ -539,7 +549,8 @@ export default function QuoteForm({
               <span>Code</span>
               <span>UOM</span>
               <span>Description</span>
-              <span>Unit price</span>
+              <span>Unit Price</span>
+              <span>Unit Price M</span>
               <span>Total price</span>
               <span />
             </div>
@@ -582,12 +593,13 @@ export default function QuoteForm({
                   required
                 />
                 <input
-                  type="text"
+                  type="number"
                   step="0.01"
-                  value={item.unitPrice}
+                  value={item.unitPricePreview}
                   onChange={(event) => handleUpdateItem(index, 'unitPrice', event.target.value)}
                   required
                 />
+                <input value={formatAmount(item.unitPrice)} disabled />
                 <input value={formatAmount(item.totalPrice)} disabled />
                 <button
                   type="button"
