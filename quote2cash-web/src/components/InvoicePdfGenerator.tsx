@@ -5,7 +5,7 @@ import type { Invoice, QuoteItem, Client } from '../types'; // Import necessary 
 import { formatAmount } from '../../formatters'; // Assuming formatAmount is available at this path
 import logo from '../assets/logo.png'; // Assuming logo path is correct
 
-export const generateInvoicePDF = async (invoice: Invoice, save: boolean = false) => {
+export const generateInvoicePDF = async (invoice: Invoice, save: boolean = false, returnBlob = false) => {
   const doc = new jsPDF({
     orientation: 'p',
     unit: 'mm',
@@ -302,9 +302,15 @@ export const generateInvoicePDF = async (invoice: Invoice, save: boolean = false
   if (save) {
     doc.save(`Invoice_${invoice.invoiceNumber}.pdf`);
     return "";
-  } else {
+  }
+  if (returnBlob) {
+    // Return a Blob for react-pdf
     const blob = doc.output("blob");
-    const pdfUrl = URL.createObjectURL(blob).toString();
+    return blob;
+  } else {
+    // Return blob URL for iframe preview
+    const blob = doc.output("blob");
+    const pdfUrl = URL.createObjectURL(blob);
     return pdfUrl;
   }
 };

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Document, Page, pdfjs } from "react-pdf";
 import { getInvoice } from '../api';
 import type { Invoice, Client, Quote, InvoiceQuote } from '../types';
 import { formatAmount } from '../../formatters';
@@ -13,12 +14,13 @@ interface Props {
 }
 
 export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfBlob, setPdfBlob] = useState<string | null>(null);
 
   useEffect(() => {
     const updatePdf = async () => {
-      const url = await generateInvoicePDF(invoice);
-      setPdfUrl(url);
+      const blob = await generateInvoicePDF(invoice, false, true) as Blob;
+      const url = URL.createObjectURL(blob);
+      setPdfBlob(url);
     };
     updatePdf();
   }, [invoice]);
@@ -64,13 +66,10 @@ export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
         </button>
       </div>
       <div className="no-print" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-start', marginTop: '20px' }}>
-        {pdfUrl && (
-          <iframe
-            src={pdfUrl}
-            width="100%"
-            height="600px"
-            style={{ border: "1px solid #ccc", marginTop: "1rem" }}
-          />
+        {pdfBlob && (
+          <Document file={pdfBlob}>
+            <Page pageNumber={1} />
+          </Document>
         )}
       </div>
     </div>

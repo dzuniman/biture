@@ -1,4 +1,5 @@
 import React, { useMemo, useEffect, useState } from 'react';
+import { Document, Page, pdfjs } from "react-pdf";
 import type { Statement, Invoice, Client, CreditNote } from '../types';
 import { formatAmount } from '../../formatters';
 import logo from '../assets/logo.png';
@@ -13,12 +14,13 @@ interface Props {
 }
 
 export const StatementViewPage: React.FC<Props> = ({ statement, invoices, creditNotes = [], onEdit, onBack }) => {
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfBlob, setPdfBlob] = useState<string | null>(null);
 
   useEffect(() => {
     const updatePdf = async () => {
-      const url = await generateStatementPDF(statement, invoices, creditNotes);
-      setPdfUrl(url);
+      const blob = await generateStatementPDF(statement, invoices, creditNotes) as Blob;
+      const url = URL.createObjectURL(blob);
+      setPdfBlob(url);
     };
     updatePdf();
   }, [statement, invoices, creditNotes]);
@@ -61,13 +63,10 @@ export const StatementViewPage: React.FC<Props> = ({ statement, invoices, credit
         </button>
       </div>
       <div className="view-actions no-print" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-start', marginTop: '20px' }}>
-        {pdfUrl && (
-          <iframe
-            src={pdfUrl}
-            width="100%"
-            height="600px"
-            style={{ border: "1px solid #ccc", marginTop: "1rem" }}
-          />
+        {pdfBlob && (
+          <Document file={pdfBlob}>
+            <Page pageNumber={1} />
+          </Document>
         )}
       </div>
     </div>
