@@ -4,7 +4,7 @@ import type { Quote } from '../types';
 import { formatAmount } from '../../formatters';
 import logo from '../assets/logo.png';
 
-export const generateQuotePDF = async (quote: Quote, save: boolean = false) => {
+export const generateQuotePDF = async (quote: Quote, save: boolean = false, returnBlob = false) => {
   const doc = new jsPDF({
     orientation: 'p',
     unit: 'mm',
@@ -297,11 +297,17 @@ export const generateQuotePDF = async (quote: Quote, save: boolean = false) => {
   if (save) {
     // Trigger a download
     doc.save(`Quote_${quote.quoteNumber}_${quote.reference}.pdf`);
-    return ""; // nothing needed for preview in this case
-  } else {
-    // Return blob URL for preview
+    return "";
+  }
+
+  if (returnBlob) {
+    // Return a Blob for react-pdf
     const blob = doc.output("blob");
-    const pdfUrl = URL.createObjectURL(blob).toString();
+    return blob;
+  } else {
+    // Return blob URL for iframe preview
+    const blob = doc.output("blob");
+    const pdfUrl = URL.createObjectURL(blob);
     return pdfUrl;
   }
 };

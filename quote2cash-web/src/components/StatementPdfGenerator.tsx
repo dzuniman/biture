@@ -5,7 +5,11 @@ import type { Statement, Invoice, Client, CreditNote } from '../types';
 import { formatAmount } from '../../formatters';
 import logo from '../assets/logo.png';
 
-export const generateStatementPDF = async (statement: Statement, invoices: Invoice[], creditNotes: CreditNote[] = [], save: boolean = false) => {
+export const generateStatementPDF = async (statement: Statement,
+  invoices: Invoice[],
+  creditNotes: CreditNote[] = [],
+  save: boolean = false,
+  returnBlob = false) => {
   const doc = new jsPDF({
     orientation: 'p',
     unit: 'mm',
@@ -422,10 +426,15 @@ export const generateStatementPDF = async (statement: Statement, invoices: Invoi
     // Trigger a download
     doc.save(`Statement_${statement.statementNumber}.pdf`);
     return ""; // nothing needed for preview in this case
-  } else {
-    // Return blob URL for preview
+  }
+  if (returnBlob) {
+    // Return a Blob for react-pdf
     const blob = doc.output("blob");
-    const pdfUrl = URL.createObjectURL(blob).toString();
+    return blob;
+  } else {
+    // Return blob URL for iframe preview
+    const blob = doc.output("blob");
+    const pdfUrl = URL.createObjectURL(blob);
     return pdfUrl;
   }
 };
