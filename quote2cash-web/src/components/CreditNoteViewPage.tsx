@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Document, Page, pdfjs } from "react-pdf";
 import { formatAmount } from '../../formatters';
 import type { CreditNote, Client } from '../types';
 import logo from '../assets/logo.png';
@@ -12,12 +13,13 @@ interface Props {
 }
 
 export default function CreditNoteViewPage({ creditNote, onEdit, onBack }: Props) {
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfBlob, setPdfBlob] = useState<string | null>(null);
 
   useEffect(() => {
     const updatePdf = async () => {
-      const url = await generateCreditNotePDF(creditNote);
-      setPdfUrl(url);
+      const blob = await generateCreditNotePDF(creditNote, false, true) as Blob;
+      const url = URL.createObjectURL(blob);
+      setPdfBlob(url);
     };
     updatePdf();
   }, [creditNote]);
@@ -49,13 +51,10 @@ export default function CreditNoteViewPage({ creditNote, onEdit, onBack }: Props
         </button>
       </div>
       <div className="no-print" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-start', marginTop: '40px' }}>
-        {pdfUrl && (
-          <iframe
-            src={pdfUrl}
-            width="100%"
-            height="600px"
-            style={{ border: "1px solid #ccc", marginTop: "1rem" }}
-          />
+        {pdfBlob && (
+          <Document file={pdfBlob}>
+            <Page pageNumber={1} />
+          </Document>
         )}
       </div>
     </div>
