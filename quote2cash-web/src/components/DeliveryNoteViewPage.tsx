@@ -6,6 +6,8 @@ import logo from '../assets/logo.png';
 import { generateDeliveryNotePDF } from './DeliveryNotePdfGenerator';
 import { getDeliveryNote } from '../api';
 
+pdfjs.GlobalWorkerOptions.workerSrc =
+  `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 interface Props {
   deliveryNote: DeliveryNote;
   onEdit: () => void;

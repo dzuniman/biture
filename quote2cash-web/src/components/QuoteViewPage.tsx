@@ -5,6 +5,9 @@ import { formatAmount } from '../../formatters';
 import logo from '../assets/logo.png';
 import { generateQuotePDF } from './QuotePdfGenerator'; // Import the Quote generator
 
+pdfjs.GlobalWorkerOptions.workerSrc =
+  `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
+
 interface Props {
   quote: Quote;
   onEdit: () => void;

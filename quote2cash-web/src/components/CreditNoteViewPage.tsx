@@ -6,6 +6,9 @@ import logo from '../assets/logo.png';
 import { generateCreditNotePDF } from './CreditNotePdfGenerator';
 import { getCreditNote } from '../api';
 
+pdfjs.GlobalWorkerOptions.workerSrc =
+  `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
+
 interface Props {
   creditNote: CreditNote;
   onEdit: () => void;

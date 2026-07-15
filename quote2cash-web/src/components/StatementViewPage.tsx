@@ -5,6 +5,9 @@ import { formatAmount } from '../../formatters';
 import logo from '../assets/logo.png';
 import { generateStatementPDF } from './StatementPdfGenerator';
 
+pdfjs.GlobalWorkerOptions.workerSrc =
+  `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
+
 interface Props {
   statement: Statement;
   invoices: Invoice[];

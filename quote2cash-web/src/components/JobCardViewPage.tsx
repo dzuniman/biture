@@ -6,6 +6,9 @@ import logo from '../assets/logo.png';
 import { generateJobCardPDF } from './JobCardPdfGenerator';
 import { getJobCard } from '../api';
 
+pdfjs.GlobalWorkerOptions.workerSrc =
+  `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
+
 interface Props {
   jobCard: JobCard;
   onEdit: () => void;
