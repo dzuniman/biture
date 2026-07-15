@@ -6,8 +6,7 @@ import logo from '../assets/logo.png';
 import { generateJobCardPDF } from './JobCardPdfGenerator';
 import { getJobCard } from '../api';
 
-pdfjs.GlobalWorkerOptions.workerSrc =
-  `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
+pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
 
 interface Props {
   jobCard: JobCard;

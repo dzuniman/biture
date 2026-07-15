@@ -7,8 +7,7 @@ import logo from '../assets/logo.png';
 import { generateInvoicePDF } from './InvoicePdfGenerator'; // Import the new generator
 import { generateQuotePDF } from "../pdfUtils";
 
-pdfjs.GlobalWorkerOptions.workerSrc =
-  `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
+pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
 
 interface Props {
   invoice: Invoice;
