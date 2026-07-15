@@ -18,7 +18,7 @@ export const StatementViewPage: React.FC<Props> = ({ statement, invoices, credit
 
   useEffect(() => {
     const updatePdf = async () => {
-      const blob = await generateStatementPDF(statement, invoices, creditNotes) as Blob;
+      const blob = await generateStatementPDF(statement, invoices, creditNotes, false, true) as Blob;
       const url = URL.createObjectURL(blob);
       setPdfBlob(url);
     };

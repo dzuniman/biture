@@ -4,7 +4,7 @@ import type { JobCard, QuoteItem } from '../types';
 import { formatAmount } from '../../formatters';
 import logo from '../assets/logo.png';
 
-export const generateJobCardPDF = async (jobCard: JobCard, save: boolean = false) => {
+export const generateJobCardPDF = async (jobCard: JobCard, save: boolean = false, returnBlob = false) => {
   const doc = new jsPDF({
     orientation: 'p',
     unit: 'mm',
@@ -167,7 +167,7 @@ export const generateJobCardPDF = async (jobCard: JobCard, save: boolean = false
     if (jobCard.quote?.poNumber) {
       addJobCardDetailRow('PO NUMBER:', jobCard.quote.poNumber);
     }
-    addJobCardDetailRow('PAGE:', `${currentPage} of ${totalPages}` || '—');
+    addJobCardDetailRow('PAGE:', `${currentPage} of ${totalPages}`);
 
     // --- Table Start ---
     currentY = Math.max(customerBoxY + boxHeight, jobCardDetailsY + boxHeight) + 5;
@@ -271,10 +271,15 @@ export const generateJobCardPDF = async (jobCard: JobCard, save: boolean = false
     // Trigger a download
     doc.save(`JobCard_${jobCard.jobCardNumber || 'N-A'}.pdf`);
     return ""; // nothing needed for preview in this case
-  } else {
-    // Return blob URL for preview
+  }
+  if (returnBlob) {
+    // Return a Blob for react-pdf
     const blob = doc.output("blob");
-    const pdfUrl = URL.createObjectURL(blob).toString();
+    return blob;
+  } else {
+    // Return blob URL for iframe preview
+    const blob = doc.output("blob");
+    const pdfUrl = URL.createObjectURL(blob);
     return pdfUrl;
   }
 };
