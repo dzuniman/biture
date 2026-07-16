@@ -127,13 +127,13 @@ export default function DocumentListPage({
       </div>
 
       {filteredDocuments.length > 0 && (
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-            itemsPerPage={ITEMS_PER_PAGE}
-            totalItems={filteredDocuments.length}
-          />
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+          itemsPerPage={ITEMS_PER_PAGE}
+          totalItems={filteredDocuments.length}
+        />
       )}
     </div>
   );
