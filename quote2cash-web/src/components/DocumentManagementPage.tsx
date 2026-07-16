@@ -4,6 +4,7 @@ import DocumentForm from './DocumentForm'; // Existing component for document fo
 import { getDocuments, deleteDocument, downloadDocument } from '../api'; // Assuming downloadDocument exists
 import type { DocumentResponse } from '../types';
 
+
 interface Props {
   onBack: () => void;
   onRefreshApp: () => Promise<void>; // To refresh documents in App.tsx after changes
@@ -75,17 +76,26 @@ export default function DocumentManagementPage({ onBack, onRefreshApp }: Props) 
     setEditingDocument(null);
   };
 
-  const handleDownloadDocument = async (document: DocumentResponse) => {
-    setIsLoading(true);
-    setError(null);
+  const handleDownloadDocument = async (doc: DocumentResponse) => {
     try {
-      // Assuming downloadDocument API returns a blob or initiates a download
-      await downloadDocument(document.id);
-    } catch (err: any) {
-      setError('Failed to download document: ' + (err.message || 'Unknown error'));
-      console.error('Failed to download document:', err);
-    } finally {
-      setIsLoading(false);
+      const blob = await downloadDocument(doc.id);
+
+      // Create a temporary URL for the blob
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+
+      // Use the document name or fallback
+      link.setAttribute('download', doc.documentName || 'download.pdf');
+
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      // Clean up
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Download failed:', err);
     }
   };
 
