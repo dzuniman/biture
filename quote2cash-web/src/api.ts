@@ -222,12 +222,16 @@ export const getDocuments = async () => {
 export const deleteDocument = async (id: string) => {
   await api.delete(`/documents/${id}`);
 };
-
 export const downloadDocument = async (id: string) => {
-  const response = await api.get(`/documents/${id}/download`, { responseType: 'blob' });
+  const response = await axios.get(`/api/documents/${id}/download`, {
+    responseType: 'blob',
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem('token')}`
+    }
+  });
+
   return response.data;
 };
-
 export const createDocument = async (formData: FormData) => {
   const response = await api.post<DocumentResponse>('/documents', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
