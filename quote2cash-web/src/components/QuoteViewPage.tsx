@@ -14,6 +14,9 @@ interface Props {
 }
 
 export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Props) {
+  // Override any other module-level worker settings to use the correct local worker
+  pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [numPages, setNumPages] = useState<number>(0);
   const [width, setWidth] = useState<number>(Math.min(window.innerWidth - 32, 800));
@@ -27,6 +30,7 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
   }, []);
 
   useEffect(() => {
+    pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
     let url: string | null = null;
     const updatePdf = async () => {
       try {
