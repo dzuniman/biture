@@ -221,7 +221,7 @@ export const deleteDocument = async (id: string) => {
   await api.delete(`/documents/${id}`);
 };
 export const downloadDocument = async (id: string) => {
-  const response = await api.get(`/api/documents/${id}/download`, {
+  const response = await api.get(`/documents/${id}/download`, {
     responseType: 'blob',
     headers: {
       Authorization: `Bearer ${localStorage.getItem('token')}`
