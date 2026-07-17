@@ -301,13 +301,14 @@ export const generateQuotePDF = async (quote: Quote, save: boolean = false, retu
   }
 
   if (returnBlob) {
-    // Return a Blob for react-pdf
+    // For download
     const blob = doc.output("blob");
+    console.log("Blob size:", blob.size);
     return blob;
   } else {
-    // Return blob URL for iframe preview
-    const blob = doc.output("blob");
-    const pdfUrl = URL.createObjectURL(blob);
-    return pdfUrl;
+    // For react-pdf viewing
+    const arrayBuffer = doc.output("arraybuffer");
+    console.log("Generated buffer length:", arrayBuffer.byteLength);
+    return arrayBuffer;
   }
 };
