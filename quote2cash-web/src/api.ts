@@ -212,8 +212,6 @@ export const deleteUser = async (id: string): Promise<void> => {
 };
 
 // Documents
-// Add these to c:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\quote2cash-web\src\api.ts
-
 export const getDocuments = async () => {
   const response = await api.get<DocumentResponse[]>('/documents');
   return response.data;
@@ -223,7 +221,7 @@ export const deleteDocument = async (id: string) => {
   await api.delete(`/documents/${id}`);
 };
 export const downloadDocument = async (id: string) => {
-  const response = await axios.get(`/api/documents/${id}/download`, {
+  const response = await api.get(`/api/documents/${id}/download`, {
     responseType: 'blob',
     headers: {
       Authorization: `Bearer ${localStorage.getItem('token')}`
