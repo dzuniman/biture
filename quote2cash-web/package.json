@@ -11,7 +11,7 @@
   "dependencies": {
     "add": "^2.0.6",
     "axios": "^1.8.6",
-    "pdfjs-dist": "^6.1.200",
+    "pdfjs-dist": "^5.4.296",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-pdf": "^10.4.1",
@@ -22,7 +22,6 @@
     "@types/node": "^25.9.1",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
-    "@types/react-pdf": "^6.2.0",
     "@vitejs/plugin-react": "^4.2.1",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",

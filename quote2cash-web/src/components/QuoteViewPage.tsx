@@ -4,9 +4,7 @@ import type { Quote, Client } from '../types'; // Ensure Client type is imported
 import { formatAmount } from '../../formatters';
 import logo from '../assets/logo.png';
 import { generateQuotePDF } from './QuotePdfGenerator'; // Import the Quote generator
-
-pdfjs.GlobalWorkerOptions.workerSrc =
-  `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
+pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
 interface Props {
   quote: Quote;
@@ -16,15 +14,38 @@ interface Props {
 }
 
 export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Props) {
-  const [pdfBlob, setPdfBlob] = useState<string | null>(null);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [numPages, setNumPages] = useState<number>(0);
+  const [width, setWidth] = useState<number>(Math.min(window.innerWidth - 32, 800));
 
   useEffect(() => {
+    const handleResize = () => {
+      setWidth(Math.min(window.innerWidth - 32, 800));
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    let url: string | null = null;
     const updatePdf = async () => {
-      const blob = await generateQuotePDF(quote, false, true) as Blob;
-      const url = URL.createObjectURL(blob);
-      setPdfBlob(url);
+      try {
+        const blob = await generateQuotePDF(quote, false, true) as Blob;
+        if (blob && blob.size > 0) {
+          url = URL.createObjectURL(blob);
+          setPdfUrl(url);
+        }
+      } catch (err) {
+        console.error("Quote PDF preview generation failed:", err);
+      }
     };
     updatePdf();
+
+    return () => {
+      if (url) {
+        URL.revokeObjectURL(url);
+      }
+    };
   }, [quote]);
 
   const handleDownloadQuotePdf = async () => {
@@ -67,10 +88,21 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
           Download PDF
         </button>
       </div>
-      <div className="view-actions no-print">
-        {pdfBlob && (
-          <Document file={pdfBlob}>
-            <Page pageNumber={1} />
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", overflowX: "auto" }}>
+        {pdfUrl && (
+          <Document
+            file={pdfUrl}
+            onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+          >
+            {Array.from({ length: numPages }, (_, index) => (
+              <Page
+                key={`page_${index + 1}`}
+                pageNumber={index + 1}
+                width={width}
+                renderTextLayer={false}
+                renderAnnotationLayer={false}
+              />
+            ))}
           </Document>
         )}
       </div>
