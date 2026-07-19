@@ -303,14 +303,14 @@ export const generateInvoicePDF = async (invoice: Invoice, save: boolean = false
     doc.save(`Invoice_${invoice.invoiceNumber}.pdf`);
     return "";
   }
+
   if (returnBlob) {
-    // Return a Blob for react-pdf
+    // For download
     const blob = doc.output("blob");
     return blob;
   } else {
-    // Return blob URL for iframe preview
-    const blob = doc.output("blob");
-    const pdfUrl = URL.createObjectURL(blob);
-    return pdfUrl;
+    // For react-pdf viewing
+    const arrayBuffer = doc.output("arraybuffer");
+    return arrayBuffer;
   }
 };

@@ -15,22 +15,49 @@ interface Props {
 }
 
 export const StatementViewPage: React.FC<Props> = ({ statement, invoices, creditNotes = [], onEdit, onBack }) => {
-  const [pdfBlob, setPdfBlob] = useState<string | null>(null);
+  // Override any other module-level worker settings to use the correct local worker
+  pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [numPages, setNumPages] = useState<number>(0);
+  const [width, setWidth] = useState<number>(Math.min(window.innerWidth - 32, 800));
 
   useEffect(() => {
+    const handleResize = () => {
+      setWidth(Math.min(window.innerWidth - 32, 800));
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+    let url: string | null = null;
     const updatePdf = async () => {
-      const blob = await generateStatementPDF(statement, invoices, creditNotes, false, true) as Blob;
-      const url = URL.createObjectURL(blob);
-      setPdfBlob(url);
+      try {
+        const blob = await generateStatementPDF(statement, invoices, creditNotes, false, true) as Blob;
+        if (blob && blob.size > 0) {
+          url = URL.createObjectURL(blob);
+          setPdfUrl(url);
+        }
+      } catch (err) {
+        console.error("Statement PDF preview generation failed:", err);
+      }
     };
     updatePdf();
+
+    return () => {
+      if (url) {
+        URL.revokeObjectURL(url);
+      }
+    };
   }, [statement, invoices, creditNotes]);
 
   const handleDownloadStatementPdf = async () => {
     try {
       await generateStatementPDF(statement, invoices, creditNotes, true); // save mode
     } catch (err) {
-      console.error("Satement PDF save failed:", err);
+      console.error("Statement PDF save failed:", err);
       alert("Could not save Statement PDF. Please check the console for errors.");
     }
   };
@@ -63,10 +90,21 @@ export const StatementViewPage: React.FC<Props> = ({ statement, invoices, credit
           Download PDF
         </button>
       </div>
-      <div className="view-actions no-print" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-start', marginTop: '20px' }}>
-        {pdfBlob && (
-          <Document file={pdfBlob}>
-            <Page pageNumber={1} />
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", overflowX: "auto" }}>
+        {pdfUrl && (
+          <Document
+            file={pdfUrl}
+            onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+          >
+            {Array.from({ length: numPages }, (_, index) => (
+              <Page
+                key={`page_${index + 1}`}
+                pageNumber={index + 1}
+                width={width}
+                renderTextLayer={false}
+                renderAnnotationLayer={false}
+              />
+            ))}
           </Document>
         )}
       </div>
