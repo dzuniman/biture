@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Quote2Cash.Infrastructure")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0b80d785b42e9c567cee4367e6fde3db89b54e48")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a52450f5f1edf16845d26170e9253fe9324304ea")]
 [assembly: System.Reflection.AssemblyProductAttribute("Quote2Cash.Infrastructure")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Quote2Cash.Infrastructure")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
