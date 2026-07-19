@@ -116,6 +116,19 @@ export const deleteQuote = async (id: string): Promise<void> => {
   await api.delete(`/quotes/${id}`);
 };
 
+export const uploadQuoteItemImage = async (file: File): Promise<string> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await api.post('/quotes/items/images/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+  return response.data.imagePath;
+};
+
+export const getQuoteItemImageUrl = (imagePath: string): string => {
+  return `${API_BASE_URL}/quotes/items/images/${imagePath}`;
+};
+
 export const getQuoteNextNumber = async (prefix: string): Promise<string> => { // Added prefix parameter
   const response = await api.get(`/quotes/next-number?prefix=${prefix}`);
   return response.data;

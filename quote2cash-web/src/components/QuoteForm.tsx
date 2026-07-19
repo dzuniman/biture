@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, useRef, type FormEvent } from 'react';
 import { formatAmount } from '../../formatters';
 import * as XLSX from 'xlsx';
 import type { Client, Quote, QuoteCreateRequest, QuoteItemCreateRequest, QuoteDescription } from '../types';
-import { getQuoteNextNumber } from '../api';
+import { getQuoteNextNumber, uploadQuoteItemImage, getQuoteItemImageUrl } from '../api';
 
 // Define the expected API response structure for next numbers
 interface NextNumberApiResponse {
@@ -122,7 +122,8 @@ const blankItem: QuoteFormItem = {
   description: '',
   unitPrice: 0,
   unitPricePreview: 0,
-  totalPrice: 0
+  totalPrice: 0,
+  imagePath: null
 };
 
 const getActualUnitPrice = (previewPrice: number, marginPercent: number) =>
@@ -239,9 +240,7 @@ export default function QuoteForm({
   };
 
   const reindexItems = (currentItems: QuoteFormItem[]) => {
-    return [...currentItems]
-      .sort((a, b) => a.itemNumber - b.itemNumber)
-      .map((item, index) => ({ ...item, itemNumber: index + 1 }));
+    return currentItems.map((item, index) => ({ ...item, itemNumber: index + 1 }));
   };
 
 
@@ -282,6 +281,47 @@ export default function QuoteForm({
     });
   };
 
+  // Dedicated image setter — avoids routing through handleUpdateItem's type-constrained path
+  const handleSetItemImage = (index: number, imagePath: string | null) => {
+    setItems((current) => {
+      const next = [...current];
+      next[index] = { ...next[index], imagePath };
+      return next;
+    });
+  };
+
+  const handleImageUpload = async (index: number, file: File) => {
+    try {
+      const path = await uploadQuoteItemImage(file);
+      handleSetItemImage(index, path);
+    } catch (error) {
+      console.error('Failed to upload image:', error);
+      alert('Failed to upload image. Please try again.');
+    }
+  };
+
+  const handleRemoveImage = (index: number) => {
+    handleSetItemImage(index, null);
+  };
+
+  const handleInsertItem = (index: number) => {
+    setItems((current) => {
+      const next = [...current];
+      next.splice(index + 1, 0, {
+        itemNumber: 0, // will be reassigned by reindexItems
+        quantity: 1,
+        code: '',
+        uom: '',
+        description: '',
+        unitPrice: 0,
+        unitPricePreview: 0,
+        totalPrice: 0,
+        imagePath: null
+      });
+      return reindexItems(next);
+    });
+  };
+
   const handleAddItem = () => {
     setItems((current) => reindexItems([...current, {
       itemNumber: current.length + 1,
@@ -292,6 +332,7 @@ export default function QuoteForm({
       unitPrice: 0,
       unitPricePreview: 0,
       totalPrice: 0,
+      imagePath: null
     }]));
   };
 
@@ -344,6 +385,7 @@ export default function QuoteForm({
           unitPricePreview: preview,
           unitPrice: getActualUnitPrice(preview, margin),
           totalPrice: 0, // Calculated below
+          imagePath: null,
         };
         item.totalPrice = parseFloat((item.quantity * item.unitPrice).toFixed(2));
         newItems.push(item);
@@ -431,7 +473,8 @@ export default function QuoteForm({
         uom: item.uom.trim(),
         description: item.description.trim(),
         unitPrice: parseFloat(item.unitPrice.toFixed(2)),
-        totalPrice: Number((item.quantity * item.unitPrice).toFixed(2))
+        totalPrice: Number((item.quantity * item.unitPrice).toFixed(2)),
+        imagePath: item.imagePath
       }))
     });
 
@@ -543,7 +586,7 @@ export default function QuoteForm({
             />
           </div>
           <div className="items-grid">
-            <div className="item-row header">
+            <div className="item-row header" style={{ gridTemplateColumns: '50px 60px 100px 100px 1fr 100px 100px 100px 80px 80px' }}>
               <span>Item</span>
               <span>Qty</span>
               <span>Code</span>
@@ -552,10 +595,11 @@ export default function QuoteForm({
               <span>Unit Price</span>
               <span>Unit Price M</span>
               <span>Total price</span>
-              <span />
+              <span>Image</span>
+              <span style={{ textAlign: 'center' }}>Actions</span>
             </div>
             {items.map((item, index) => (
-              <div key={index} className="item-row">
+              <div key={index} className="item-row" style={{ gridTemplateColumns: '50px 60px 100px 100px 1fr 100px 100px 100px 80px 80px' }}>
                 <input
                   type="number"
                   min="1"
@@ -601,15 +645,71 @@ export default function QuoteForm({
                 />
                 <input value={formatAmount(item.unitPrice)} disabled />
                 <input value={formatAmount(item.totalPrice)} disabled />
-                <button
-                  type="button"
-                  className="danger small remove-line-button"
-                  title="Remove line"
-                  aria-label="Remove line"
-                  onClick={() => handleRemoveItem(index)}
-                >
-                  −
-                </button>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                  {item.imagePath ? (
+                    <>
+                      <a href={getQuoteItemImageUrl(item.imagePath)} target="_blank" rel="noreferrer" title="Click to view full image">
+                        <img src={getQuoteItemImageUrl(item.imagePath)} alt="Item" style={{ width: '40px', height: '40px', objectFit: 'contain', cursor: 'pointer' }} />
+                      </a>
+                      <button type="button" onClick={() => handleRemoveImage(index)} style={{ padding: '2px 4px', fontSize: '10px' }} className="danger">Remove</button>
+                    </>
+                  ) : (
+                    <>
+                      <label htmlFor={`item-image-upload-${index}`} style={{ cursor: 'pointer', padding: '4px 8px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '12px' }}>
+                        Upload
+                      </label>
+                      <input
+                        id={`item-image-upload-${index}`}
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={(e) => {
+                          if (e.target.files?.[0]) handleImageUpload(index, e.target.files[0]);
+                        }}
+                      />
+                    </>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    className="secondary small"
+                    title="Insert item below"
+                    aria-label="Insert item below"
+                    onClick={() => handleInsertItem(index)}
+                    style={{
+                      padding: 0,
+                      width: '28px',
+                      height: '28px',
+                      fontSize: '16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: 0
+                    }}
+                  >
+                    +
+                  </button>
+                  <button
+                    type="button"
+                    className="danger small remove-line-button"
+                    title="Remove line"
+                    aria-label="Remove line"
+                    onClick={() => handleRemoveItem(index)}
+                    style={{
+                      padding: 0,
+                      width: '28px',
+                      height: '28px',
+                      fontSize: '16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: 0
+                    }}
+                  >
+                    −
+                  </button>
+                </div>
               </div>
             ))}
           </div>
