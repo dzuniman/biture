@@ -3,6 +3,7 @@ import { autoTable } from 'jspdf-autotable';
 import type { Quote } from '../types';
 import { formatAmount } from '../../formatters';
 import logo from '../assets/logo.png';
+import { getQuoteItemImageUrl } from '../api';
 
 export const generateQuotePDF = async (quote: Quote, save: boolean = false, returnBlob = false) => {
   const doc = new jsPDF({
@@ -22,26 +23,57 @@ export const generateQuotePDF = async (quote: Quote, save: boolean = false, retu
     };
   });
 
-  // Get all row items
-  let allRows = quote.items
-    .slice()
-    .sort((a, b) => {
-      const aNum = Number(a.itemNumber);
-      const bNum = Number(b.itemNumber);
-      if (!Number.isNaN(aNum) && !Number.isNaN(bNum)) return aNum - bNum;
-      return a.itemNumber
-        .toString()
-        .localeCompare(b.itemNumber.toString(), undefined, { numeric: true });
-    })
-    .map(item => [
-      item.itemNumber,
-      item.quantity,
-      item.code || '—',
-      item.uom,
-      item.description,
-      formatAmount(item.unitPrice),
-      formatAmount(item.totalPrice),
-    ]);
+  // Pre-load quote item images as base64 via fetch (avoids canvas taint issues with crossOrigin)
+  // Sort items first so rowImages array index matches allRows index
+  const sortedItemsForImages = quote.items.slice().sort((a, b) => {
+    const aNum = Number(a.itemNumber);
+    const bNum = Number(b.itemNumber);
+    if (!Number.isNaN(aNum) && !Number.isNaN(bNum)) return aNum - bNum;
+    return a.itemNumber.toString().localeCompare(b.itemNumber.toString(), undefined, { numeric: true });
+  });
+
+  const rowImages: Array<string | null> = [];
+  for (const item of sortedItemsForImages) {
+    if (item.imagePath) {
+      try {
+        const url = getQuoteItemImageUrl(item.imagePath);
+        const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
+        const response = await fetch(url, token ? { headers: { Authorization: `Bearer ${token}` } } : {});
+        if (response.ok) {
+          const blob = await response.blob();
+          const base64 = await new Promise<string | null>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(blob);
+          });
+          rowImages.push(base64);
+        } else {
+          rowImages.push(null);
+        }
+      } catch {
+        rowImages.push(null);
+      }
+    } else {
+      rowImages.push(null);
+    }
+  }
+
+  // Determine whether ANY item has an image — used to conditionally show the IMG column
+  const hasAnyImage = rowImages.some(img => img !== null);
+
+  // Get all row items (uses same sort as sortedItemsForImages so indices match rowImages)
+  // IMG placeholder is only included when at least one item has an image
+  let allRows = sortedItemsForImages.map(item => [
+    item.itemNumber,
+    ...(hasAnyImage ? [''] : []), // IMG column placeholder — only when column is shown
+    item.quantity,
+    item.code || '\u2014',
+    item.uom,
+    item.description,
+    formatAmount(item.unitPrice),
+    formatAmount(item.totalPrice),
+  ]);
 
   const MAX_ROWS_PER_PAGE = 24;
   const totalPages = Math.ceil(allRows.length / MAX_ROWS_PER_PAGE);
@@ -55,9 +87,10 @@ export const generateQuotePDF = async (quote: Quote, save: boolean = false, retu
     const currentPage = Math.floor(i / MAX_ROWS_PER_PAGE) + 1;
     let chunk = allRows.slice(i, i + MAX_ROWS_PER_PAGE);
 
-    // Pad with empty rows if less than 24
+    // Pad with empty rows — column count matches allRows (7 without IMG, 8 with IMG)
+    const colCount = hasAnyImage ? 8 : 7;
     while (chunk.length < MAX_ROWS_PER_PAGE) {
-      chunk.push(['', '', '', '', '', '', '']);
+      chunk.push(Array(colCount).fill(''));
     }
 
     const margin = 5;
@@ -176,9 +209,36 @@ export const generateQuotePDF = async (quote: Quote, save: boolean = false, retu
     currentY = Math.max(customerBoxY + boxHeight, quoteDetailsY + boxHeight) + 5;
 
     // Render this chunk as a table
+    // Column layout differs based on whether any item has an image
+    const imgColIndex = 1; // only relevant when hasAnyImage
+    const tableHead = hasAnyImage
+      ? [['ITEM', 'IMG', 'QTY', 'CODE', 'UOM', 'DESCRIPTION', 'UNIT PRICE', 'TOTAL']]
+      : [['ITEM', 'QTY', 'CODE', 'UOM', 'DESCRIPTION', 'UNIT PRICE', 'TOTAL']];
+
+    const tableColumnStyles: any = hasAnyImage
+      ? {
+          0: { cellWidth: 12, halign: 'center' },
+          1: { cellWidth: 15, halign: 'center' }, // IMG
+          2: { cellWidth: 10, halign: 'center' },
+          3: { cellWidth: 16, halign: 'center' },
+          4: { cellWidth: 12, halign: 'center' },
+          5: { cellWidth: 'auto' },
+          6: { cellWidth: 22, halign: 'right' },
+          7: { cellWidth: 22, halign: 'right' },
+        }
+      : {
+          0: { cellWidth: 12, halign: 'center' },
+          1: { cellWidth: 12, halign: 'center' },
+          2: { cellWidth: 18, halign: 'center' },
+          3: { cellWidth: 15, halign: 'center' },
+          4: { cellWidth: 'auto' },
+          5: { cellWidth: 25, halign: 'right' },
+          6: { cellWidth: 25, halign: 'right' },
+        };
+
     autoTable(doc, {
       startY: currentY,
-      head: [['ITEM', 'QTY', 'CODE', 'UOM', 'DESCRIPTION', 'UNIT PRICE', 'TOTAL']],
+      head: tableHead,
       body: chunk,
       theme: 'plain',
       styles: {
@@ -197,16 +257,35 @@ export const generateQuotePDF = async (quote: Quote, save: boolean = false, retu
         halign: 'center',
         valign: 'middle',
       },
-      columnStyles: {
-        0: { cellWidth: 12, halign: 'center' },
-        1: { cellWidth: 12, halign: 'center' },
-        2: { cellWidth: 18, halign: 'center' },
-        3: { cellWidth: 15, halign: 'center' },
-        4: { cellWidth: 'auto' },
-        5: { cellWidth: 25, halign: 'right' },
-        6: { cellWidth: 25, halign: 'right' },
+      columnStyles: tableColumnStyles,
+      // Expand row height to fit image (image is 12mm + 2mm padding each side = 16mm min)
+      didParseCell: (data) => {
+        if (data.section === 'body' && hasAnyImage) {
+          const absoluteRowIndex = i + data.row.index;
+          if (absoluteRowIndex < rowImages.length && rowImages[absoluteRowIndex]) {
+            data.cell.styles.minCellHeight = 16;
+          }
+        }
       },
       didDrawCell: (data) => {
+        // Render image in the IMG column (only when hasAnyImage)
+        if (hasAnyImage && data.section === 'body' && data.column.index === imgColIndex) {
+          const absoluteRowIndex = i + data.row.index;
+          if (absoluteRowIndex < rowImages.length) {
+            const imgBase64 = rowImages[absoluteRowIndex];
+            if (imgBase64) {
+              const imgSize = 12; // 12mm x 12mm fixed size
+              const x = data.cell.x + (data.cell.width - imgSize) / 2;
+              const y = data.cell.y + (data.cell.height - imgSize) / 2;
+              try {
+                doc.addImage(imgBase64, 'JPEG', x, y, imgSize, imgSize);
+              } catch {
+                // Silently ignore failures (e.g. unsupported format)
+              }
+            }
+          }
+        }
+
         if (
           data.section === 'body' &&
           data.row.index === chunk.length - 1 &&

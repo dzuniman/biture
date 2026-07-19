@@ -59,6 +59,7 @@ export interface QuoteItem {
   description: string;
   unitPrice: number;
   totalPrice: number;
+  imagePath?: string | null;
 }
 
 export interface QuoteItemCreateRequest {
@@ -69,6 +70,7 @@ export interface QuoteItemCreateRequest {
   description: string;
   unitPrice: number;
   totalPrice: number;
+  imagePath?: string | null;
 }
 
 export interface Quote {

@@ -1,11 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Quote2Cash.Domain.Entities;
 using Quote2Cash.Persistence.Data;
 
 namespace Quote2Cash.API.Controllers
 {
-    public record QuoteItemDto(int ItemNumber, decimal Quantity, string Code, string Uom, string Description, decimal UnitPrice, decimal TotalPrice);
+    public record QuoteItemDto(int ItemNumber, decimal Quantity, string Code, string Uom, string Description, decimal UnitPrice, decimal TotalPrice, string? ImagePath = null);
     public record QuoteCreateDto(Guid? ClientId, string QuoteNumber, string Reference, DateTime Date, int ValidityDays, QuoteItemDto[] Items, string? PONumber, decimal Margin = 0);
 
     [ApiController]
@@ -13,10 +14,12 @@ namespace Quote2Cash.API.Controllers
     public class QuotesController : ControllerBase
     {
         private readonly Quote2CashDbContext _context;
+        private readonly IWebHostEnvironment _env;
 
-        public QuotesController(Quote2CashDbContext context)
+        public QuotesController(Quote2CashDbContext context, IWebHostEnvironment env)
         {
             _context = context;
+            _env = env;
         }
 
         [HttpGet("next-number")]
@@ -105,7 +108,8 @@ namespace Quote2Cash.API.Controllers
                     item.Uom,
                     item.Description,
                     item.UnitPrice,
-                    item.TotalPrice
+                    item.TotalPrice,
+                    item.ImagePath
                 }),
                 quote.SubTotal,
                 quote.Vat,
@@ -138,11 +142,16 @@ namespace Quote2Cash.API.Controllers
                     Uom = item.Uom,
                     Description = item.Description,
                     UnitPrice = item.UnitPrice,
-                    TotalPrice = item.TotalPrice
+                    TotalPrice = item.TotalPrice,
+                    ImagePath = item.ImagePath
                 }).ToList()
             };
 
             _context.Quotes.Add(quote);
+            await _context.SaveChangesAsync();
+
+            // Rename temp images
+            RenameTempImages(quote);
             await _context.SaveChangesAsync();
 
             var result = new
@@ -166,7 +175,8 @@ namespace Quote2Cash.API.Controllers
                     item.Uom,
                     item.Description,
                     item.UnitPrice,
-                    item.TotalPrice
+                    item.TotalPrice,
+                    item.ImagePath
                 }).ToList(),
                 quote.SubTotal,
                 quote.Vat,
@@ -212,12 +222,17 @@ namespace Quote2Cash.API.Controllers
                 Uom = item.Uom,
                 Description = item.Description,
                 UnitPrice = item.UnitPrice,
-                TotalPrice = item.TotalPrice
+                TotalPrice = item.TotalPrice,
+                ImagePath = item.ImagePath
             }).ToList();
 
             if (newItems.Any())
             {
                 _context.QuoteItems.AddRange(newItems);
+                await _context.SaveChangesAsync();
+
+                // Rename temp images and clean up old ones
+                RenameTempImages(quote);
                 await _context.SaveChangesAsync();
             }
 
@@ -269,6 +284,37 @@ namespace Quote2Cash.API.Controllers
             {
                 _context.QuoteDescriptions.AddRange(newDescriptions);
                 await _context.SaveChangesAsync();
+            }
+        }
+
+        private void RenameTempImages(Quote quote)
+        {
+            var storagePath = Path.Combine(_env.ContentRootPath, "quote_items");
+            if (!Directory.Exists(storagePath))
+            {
+                Directory.CreateDirectory(storagePath);
+            }
+
+            foreach (var item in quote.Items)
+            {
+                if (!string.IsNullOrEmpty(item.ImagePath) && item.ImagePath.StartsWith("temp_"))
+                {
+                    var extension = Path.GetExtension(item.ImagePath);
+                    var newFileName = $"{quote.QuoteNumber}_{item.ItemNumber}{extension}";
+                    var oldFilePath = Path.Combine(storagePath, item.ImagePath);
+                    var newFilePath = Path.Combine(storagePath, newFileName);
+
+                    if (System.IO.File.Exists(oldFilePath))
+                    {
+                        // Overwrite if exists
+                        if (System.IO.File.Exists(newFilePath))
+                        {
+                            System.IO.File.Delete(newFilePath);
+                        }
+                        System.IO.File.Move(oldFilePath, newFilePath);
+                        item.ImagePath = newFileName;
+                    }
+                }
             }
         }
     }

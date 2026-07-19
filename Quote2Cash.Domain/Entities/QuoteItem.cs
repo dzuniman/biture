@@ -15,5 +15,6 @@ namespace Quote2Cash.Domain.Entities
         public string Description { get; set; } = string.Empty;
         public decimal UnitPrice { get; set; }
         public decimal TotalPrice { get; set; }
+        public string? ImagePath { get; set; }
     }
 }
