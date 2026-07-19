@@ -274,14 +274,14 @@ export const generateDeliveryNotePDF = async (deliveryNote: DeliveryNote, save: 
     doc.save(`DeliveryNote_${deliveryNote.deliveryNoteNumber}.pdf`);
     return ""; // nothing needed for preview in this case
   }
+
   if (returnBlob) {
-    // Return a Blob for react-pdf
+    // For download
     const blob = doc.output("blob");
     return blob;
   } else {
-    // Return blob URL for iframe preview
-    const blob = doc.output("blob");
-    const pdfUrl = URL.createObjectURL(blob);
-    return pdfUrl;
+    // For react-pdf viewing
+    const arrayBuffer = doc.output("arraybuffer");
+    return arrayBuffer;
   }
 };

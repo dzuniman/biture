@@ -303,12 +303,10 @@ export const generateQuotePDF = async (quote: Quote, save: boolean = false, retu
   if (returnBlob) {
     // For download
     const blob = doc.output("blob");
-    console.log("Blob size:", blob.size);
     return blob;
   } else {
     // For react-pdf viewing
     const arrayBuffer = doc.output("arraybuffer");
-    console.log("Generated buffer length:", arrayBuffer.byteLength);
     return arrayBuffer;
   }
 };
