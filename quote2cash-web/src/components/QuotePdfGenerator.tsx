@@ -61,6 +61,7 @@ export const generateQuotePDF = async (quote: Quote, save: boolean = false, retu
 
   // Determine whether ANY item has an image — used to conditionally show the IMG column
   const hasAnyImage = rowImages.some(img => img !== null);
+  const imageCount = rowImages.reduce((count, img) => img !== null ? count + 1 : count, 0);
 
   // Get all row items (uses same sort as sortedItemsForImages so indices match rowImages)
   // IMG placeholder is only included when at least one item has an image
@@ -75,7 +76,7 @@ export const generateQuotePDF = async (quote: Quote, save: boolean = false, retu
     formatAmount(item.totalPrice),
   ]);
 
-  const MAX_ROWS_PER_PAGE = 24;
+  const MAX_ROWS_PER_PAGE = 24 - imageCount - 1;
   const totalPages = Math.ceil(allRows.length / MAX_ROWS_PER_PAGE);
   const pageHeight = doc.internal.pageSize.getHeight();
   const footerBlockHeight = 55;
@@ -217,24 +218,24 @@ export const generateQuotePDF = async (quote: Quote, save: boolean = false, retu
 
     const tableColumnStyles: any = hasAnyImage
       ? {
-          0: { cellWidth: 12, halign: 'center' },
-          1: { cellWidth: 15, halign: 'center' }, // IMG
-          2: { cellWidth: 10, halign: 'center' },
-          3: { cellWidth: 16, halign: 'center' },
-          4: { cellWidth: 12, halign: 'center' },
-          5: { cellWidth: 'auto' },
-          6: { cellWidth: 22, halign: 'right' },
-          7: { cellWidth: 22, halign: 'right' },
-        }
+        0: { cellWidth: 12, halign: 'center' },
+        1: { cellWidth: 15, halign: 'center' }, // IMG
+        2: { cellWidth: 10, halign: 'center' },
+        3: { cellWidth: 16, halign: 'center' },
+        4: { cellWidth: 12, halign: 'center' },
+        5: { cellWidth: 'auto' },
+        6: { cellWidth: 22, halign: 'right' },
+        7: { cellWidth: 22, halign: 'right' },
+      }
       : {
-          0: { cellWidth: 12, halign: 'center' },
-          1: { cellWidth: 12, halign: 'center' },
-          2: { cellWidth: 18, halign: 'center' },
-          3: { cellWidth: 15, halign: 'center' },
-          4: { cellWidth: 'auto' },
-          5: { cellWidth: 25, halign: 'right' },
-          6: { cellWidth: 25, halign: 'right' },
-        };
+        0: { cellWidth: 12, halign: 'center' },
+        1: { cellWidth: 12, halign: 'center' },
+        2: { cellWidth: 18, halign: 'center' },
+        3: { cellWidth: 15, halign: 'center' },
+        4: { cellWidth: 'auto' },
+        5: { cellWidth: 25, halign: 'right' },
+        6: { cellWidth: 25, halign: 'right' },
+      };
 
     autoTable(doc, {
       startY: currentY,
