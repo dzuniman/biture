@@ -28,7 +28,7 @@ interface Props {
 
 type SuggestionOption = { id: string; value: string };
 
-type QuoteFormItem = QuoteItemCreateRequest & { unitPricePreview: number };
+type QuoteFormItem = QuoteItemCreateRequest & { unitPricePreview: number; imagePreview?: string; };
 
 interface SuggestionInputProps {
   options: SuggestionOption[];
@@ -36,6 +36,27 @@ interface SuggestionInputProps {
   onChange: (value: string) => void;
   placeholder?: string;
   required?: boolean;
+}
+
+// Utility: fetch image securely and return blob URL
+async function fetchSecureImage(imagePath: string): Promise<string | undefined> {
+  if (!imagePath) return undefined;
+
+  const token = localStorage.getItem("token");
+  const url = getQuoteItemImageUrl(imagePath);
+
+  try {
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error("Unauthorized");
+
+    const blob = await res.blob();
+    return URL.createObjectURL(blob); // 👈 returns a string blob URL
+  } catch (err) {
+    console.error("Failed to load image", err);
+    return undefined;
+  }
 }
 
 function SuggestionInput({
@@ -123,7 +144,8 @@ const blankItem: QuoteFormItem = {
   unitPrice: 0,
   unitPricePreview: 0,
   totalPrice: 0,
-  imagePath: null
+  imagePath: null,
+  imagePreview: ''
 };
 
 const getActualUnitPrice = (previewPrice: number, marginPercent: number) =>
@@ -173,7 +195,21 @@ export default function QuoteForm({
       setValidityDays(initialData.validityDays.toString());
       setMargin(initialData.margin ?? 0);
       const sorted = [...(initialData.items || [])].sort((a, b) => a.itemNumber - b.itemNumber);
-      setItems(sorted.length ? sorted.map((item) => ({ ...item, unitPricePreview: getBaseUnitPrice(item.unitPrice, initialData.margin ?? 0) })) : [blankItem]);
+      const baseItems = sorted.map((item) => ({ ...item, unitPricePreview: getBaseUnitPrice(item.unitPrice, initialData.margin ?? 0), imagePreview: undefined }));
+      setItems(baseItems);
+      // Then fetch previews asynchronously
+      (async () => {
+        const withPreviews = await Promise.all(
+          baseItems.map(async (item) => {
+            if (item.imagePath) {
+              const previewUrl = await fetchSecureImage(item.imagePath);
+              return { ...item, imagePreview: previewUrl };
+            }
+            return item;
+          })
+        );
+        setItems(withPreviews);
+      })();
     } else { // This block runs for a brand new quote or when duplicating
       setClientId(selectedClientId ?? '');
       setQuoteNumber('');
@@ -281,14 +317,17 @@ export default function QuoteForm({
     });
   };
 
-  // Dedicated image setter — avoids routing through handleUpdateItem's type-constrained path
-  const handleSetItemImage = (index: number, imagePath: string | null) => {
+  // Example: preload preview when setting image
+  const handleSetItemImage = async (index: number, imagePath: string | null) => {
+    const previewUrl = imagePath ? await fetchSecureImage(imagePath) : undefined;
+
     setItems((current) => {
       const next = [...current];
-      next[index] = { ...next[index], imagePath };
+      next[index] = { ...next[index], imagePath, imagePreview: previewUrl };
       return next;
     });
   };
+
 
   const handleImageUpload = async (index: number, file: File) => {
     try {
@@ -316,7 +355,8 @@ export default function QuoteForm({
         unitPrice: 0,
         unitPricePreview: 0,
         totalPrice: 0,
-        imagePath: null
+        imagePath: null,
+        imagePreview: ''
       });
       return reindexItems(next);
     });
@@ -332,7 +372,8 @@ export default function QuoteForm({
       unitPrice: 0,
       unitPricePreview: 0,
       totalPrice: 0,
-      imagePath: null
+      imagePath: null,
+      imagePreview: ''
     }]));
   };
 
@@ -386,6 +427,7 @@ export default function QuoteForm({
           unitPrice: getActualUnitPrice(preview, margin),
           totalPrice: 0, // Calculated below
           imagePath: null,
+          imagePreview: ''
         };
         item.totalPrice = parseFloat((item.quantity * item.unitPrice).toFixed(2));
         newItems.push(item);
@@ -648,8 +690,8 @@ export default function QuoteForm({
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
                   {item.imagePath ? (
                     <>
-                      <a href={getQuoteItemImageUrl(item.imagePath)} target="_blank" rel="noreferrer" title="Click to view full image">
-                        <img src={getQuoteItemImageUrl(item.imagePath)} alt="Item" style={{ width: '40px', height: '40px', objectFit: 'contain', cursor: 'pointer' }} />
+                      <a href={item.imagePreview} target="_blank" rel="noreferrer" title="Click to view full image">
+                        <img src={item.imagePreview} alt="Item" style={{ width: '40px', height: '40px', objectFit: 'contain', cursor: 'pointer' }} />
                       </a>
                       <button type="button" onClick={() => handleRemoveImage(index)} style={{ padding: '2px 4px', fontSize: '10px' }} className="danger">Remove</button>
                     </>
