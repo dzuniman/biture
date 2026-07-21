@@ -10,3 +10,15 @@ C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Infrastruc
 C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Infrastructure\obj\Debug\net8.0\refint\Quote2Cash.Infrastructure.dll
 C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Infrastructure\obj\Debug\net8.0\Quote2Cash.Infrastructure.pdb
 C:\Staff\Documents\Other\Vutivi\Quote2Cash\Code\Quote2Cash\Quote2Cash.Infrastructure\obj\Debug\net8.0\ref\Quote2Cash.Infrastructure.dll
+C:\Staff\Documents\Other\Vutivi\Biture\Code\Quote2Cash\Quote2Cash.Infrastructure\bin\Debug\net8.0\Quote2Cash.Infrastructure.deps.json
+C:\Staff\Documents\Other\Vutivi\Biture\Code\Quote2Cash\Quote2Cash.Infrastructure\bin\Debug\net8.0\Quote2Cash.Infrastructure.dll
+C:\Staff\Documents\Other\Vutivi\Biture\Code\Quote2Cash\Quote2Cash.Infrastructure\bin\Debug\net8.0\Quote2Cash.Infrastructure.pdb
+C:\Staff\Documents\Other\Vutivi\Biture\Code\Quote2Cash\Quote2Cash.Infrastructure\obj\Debug\net8.0\Quote2Cash.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+C:\Staff\Documents\Other\Vutivi\Biture\Code\Quote2Cash\Quote2Cash.Infrastructure\obj\Debug\net8.0\Quote2Cash.Infrastructure.AssemblyInfoInputs.cache
+C:\Staff\Documents\Other\Vutivi\Biture\Code\Quote2Cash\Quote2Cash.Infrastructure\obj\Debug\net8.0\Quote2Cash.Infrastructure.AssemblyInfo.cs
+C:\Staff\Documents\Other\Vutivi\Biture\Code\Quote2Cash\Quote2Cash.Infrastructure\obj\Debug\net8.0\Quote2Cash.Infrastructure.csproj.CoreCompileInputs.cache
+C:\Staff\Documents\Other\Vutivi\Biture\Code\Quote2Cash\Quote2Cash.Infrastructure\obj\Debug\net8.0\Quote2Cash.Infrastructure.sourcelink.json
+C:\Staff\Documents\Other\Vutivi\Biture\Code\Quote2Cash\Quote2Cash.Infrastructure\obj\Debug\net8.0\Quote2Cash.Infrastructure.dll
+C:\Staff\Documents\Other\Vutivi\Biture\Code\Quote2Cash\Quote2Cash.Infrastructure\obj\Debug\net8.0\refint\Quote2Cash.Infrastructure.dll
+C:\Staff\Documents\Other\Vutivi\Biture\Code\Quote2Cash\Quote2Cash.Infrastructure\obj\Debug\net8.0\Quote2Cash.Infrastructure.pdb
+C:\Staff\Documents\Other\Vutivi\Biture\Code\Quote2Cash\Quote2Cash.Infrastructure\obj\Debug\net8.0\ref\Quote2Cash.Infrastructure.dll

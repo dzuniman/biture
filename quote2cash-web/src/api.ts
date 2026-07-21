@@ -27,7 +27,9 @@ import type {
   CreditNoteCreateRequest,
   Cost,
   CostCreateRequest,
-  DocumentResponse
+  DocumentResponse,
+  Tool,
+  ToolCreateRequest
 } from './types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:5227/api';
@@ -402,3 +404,42 @@ export const duplicateCost = async (id: string): Promise<Cost> => {
   const response = await api.post(`/costs/${id}/duplicate`);
   return response.data;
 };
+
+// Tools
+export const getTools = async (): Promise<Tool[]> => {
+  const response = await api.get('/tools');
+  return response.data;
+};
+
+export const getTool = async (id: string): Promise<Tool> => {
+  const response = await api.get(`/tools/${id}`);
+  return response.data;
+};
+
+export const createTool = async (tool: ToolCreateRequest): Promise<Tool> => {
+  const response = await api.post('/tools', tool);
+  return response.data;
+};
+
+export const updateTool = async (id: string, tool: ToolCreateRequest): Promise<Tool> => {
+  const response = await api.put(`/tools/${id}`, tool);
+  return response.data;
+};
+
+export const deleteTool = async (id: string): Promise<void> => {
+  await api.delete(`/tools/${id}`);
+};
+
+export const uploadToolImage = async (file: File): Promise<string> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await api.post('/tools/upload-image', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+  return response.data.imagePath;
+};
+
+export const getToolImageUrl = (imagePath: string): string => {
+  return `${API_BASE_URL}/tools/images/${imagePath}`;
+};
+

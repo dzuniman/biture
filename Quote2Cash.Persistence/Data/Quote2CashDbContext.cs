@@ -25,6 +25,7 @@ namespace Quote2Cash.Persistence.Data
         public DbSet<Statement> Statements { get; set; } = null!;
         public DbSet<StatementItem> StatementItems { get; set; } = null!;
         public DbSet<Document> Documents { get; set; } = null!;
+        public DbSet<Tool> Tools { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -215,6 +216,18 @@ namespace Quote2Cash.Persistence.Data
                 entity.Property(e => e.Description).HasMaxLength(1000);
                 entity.Property(e => e.ContentType).IsRequired().HasMaxLength(100);
                 entity.HasIndex(e => e.DocumentName).IsUnique();
+            });
+
+            modelBuilder.Entity<Tool>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Code).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Description).IsRequired().HasMaxLength(1000);
+                entity.Property(e => e.Quantity).HasPrecision(18, 2);
+                entity.Property(e => e.Location).HasMaxLength(250);
+                entity.Property(e => e.ImagePath).HasMaxLength(500);
+                entity.Property(e => e.Value).HasPrecision(18, 2);
+                entity.Property(e => e.InspectionDate);
             });
         }
     }

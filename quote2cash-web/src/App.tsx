@@ -79,6 +79,8 @@ import QuoteViewPage from './components/QuoteViewPage';
 import AdminHomePage from './components/AdminHomePage';
 import QuoteDescriptionManagementPage from './components/QuoteDescriptionManagementPage';
 import UserManagementPage from './components/UserManagementPage';
+import ToolManagementPage from './components/ToolManagementPage';
+import ToolViewPage from './components/ToolViewPage';
 import { Statements } from './components/Statements';
 import JobCardListPage from './components/JobCardListPage';
 import JobCardForm from './components/JobCardForm';
@@ -102,7 +104,7 @@ type StatementView = 'list' | 'manage' | 'view';
 type JobCardView = 'list' | 'manage' | 'view';
 type DeliveryNoteView = 'list' | 'manage' | 'view';
 type CreditNoteView = 'list' | 'manage' | 'view';
-type AdminView = 'home' | 'descriptions' | 'users' | 'documents';
+type AdminView = 'home' | 'descriptions' | 'users' | 'documents' | 'tools';
 
 function App() {
   const [section, setSection] = useState<Section>('dashboard');
@@ -123,6 +125,7 @@ function App() {
   const [costs, setCosts] = useState<Cost[]>([]);
   const [editingCost, setEditingCost] = useState<Cost | null>(null);
   const [costView, setCostView] = useState<'list' | 'manage'>('list');
+  const [toolView, setToolView] = useState<'list' | 'view'>('list');
   const [documents, setDocuments] = useState<DocumentResponse[]>([]);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [editingQuote, setEditingQuote] = useState<Quote | null>(null);
@@ -142,6 +145,13 @@ function App() {
   const [adminView, setAdminView] = useState<AdminView>('home');
   const [quickActionsOpen, setQuickActionsOpen] = useState(false);
   const quickActionsRef = useRef<HTMLDivElement | null>(null);
+  const [businessOpen, setBusinessOpen] = useState(false);
+  const businessRef = useRef<HTMLDivElement | null>(null);
+  const [managementOpen, setManagementOpen] = useState(false);
+  const managementRef = useRef<HTMLDivElement | null>(null);
+  const [adminDropOpen, setAdminDropOpen] = useState(false);
+  const adminDropRef = useRef<HTMLDivElement | null>(null);
+  const [viewingTool, setViewingTool] = useState<{ id: string; code: string; description: string; quantity: number; location?: string | null; imagePath?: string | null; value: number; inspectionDate?: string | null; imagePreviewUrl?: string } | null>(null);
   const [isDuplicatingClient, setIsDuplicatingClient] = useState(false);
   const [isDuplicatingQuote, setIsDuplicatingQuote] = useState(false);
   const [quoteClientId, setQuoteClientId] = useState('');
@@ -206,20 +216,23 @@ function App() {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handler = (event: MouseEvent) => {
       if (quickActionsRef.current && !quickActionsRef.current.contains(event.target as Node)) {
         setQuickActionsOpen(false);
       }
+      if (businessRef.current && !businessRef.current.contains(event.target as Node)) {
+        setBusinessOpen(false);
+      }
+      if (managementRef.current && !managementRef.current.contains(event.target as Node)) {
+        setManagementOpen(false);
+      }
+      if (adminDropRef.current && !adminDropRef.current.contains(event.target as Node)) {
+        setAdminDropOpen(false);
+      }
     };
-
-    if (quickActionsOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [quickActionsOpen]);
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const handleCreateClient = async (payload: ClientCreateRequest) => {
     try {
@@ -902,6 +915,35 @@ function App() {
     setCostView('list');
   };
 
+  // --- Tool Handlers ---
+  const handleViewTool = async (tool: any) => {
+    try {
+      setIsLoading(true);
+      let imagePreviewUrl: string | undefined;
+      if (tool.imagePath) {
+        const token = localStorage.getItem('token');
+        const url = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/tools/image/${tool.imagePath}`;
+        try {
+          const res = await fetch(url, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const blob = await res.blob();
+            imagePreviewUrl = URL.createObjectURL(blob);
+          }
+        } catch (err) {
+          console.error('Failed to load tool image', err);
+        }
+      }
+      setViewingTool({ ...tool, imagePreviewUrl });
+      setToolView('view');
+    } catch (err: any) {
+      setError(getErrorMessage(err, 'Unable to load tool.'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Dashboard Calculations
   const totalQuoteValue = quotes.reduce((sum, q) => sum + (Number(q.total) || 0), 0);
   const totalInvoiceValue = invoices.reduce((sum, inv) => sum + (Number(inv.amount) || 0), 0);
@@ -952,281 +994,84 @@ function App() {
               className="brand-logo"
               style={{ display: 'block', height: '80px', width: 'auto', flexShrink: 0, marginRight: '12px' }}
             />
-            {/*<div>
-              <div className="brand-title">EPEC Solution</div>
-              <div className="brand-tagline">EXPLORE THE POSIBILITY</div>
-            </div>*/}
           </div>
 
           <div className="site-toolbar">
+            {/* QuickActions dropdown */}
             <div className="dropdown" ref={quickActionsRef}>
               <button
                 type="button"
                 className={`dropdown-toggle ${quickActionsOpen ? 'active' : ''}`}
-                onClick={() => setQuickActionsOpen((open) => !open)}
+                onClick={() => setQuickActionsOpen((o) => !o)}
               >
                 QuickActions ▾
               </button>
               {quickActionsOpen && (
                 <div className="dropdown-menu">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSection('quotes');
-                      setQuoteView('list');
-                      clearClientState();
-                      clearQuoteState();
-                      setQuickActionsOpen(false);
-                    }}
-                  >
-                    View Quotes
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSection('invoices');
-                      setInvoiceView('list');
-                      clearClientState();
-                      clearQuoteState();
-                      clearInvoiceState();
-                      setQuickActionsOpen(false);
-                    }}
-                  >
-                    View Invoices
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSection('statements');
-                      setStatementView('list');
-                      clearClientState();
-                      clearQuoteState();
-                      clearInvoiceState();
-                      clearStatementState();
-                      setQuickActionsOpen(false);
-                    }}
-                  >
-                    View Statements
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSection('clients');
-                      setClientView('list');
-                      clearClientState();
-                      clearQuoteState();
-                      setQuickActionsOpen(false);
-                    }}
-                  >
-                    View Clients
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSection('quotes');
-                      clearQuoteState();
-                      setQuoteView('manage');
-                      setQuickActionsOpen(false);
-                    }}
-                  >
-                    Create Quote
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSection('invoices');
-                      clearInvoiceState();
-                      setInvoiceView('manage');
-                      setQuickActionsOpen(false);
-                    }}
-                  >
-                    Create Invoice
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSection('statements');
-                      setStatementView('manage');
-                      clearClientState();
-                      clearQuoteState();
-                      clearInvoiceState();
-                      clearStatementState();
-                      setQuickActionsOpen(false);
-                    }}
-                  >
-                    Create Statement
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSection('clients');
-                      clearClientState();
-                      setClientView('manage');
-                      setQuickActionsOpen(false);
-                    }}
-                  >
-                    Create Client
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSection('jobcards');
-                      setJobCardView('list');
-                      clearJobCardState();
-                      setQuickActionsOpen(false);
-                    }}
-                  >
-                    View Job Cards
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSection('jobcards');
-                      clearJobCardState();
-                      setJobCardView('manage');
-                      setQuickActionsOpen(false);
-                    }}
-                  >
-                    Create Job Card
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSection('deliverynotes');
-                      setDeliveryNoteView('list');
-                      clearDeliveryNoteState();
-                      setQuickActionsOpen(false);
-                    }}
-                  >
-                    View Delivery Notes
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSection('creditnotes');
-                      setCreditNoteView('list');
-                      clearCreditNoteState();
-                      setQuickActionsOpen(false);
-                    }}
-                  >
-                    View Credit Notes
-                  </button>
+                  <button type="button" onClick={() => { setSection('quotes'); clearQuoteState(); setQuoteView('manage'); setQuickActionsOpen(false); }}>Create Quote</button>
+                  <button type="button" onClick={() => { setSection('invoices'); clearInvoiceState(); setInvoiceView('manage'); setQuickActionsOpen(false); }}>Create Invoice</button>
+                  <button type="button" onClick={() => { setSection('statements'); setStatementView('manage'); clearStatementState(); setQuickActionsOpen(false); }}>Create Statement</button>
+                  <button type="button" onClick={() => { setSection('clients'); clearClientState(); setClientView('manage'); setQuickActionsOpen(false); }}>Create Client</button>
+                  <button type="button" onClick={() => { setSection('jobcards'); clearJobCardState(); setJobCardView('manage'); setQuickActionsOpen(false); }}>Create Job Card</button>
                 </div>
               )}
             </div>
 
-            <button
-              type="button"
-              className={`nav-button ${section === 'statements' ? 'active' : ''}`}
-              onClick={() => {
-                setSection('statements');
-                setStatementView('list');
-                clearClientState();
-                clearQuoteState();
-                clearInvoiceState();
-                clearStatementState();
-              }}
-            >
-              Statements
-            </button>
-            <button
-              type="button"
-              className={`nav-button ${section === 'clients' ? 'active' : ''}`}
-              onClick={() => {
-                setSection('clients');
-                setClientView('list');
-                clearClientState();
-                clearQuoteState();
-              }}
-            >
-              Clients
-            </button>
-            <button
-              type="button"
-              className={`nav-button ${section === 'quotes' ? 'active' : ''}`}
-              onClick={() => {
-                setSection('quotes');
-                setQuoteView('list');
-                clearClientState();
-                clearQuoteState();
-              }}
-            >
-              Quotes
-            </button>
-            <button
-              type="button"
-              className={`nav-button ${section === 'invoices' ? 'active' : ''}`}
-              onClick={() => {
-                setSection('invoices');
-                setInvoiceView('list');
-                clearClientState();
-                clearQuoteState();
-                clearInvoiceState();
-                clearStatementState();
-              }}
-            >
-              Invoices
-            </button>
-            <button
-              type="button"
-              className={`nav-button ${section === 'jobcards' ? 'active' : ''}`}
-              onClick={() => {
-                setSection('jobcards');
-                setJobCardView('list');
-                clearClientState();
-                clearQuoteState();
-                clearInvoiceState();
-                clearStatementState();
-                clearJobCardState();
-              }}
-            >
-              Job Cards
-            </button>
-            <button
-              type="button"
-              className={`nav-button ${section === 'deliverynotes' ? 'active' : ''}`}
-              onClick={() => {
-                setSection('deliverynotes');
-                setDeliveryNoteView('list');
-                clearDeliveryNoteState();
-              }}
-            >
-              Delivery Notes
-            </button>
-            <button
-              type="button"
-              className={`nav-button ${section === 'creditnotes' ? 'active' : ''}`}
-              onClick={() => {
-                setSection('creditnotes');
-                setCreditNoteView('list');
-                clearCreditNoteState();
-              }}
-            >
-              Credit Notes
-            </button>
-            <button
-              type="button"
-              className={`nav-button ${section === 'costs' ? 'active' : ''}`}
-              onClick={() => {
-                setSection('costs');
-                setCostView('list');
-                clearCostState();
-              }}
-            >
-              Costs
-            </button>
-            <button
-              type="button"
-              className={`nav-button ${section === 'admin' ? 'active' : ''}`}
-              onClick={() => {
-                setSection('admin');
-                setAdminView('home');
-                clearClientState();
-                clearQuoteState();
-              }}
-            >
-              Admin
-            </button>
+            {/* Business dropdown */}
+            <div className="dropdown" ref={businessRef}>
+              <button
+                type="button"
+                className={`dropdown-toggle ${businessOpen ? 'active' : ''}`}
+                onClick={() => setBusinessOpen((o) => !o)}
+              >
+                Business ▾
+              </button>
+              {businessOpen && (
+                <div className="dropdown-menu">
+                  <button type="button" onClick={() => { setSection('quotes'); setQuoteView('list'); clearQuoteState(); setBusinessOpen(false); }}>Quotes</button>
+                  <button type="button" onClick={() => { setSection('invoices'); setInvoiceView('list'); clearInvoiceState(); setBusinessOpen(false); }}>Invoices</button>
+                  <button type="button" onClick={() => { setSection('statements'); setStatementView('list'); clearStatementState(); setBusinessOpen(false); }}>Statements</button>
+                  <button type="button" onClick={() => { setSection('clients'); setClientView('list'); clearClientState(); setBusinessOpen(false); }}>Clients</button>
+                  <button type="button" onClick={() => { setSection('jobcards'); setJobCardView('list'); clearJobCardState(); setBusinessOpen(false); }}>Job Cards</button>
+                  <button type="button" onClick={() => { setSection('deliverynotes'); setDeliveryNoteView('list'); clearDeliveryNoteState(); setBusinessOpen(false); }}>Delivery Notes</button>
+                </div>
+              )}
+            </div>
+
+            {/* Management dropdown */}
+            <div className="dropdown" ref={managementRef}>
+              <button
+                type="button"
+                className={`dropdown-toggle ${managementOpen ? 'active' : ''}`}
+                onClick={() => setManagementOpen((o) => !o)}
+              >
+                Management ▾
+              </button>
+              {managementOpen && (
+                <div className="dropdown-menu">
+                  <button type="button" onClick={() => { setSection('admin'); setAdminView('tools'); setManagementOpen(false); }}>Tools</button>
+                  <button type="button" onClick={() => { setSection('admin'); setAdminView('documents'); setManagementOpen(false); }}>Documents</button>
+                  <button type="button" onClick={() => { setSection('costs'); setCostView('list'); clearCostState(); setManagementOpen(false); }}>Costs</button>
+                </div>
+              )}
+            </div>
+
+            {/* Admin dropdown */}
+            <div className="dropdown" ref={adminDropRef}>
+              <button
+                type="button"
+                className={`dropdown-toggle ${adminDropOpen ? 'active' : ''}`}
+                onClick={() => setAdminDropOpen((o) => !o)}
+              >
+                Admin ▾
+              </button>
+              {adminDropOpen && (
+                <div className="dropdown-menu">
+                  <button type="button" onClick={() => { setSection('admin'); setAdminView('users'); setAdminDropOpen(false); }}>Users</button>
+                  <button type="button" onClick={() => { setSection('admin'); setAdminView('descriptions'); setAdminDropOpen(false); }}>Quote Descriptions</button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -1270,107 +1115,128 @@ function App() {
         </div>
       )}
 
-      {!isLoading && section === 'statements' && (
-        <Statements invoices={invoices} clients={clients} creditNotes={creditNotes} statements={statements} onRefresh={loadAll} onDelete={handleDeleteStatement} />
-      )}
+      {
+        !isLoading && section === 'statements' && (
+          <Statements invoices={invoices} clients={clients} creditNotes={creditNotes} statements={statements} onRefresh={loadAll} onDelete={handleDeleteStatement} />
+        )
+      }
 
-      {!isLoading && section === 'deliverynotes' && deliveryNoteView === 'list' && (
-        <DeliveryNoteListPage
-          deliveryNotes={deliveryNotes}
-          onView={handleViewDeliveryNote}
-          onEdit={handleEditDeliveryNote}
-          onDelete={handleDeleteDeliveryNote}
-          onCreateNew={() => { clearDeliveryNoteState(); setDeliveryNoteView('manage'); }}
-        />
-      )}
+      {
+        !isLoading && section === 'deliverynotes' && deliveryNoteView === 'list' && (
+          <DeliveryNoteListPage
+            deliveryNotes={deliveryNotes}
+            onView={handleViewDeliveryNote}
+            onEdit={handleEditDeliveryNote}
+            onDelete={handleDeleteDeliveryNote}
+            onCreateNew={() => { clearDeliveryNoteState(); setDeliveryNoteView('manage'); }}
+          />
+        )
+      }
 
-      {!isLoading && section === 'deliverynotes' && deliveryNoteView === 'manage' && (
-        <DeliveryNoteForm
-          quotes={quotes}
-          clients={clients}
-          initialData={editingDeliveryNote ?? undefined}
-          isNew={!editingDeliveryNote}
-          onSubmit={editingDeliveryNote
-            ? (p) => handleUpdateDeliveryNote(editingDeliveryNote.id, p)
-            : handleCreateDeliveryNote
-          }
-          onCancel={() => setDeliveryNoteView('list')}
-        />
-      )}
+      {
+        !isLoading && section === 'deliverynotes' && deliveryNoteView === 'manage' && (
+          <DeliveryNoteForm
+            quotes={quotes}
+            clients={clients}
+            initialData={editingDeliveryNote ?? undefined}
+            isNew={!editingDeliveryNote}
+            onSubmit={editingDeliveryNote
+              ? (p) => handleUpdateDeliveryNote(editingDeliveryNote.id, p)
+              : handleCreateDeliveryNote
+            }
+            onCancel={() => setDeliveryNoteView('list')}
+          />
+        )
+      }
 
-      {!isLoading && section === 'deliverynotes' && deliveryNoteView === 'view' && viewingDeliveryNote && (
-        <DeliveryNoteViewPage
-          deliveryNote={viewingDeliveryNote}
-          onEdit={() => handleEditDeliveryNote(viewingDeliveryNote)}
-          onBack={() => setDeliveryNoteView('list')}
-        />
-      )}
+      {
+        !isLoading && section === 'deliverynotes' && deliveryNoteView === 'view' && viewingDeliveryNote && (
+          <DeliveryNoteViewPage
+            deliveryNote={viewingDeliveryNote}
+            onEdit={() => handleEditDeliveryNote(viewingDeliveryNote)}
+            onBack={() => setDeliveryNoteView('list')}
+          />
+        )
+      }
 
-      {!isLoading && section === 'creditnotes' && creditNoteView === 'list' && (
-        <CreditNoteListPage
-          creditNotes={creditNotes}
-          onView={handleViewCreditNote}
-          onEdit={handleEditCreditNote}
-          onDelete={handleDeleteCreditNote}
-          onCreateNew={() => { clearCreditNoteState(); setCreditNoteView('manage'); }}
-        />
-      )}
+      {
+        !isLoading && section === 'creditnotes' && creditNoteView === 'list' && (
+          <CreditNoteListPage
+            creditNotes={creditNotes}
+            onView={handleViewCreditNote}
+            onEdit={handleEditCreditNote}
+            onDelete={handleDeleteCreditNote}
+            onCreateNew={() => { clearCreditNoteState(); setCreditNoteView('manage'); }}
+          />
+        )
+      }
 
-      {!isLoading && section === 'creditnotes' && creditNoteView === 'manage' && (
-        <CreditNoteForm
-          clients={clients}
-          initialData={editingCreditNote || undefined}
-          isNew={!editingCreditNote}
-          onSubmit={editingCreditNote
-            ? (p) => handleUpdateCreditNote(editingCreditNote.id, p)
-            : handleCreateCreditNote
-          }
-          onCancel={() => setCreditNoteView('list')}
-        />
-      )}
+      {
+        !isLoading && section === 'creditnotes' && creditNoteView === 'manage' && (
+          <CreditNoteForm
+            clients={clients}
+            initialData={editingCreditNote || undefined}
+            isNew={!editingCreditNote}
+            onSubmit={editingCreditNote
+              ? (p) => handleUpdateCreditNote(editingCreditNote.id, p)
+              : handleCreateCreditNote
+            }
+            onCancel={() => setCreditNoteView('list')}
+          />
+        )
+      }
 
-      {!isLoading && section === 'creditnotes' && creditNoteView === 'view' && viewingCreditNote && (
-        <CreditNoteViewPage
-          creditNote={viewingCreditNote}
-          onEdit={() => handleEditCreditNote(viewingCreditNote)}
-          onBack={() => setCreditNoteView('list')}
-        />
-      )}
+      {
+        !isLoading && section === 'creditnotes' && creditNoteView === 'view' && viewingCreditNote && (
+          <CreditNoteViewPage
+            creditNote={viewingCreditNote}
+            onEdit={() => handleEditCreditNote(viewingCreditNote)}
+            onBack={() => setCreditNoteView('list')}
+          />
+        )
+      }
 
-      {!isLoading && section === 'costs' && costView === 'list' && (
-        <CostsListPage
-          costs={costs}
-          onEdit={handleEditCost}
-          onDelete={handleDeleteCost}
-          onDuplicate={handleDuplicateCost}
-          onCreateNew={() => {
-            clearCostState();
-            setCostView('manage');
-          }}
-        />
-      )}
+      {
+        !isLoading && section === 'costs' && costView === 'list' && (
+          <CostsListPage
+            costs={costs}
+            onEdit={handleEditCost}
+            onDelete={handleDeleteCost}
+            onDuplicate={handleDuplicateCost}
+            onCreateNew={() => {
+              clearCostState();
+              setCostView('manage');
+            }}
+          />
+        )
+      }
 
-      {!isLoading && section === 'costs' && costView === 'manage' && (
-        <CostForm
-          initialData={editingCost ?? undefined}
-          onSubmit={editingCost
-            ? (payload) => handleUpdateCost(editingCost.id, payload)
-            : handleCreateCost
-          }
-          onCancel={() => setCostView('list')}
-        />
-      )}
+      {
+        !isLoading && section === 'costs' && costView === 'manage' && (
+          <CostForm
+            initialData={editingCost ?? undefined}
+            onSubmit={editingCost
+              ? (payload) => handleUpdateCost(editingCost.id, payload)
+              : handleCreateCost
+            }
+            onCancel={() => setCostView('list')}
+          />
+        )
+      }
 
-      {isLoading && section !== 'dashboard' && (
-        <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
-          Loading…
-        </div>
-      )}
+      {
+        isLoading && section !== 'dashboard' && (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+            Loading…
+          </div>
+        )
+      }
 
-      {!isLoading && section === 'dashboard' && (
-        <div className="page-section dashboard-new">
-          <style dangerouslySetInnerHTML={{
-            __html: `
+      {
+        !isLoading && section === 'dashboard' && (
+          <div className="page-section dashboard-new">
+            <style dangerouslySetInnerHTML={{
+              __html: `
             .dashboard-new { max-width: 1400px; margin: 0 auto; padding: 20px; }
             .dash-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
             .dash-header h2 { margin: 0; font-size: 1.8rem; color: #e6e6e6; }
@@ -1415,327 +1281,377 @@ function App() {
             .empty-msg { padding: 60px; text-align: center; color: #94a3b8; font-style: italic; font-size: 0.95rem; }
           ` }} />
 
-          <div className="dash-header">
-            <div>
-              <h2>Dashboard</h2>
-              <p>Hello, {user?.username}. Here's the current health of your operations and activities.</p>
-            </div>
-            <div className="dash-summary-pills">
-              <span className="badge accent-blue" style={{ padding: '10px 20px', borderRadius: '25px', fontWeight: 'bold' }}>{clients.length} Active Clients</span>
-            </div>
-          </div>
-
-          <div className="metrics-row">
-            <div className="metric-card m-card-quotes">
-              <span className="m-label">Quoted Pipeline</span>
-              <span className="m-value">{formatAmount(totalQuoteValue)}</span>
-              <span className="m-sub">Value of {quotes.length} total quotes</span>
-            </div>
-            <div className="metric-card m-card-invoices">
-              <span className="m-label">Billed Revenue</span>
-              <span className="m-value">{formatAmount(totalInvoiceValue)}</span>
-              <span className="m-sub">{invoices.length} invoices generated</span>
-            </div>
-            <div className="metric-card m-card-payments">
-              <span className="m-label">Cash Collected</span>
-              <span className="m-value" style={{ color: '#10b981' }}>{formatAmount(totalPaymentsRecorded)}</span>
-              <span className="m-sub">{collectionRate.toFixed(1)}% collection efficiency</span>
-            </div>
-            <div className="metric-card m-card-outstanding">
-              <span className="m-label">Pending Receivables</span>
-              <span className="m-value" style={{ color: totalOutstanding > 0 ? '#ef4444' : '#10b981' }}>
-                {formatAmount(totalOutstanding)}
-              </span>
-              <span className="m-sub">Balance from issued invoices</span>
-            </div>
-          </div>
-
-          <div className="activity-grid">
-            {/* Recent Payments */}
-            <div className="activity-block">
-              <div className="block-header">
-                <h3>Recent Collection Activity</h3>
-                <button onClick={() => setSection('statements')}>Statement Logs</button>
+            <div className="dash-header">
+              <div>
+                <h2>Dashboard</h2>
+                <p>Hello, {user?.username}. Here's the current health of your operations and activities.</p>
               </div>
-              <div className="list-scroll" style={{ maxHeight: '300px' }}>
-                {recentStatements.length === 0 ? (
-                  <div className="empty-msg">No payment history recorded</div>
-                ) : (
-                  recentStatements.map(s => {
-                    const sItems = (s as any).items || (s as any).Items || [];
-                    const sTotal = sItems.reduce((sum: number, i: any) => sum + (i.paymentAmount || i.PaymentAmount || 0), 0);
-                    const clientName = (s as any).client?.name || (s as any).Client?.Name || 'Unknown Client';
-                    const sNum = (s as any).statementNumber || (s as any).StatementNumber;
-                    return (
-                      <div key={s.id} className="dash-item" onClick={() => handleViewStatement(s)}>
+              <div className="dash-summary-pills">
+                <span className="badge accent-blue" style={{ padding: '10px 20px', borderRadius: '25px', fontWeight: 'bold' }}>{clients.length} Active Clients</span>
+              </div>
+            </div>
+
+            <div className="metrics-row">
+              <div className="metric-card m-card-quotes">
+                <span className="m-label">Quoted Pipeline</span>
+                <span className="m-value">{formatAmount(totalQuoteValue)}</span>
+                <span className="m-sub">Value of {quotes.length} total quotes</span>
+              </div>
+              <div className="metric-card m-card-invoices">
+                <span className="m-label">Billed Revenue</span>
+                <span className="m-value">{formatAmount(totalInvoiceValue)}</span>
+                <span className="m-sub">{invoices.length} invoices generated</span>
+              </div>
+              <div className="metric-card m-card-payments">
+                <span className="m-label">Cash Collected</span>
+                <span className="m-value" style={{ color: '#10b981' }}>{formatAmount(totalPaymentsRecorded)}</span>
+                <span className="m-sub">{collectionRate.toFixed(1)}% collection efficiency</span>
+              </div>
+              <div className="metric-card m-card-outstanding">
+                <span className="m-label">Pending Receivables</span>
+                <span className="m-value" style={{ color: totalOutstanding > 0 ? '#ef4444' : '#10b981' }}>
+                  {formatAmount(totalOutstanding)}
+                </span>
+                <span className="m-sub">Balance from issued invoices</span>
+              </div>
+            </div>
+
+            <div className="activity-grid">
+              {/* Recent Payments */}
+              <div className="activity-block">
+                <div className="block-header">
+                  <h3>Recent Collection Activity</h3>
+                  <button onClick={() => setSection('statements')}>Statement Logs</button>
+                </div>
+                <div className="list-scroll" style={{ maxHeight: '300px' }}>
+                  {recentStatements.length === 0 ? (
+                    <div className="empty-msg">No payment history recorded</div>
+                  ) : (
+                    recentStatements.map(s => {
+                      const sItems = (s as any).items || (s as any).Items || [];
+                      const sTotal = sItems.reduce((sum: number, i: any) => sum + (i.paymentAmount || i.PaymentAmount || 0), 0);
+                      const clientName = (s as any).client?.name || (s as any).Client?.Name || 'Unknown Client';
+                      const sNum = (s as any).statementNumber || (s as any).StatementNumber;
+                      return (
+                        <div key={s.id} className="dash-item" onClick={() => handleViewStatement(s)}>
+                          <div className="item-main">
+                            <span className="title">Payment Advice #{sNum}</span>
+                            <span className="subtitle">{clientName}</span>
+                          </div>
+                          <div className="item-side">
+                            <span className="amount" style={{ color: '#10b981' }}>+{formatAmount(sTotal)}</span>
+                            <span className="date">{new Date((s as any).createdAt || (s as any).CreatedAt).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              {/* Recent Invoices */}
+              <div className="activity-block">
+                <div className="block-header">
+                  <h3>Latest Invoices</h3>
+                  <button onClick={() => setSection('invoices')}>Manage Invoices</button>
+                </div>
+                <div className="list-scroll" style={{ maxHeight: '300px' }}>
+                  {recentInvoices.length === 0 ? (
+                    <div className="empty-msg">No invoicing activity found</div>
+                  ) : (
+                    recentInvoices.map(inv => (
+                      <div key={inv.id} className="dash-item" onClick={() => handleViewInvoice(inv)}>
                         <div className="item-main">
-                          <span className="title">Payment Advice #{sNum}</span>
-                          <span className="subtitle">{clientName}</span>
+                          <span className="title">
+                            <span className={`status-tag ${inv.status.toLowerCase()}`}>{inv.status}</span>
+                            #{inv.invoiceNumber}
+                          </span>
+                          <span className="subtitle">{inv.client?.name || inv.quote?.client?.name || 'Unknown Client'}</span>
                         </div>
                         <div className="item-side">
-                          <span className="amount" style={{ color: '#10b981' }}>+{formatAmount(sTotal)}</span>
-                          <span className="date">{new Date((s as any).createdAt || (s as any).CreatedAt).toLocaleDateString()}</span>
+                          <span className="amount">{formatAmount(inv.amount)}</span>
+                          <span className="date">{inv.createdAt ? new Date(inv.createdAt).toLocaleDateString() : ''}</span>
                         </div>
                       </div>
-                    );
-                  })
-                )}
+                    ))
+                  )}
+                </div>
               </div>
-            </div>
 
-            {/* Recent Invoices */}
-            <div className="activity-block">
-              <div className="block-header">
-                <h3>Latest Invoices</h3>
-                <button onClick={() => setSection('invoices')}>Manage Invoices</button>
-              </div>
-              <div className="list-scroll" style={{ maxHeight: '300px' }}>
-                {recentInvoices.length === 0 ? (
-                  <div className="empty-msg">No invoicing activity found</div>
-                ) : (
-                  recentInvoices.map(inv => (
-                    <div key={inv.id} className="dash-item" onClick={() => handleViewInvoice(inv)}>
-                      <div className="item-main">
-                        <span className="title">
-                          <span className={`status-tag ${inv.status.toLowerCase()}`}>{inv.status}</span>
-                          #{inv.invoiceNumber}
-                        </span>
-                        <span className="subtitle">{inv.client?.name || inv.quote?.client?.name || 'Unknown Client'}</span>
+              {/* Recent Quotes */}
+              <div className="activity-block">
+                <div className="block-header">
+                  <h3>Active Quotes</h3>
+                  <button onClick={() => setSection('quotes')}>Manage Quotes</button>
+                </div>
+                <div className="list-scroll">
+                  {recentQuotes.length === 0 ? (
+                    <div className="empty-msg">No quotations created yet</div>
+                  ) : (
+                    recentQuotes.map(q => (
+                      <div key={q.id} className="dash-item" onClick={() => handleViewQuote(q)}>
+                        <div className="item-main">
+                          <span className="title">#{q.quoteNumber}</span>
+                          <span className="subtitle">{q.client?.name || 'Private Client'} — {q.reference}</span>
+                        </div>
+                        <div className="item-side">
+                          <span className="amount">{formatAmount(q.total)}</span>
+                          <span className="date">{new Date(q.date).toLocaleDateString()}</span>
+                        </div>
                       </div>
-                      <div className="item-side">
-                        <span className="amount">{formatAmount(inv.amount)}</span>
-                        <span className="date">{inv.createdAt ? new Date(inv.createdAt).toLocaleDateString() : ''}</span>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* Recent Quotes */}
-            <div className="activity-block">
-              <div className="block-header">
-                <h3>Active Quotes</h3>
-                <button onClick={() => setSection('quotes')}>Manage Quotes</button>
-              </div>
-              <div className="list-scroll">
-                {recentQuotes.length === 0 ? (
-                  <div className="empty-msg">No quotations created yet</div>
-                ) : (
-                  recentQuotes.map(q => (
-                    <div key={q.id} className="dash-item" onClick={() => handleViewQuote(q)}>
-                      <div className="item-main">
-                        <span className="title">#{q.quoteNumber}</span>
-                        <span className="subtitle">{q.client?.name || 'Private Client'} — {q.reference}</span>
-                      </div>
-                      <div className="item-side">
-                        <span className="amount">{formatAmount(q.total)}</span>
-                        <span className="date">{new Date(q.date).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-                  ))
-                )}
+                    ))
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
-      {!isLoading && section === 'clients' && clientView === 'list' && (
-        <ClientsListPage
-          clients={clients}
-          onEdit={handleEditClient}
-          onView={handleViewClient}
-          onDelete={handleDeleteClient}
-          onCreateNew={() => {
-            clearClientState();
-            setClientView('manage');
-          }}
-        />
-      )}
+      {
+        !isLoading && section === 'clients' && clientView === 'list' && (
+          <ClientsListPage
+            clients={clients}
+            onEdit={handleEditClient}
+            onView={handleViewClient}
+            onDelete={handleDeleteClient}
+            onCreateNew={() => {
+              clearClientState();
+              setClientView('manage');
+            }}
+          />
+        )
+      }
 
-      {!isLoading && section === 'clients' && clientView === 'manage' && (
-        <ClientManagementPage
-          client={editingClient ?? undefined}
-          isNew={!editingClient}
-          isDuplicate={isDuplicatingClient}
-          onSubmit={
-            editingClient && !isDuplicatingClient
-              ? (payload) => handleUpdateClient(editingClient.id, payload)
-              : handleCreateClient
-          }
-          onCancel={() => {
-            clearClientState();
-            setClientView('list');
-          }}
-        />
-      )}
+      {
+        !isLoading && section === 'clients' && clientView === 'manage' && (
+          <ClientManagementPage
+            client={editingClient ?? undefined}
+            isNew={!editingClient}
+            isDuplicate={isDuplicatingClient}
+            onSubmit={
+              editingClient && !isDuplicatingClient
+                ? (payload) => handleUpdateClient(editingClient.id, payload)
+                : handleCreateClient
+            }
+            onCancel={() => {
+              clearClientState();
+              setClientView('list');
+            }}
+          />
+        )
+      }
 
-      {!isLoading && section === 'clients' && clientView === 'view' && viewingClient && (
-        <ClientViewPage
-          client={viewingClient}
-          onEdit={() => handleEditClient(viewingClient)}
-          onDuplicate={() => handleDuplicateClient(viewingClient)}
-          onBack={() => {
-            clearClientState();
-            setClientView('list');
-          }}
-        />
-      )}
+      {
+        !isLoading && section === 'clients' && clientView === 'view' && viewingClient && (
+          <ClientViewPage
+            client={viewingClient}
+            onEdit={() => handleEditClient(viewingClient)}
+            onDuplicate={() => handleDuplicateClient(viewingClient)}
+            onBack={() => {
+              clearClientState();
+              setClientView('list');
+            }}
+          />
+        )
+      }
 
-      {!isLoading && section === 'quotes' && quoteView === 'list' && (
-        <QuotesListPage
-          quotes={quotes}
-          onEdit={handleEditQuote}
-          onView={handleViewQuote}
-          onDelete={handleDeleteQuote}
-          onDuplicate={handleDuplicateQuote}
-          onCreateNew={() => {
-            clearQuoteState();
-            setQuoteView('manage');
-          }}
-        />
-      )}
+      {
+        !isLoading && section === 'quotes' && quoteView === 'list' && (
+          <QuotesListPage
+            quotes={quotes}
+            onEdit={handleEditQuote}
+            onView={handleViewQuote}
+            onDelete={handleDeleteQuote}
+            onDuplicate={handleDuplicateQuote}
+            onCreateNew={() => {
+              clearQuoteState();
+              setQuoteView('manage');
+            }}
+          />
+        )
+      }
 
-      {!isLoading && section === 'quotes' && quoteView === 'manage' && (
-        <QuoteManagementPage
-          quote={editingQuote ?? undefined}
-          clients={clients}
-          selectedClientId={quoteClientId}
-          descriptionOptions={quoteDescriptions}
-          onSelectClientId={setQuoteClientId}
-          isNew={!editingQuote?.id}
-          isDuplicate={isDuplicatingQuote}
-          onSubmit={
-            editingQuote?.id && !isDuplicatingQuote
-              ? (payload) => handleUpdateQuote(editingQuote.id, payload)
-              : handleCreateQuote
-          }
-          onCancel={() => {
-            clearQuoteState();
-            setQuoteView('list');
-          }}
-          onRequestNewClient={() => {
-            setSection('clients');
-            clearClientState();
-            setClientView('manage');
-          }}
-        />
-      )}
+      {
+        !isLoading && section === 'quotes' && quoteView === 'manage' && (
+          <QuoteManagementPage
+            quote={editingQuote ?? undefined}
+            clients={clients}
+            selectedClientId={quoteClientId}
+            descriptionOptions={quoteDescriptions}
+            onSelectClientId={setQuoteClientId}
+            isNew={!editingQuote?.id}
+            isDuplicate={isDuplicatingQuote}
+            onSubmit={
+              editingQuote?.id && !isDuplicatingQuote
+                ? (payload) => handleUpdateQuote(editingQuote.id, payload)
+                : handleCreateQuote
+            }
+            onCancel={() => {
+              clearQuoteState();
+              setQuoteView('list');
+            }}
+            onRequestNewClient={() => {
+              setSection('clients');
+              clearClientState();
+              setClientView('manage');
+            }}
+          />
+        )
+      }
 
-      {!isLoading && section === 'quotes' && quoteView === 'view' && viewingQuote && (
-        <QuoteViewPage
-          quote={viewingQuote}
-          onEdit={() => handleEditQuote(viewingQuote)}
-          onDuplicate={() => handleDuplicateQuote(viewingQuote)}
-          onBack={() => {
-            clearQuoteState();
-            setQuoteView('list');
-          }}
-        />
-      )}
+      {
+        !isLoading && section === 'quotes' && quoteView === 'view' && viewingQuote && (
+          <QuoteViewPage
+            quote={viewingQuote}
+            onEdit={() => handleEditQuote(viewingQuote)}
+            onDuplicate={() => handleDuplicateQuote(viewingQuote)}
+            onBack={() => {
+              clearQuoteState();
+              setQuoteView('list');
+            }}
+          />
+        )
+      }
 
-      {!isLoading && section === 'invoices' && invoiceView === 'list' && (
-        <InvoiceListPage
-          invoices={invoices}
-          onView={handleViewInvoice}
-          onEdit={handleEditInvoice}
-          onDelete={handleDeleteInvoice}
-          onCreateNew={() => {
-            clearInvoiceState();
-            setInvoiceView('manage');
-          }}
-        />
-      )}
+      {
+        !isLoading && section === 'invoices' && invoiceView === 'list' && (
+          <InvoiceListPage
+            invoices={invoices}
+            onView={handleViewInvoice}
+            onEdit={handleEditInvoice}
+            onDelete={handleDeleteInvoice}
+            onCreateNew={() => {
+              clearInvoiceState();
+              setInvoiceView('manage');
+            }}
+          />
+        )
+      }
 
-      {!isLoading && section === 'invoices' && invoiceView === 'manage' && (
-        <InvoiceForm
-          quotes={quotes}
-          initialData={editingInvoice ?? undefined}
-          onSubmit={
-            editingInvoice?.id
-              ? (payload) => handleUpdateInvoice(editingInvoice.id, payload)
-              : handleCreateInvoice
-          }
-          onCancel={() => {
-            clearInvoiceState();
-            setInvoiceView('list');
-          }}
-        />
-      )}
+      {
+        !isLoading && section === 'invoices' && invoiceView === 'manage' && (
+          <InvoiceForm
+            quotes={quotes}
+            initialData={editingInvoice ?? undefined}
+            onSubmit={
+              editingInvoice?.id
+                ? (payload) => handleUpdateInvoice(editingInvoice.id, payload)
+                : handleCreateInvoice
+            }
+            onCancel={() => {
+              clearInvoiceState();
+              setInvoiceView('list');
+            }}
+          />
+        )
+      }
 
-      {!isLoading && section === 'invoices' && invoiceView === 'view' && viewingInvoice && (
-        <InvoiceViewPage
-          invoice={viewingInvoice}
-          onEdit={() => viewingInvoice && handleEditInvoice(viewingInvoice)}
-          onBack={() => {
-            clearInvoiceState();
-            setInvoiceView('list');
-          }}
-        />
-      )}
+      {
+        !isLoading && section === 'invoices' && invoiceView === 'view' && viewingInvoice && (
+          <InvoiceViewPage
+            invoice={viewingInvoice}
+            onEdit={() => viewingInvoice && handleEditInvoice(viewingInvoice)}
+            onBack={() => {
+              clearInvoiceState();
+              setInvoiceView('list');
+            }}
+          />
+        )
+      }
 
-      {!isLoading && section === 'admin' && adminView === 'home' && (
-        <AdminHomePage
-          onViewDescriptions={() => setAdminView('descriptions')}
-          onViewUsers={() => setAdminView('users')}
-          onViewDocuments={() => setAdminView('documents')}
-        />
-      )}
+      {
+        !isLoading && section === 'admin' && adminView === 'home' && (
+          <AdminHomePage
+            onViewDescriptions={() => setAdminView('descriptions')}
+            onViewUsers={() => setAdminView('users')}
+            onViewDocuments={() => setAdminView('documents')}
+            onViewTools={() => setAdminView('tools')}
+          />
+        )
+      }
 
-      {!isLoading && section === 'admin' && adminView === 'descriptions' && (
-        <QuoteDescriptionManagementPage descriptions={quoteDescriptions} onBack={() => setAdminView('home')} onRefresh={loadAll} />
-      )}
+      {
+        !isLoading && section === 'admin' && adminView === 'descriptions' && (
+          <QuoteDescriptionManagementPage descriptions={quoteDescriptions} onBack={() => setAdminView('home')} onRefresh={loadAll} />
+        )
+      }
 
-      {!isLoading && section === 'admin' && adminView === 'users' && (
-        <UserManagementPage users={users} onBack={() => setAdminView('home')} onRefresh={loadAll} />
-      )}
+      {
+        !isLoading && section === 'admin' && adminView === 'users' && (
+          <UserManagementPage users={users} onBack={() => setAdminView('home')} onRefresh={loadAll} />
+        )
+      }
 
-      {!isLoading && section === 'admin' && adminView === 'documents' && (
-        <DocumentManagementPage onBack={() => setAdminView('home')} onRefreshApp={loadAll} />
-      )}
+      {
+        !isLoading && section === 'admin' && adminView === 'documents' && (
+          <DocumentManagementPage onBack={() => setAdminView('home')} onRefreshApp={loadAll} />
+        )
+      }
 
-      {!isLoading && section === 'jobcards' && jobCardView === 'list' && (
-        <JobCardListPage
-          jobCards={jobCards}
-          onView={handleViewJobCard}
-          onEdit={handleEditJobCard}
-          onDelete={handleDeleteJobCard}
-          onCreateNew={() => {
-            clearJobCardState();
-            setJobCardView('manage');
-          }}
-        />
-      )}
+      {
+        !isLoading && section === 'admin' && adminView === 'tools' && toolView === 'list' && (
+          <ToolManagementPage onBack={() => setAdminView('home')} onRefreshApp={loadAll} onView={handleViewTool} />
+        )
+      }
 
-      {!isLoading && section === 'jobcards' && jobCardView === 'manage' && (
-        <JobCardForm
-          quotes={quotes}
-          initialData={editingJobCard ?? undefined}
-          isNew={!editingJobCard?.id}
-          onSubmit={
-            editingJobCard?.id
-              ? (payload) => handleUpdateJobCard(editingJobCard.id, payload)
-              : handleCreateJobCard
-          }
-          onCancel={() => {
-            clearJobCardState();
-            setJobCardView('list');
-          }}
-        />
-      )}
+      {
+        !isLoading && section === 'admin' && adminView === 'tools' && toolView === 'view' && viewingTool && (
+          <ToolViewPage
+            tool={viewingTool}
+            imagePreviewUrl={viewingTool.imagePreviewUrl}
+            onBack={() => setToolView('list')}
+          />
+        )
+      }
 
-      {!isLoading && section === 'jobcards' && jobCardView === 'view' && viewingJobCard && (
-        <JobCardViewPage
-          jobCard={viewingJobCard}
-          onEdit={() => viewingJobCard && handleEditJobCard(viewingJobCard)}
-          onBack={() => {
-            clearJobCardState();
-            setJobCardView('list');
-          }}
-        />
-      )}
-    </div>
+      {
+        !isLoading && section === 'jobcards' && jobCardView === 'list' && (
+          <JobCardListPage
+            jobCards={jobCards}
+            onView={handleViewJobCard}
+            onEdit={handleEditJobCard}
+            onDelete={handleDeleteJobCard}
+            onCreateNew={() => {
+              clearJobCardState();
+              setJobCardView('manage');
+            }}
+          />
+        )
+      }
+
+      {
+        !isLoading && section === 'jobcards' && jobCardView === 'manage' && (
+          <JobCardForm
+            quotes={quotes}
+            initialData={editingJobCard ?? undefined}
+            isNew={!editingJobCard?.id}
+            onSubmit={
+              editingJobCard?.id
+                ? (payload) => handleUpdateJobCard(editingJobCard.id, payload)
+                : handleCreateJobCard
+            }
+            onCancel={() => {
+              clearJobCardState();
+              setJobCardView('list');
+            }}
+          />
+        )
+      }
+
+      {
+        !isLoading && section === 'jobcards' && jobCardView === 'view' && viewingJobCard && (
+          <JobCardViewPage
+            jobCard={viewingJobCard}
+            onEdit={() => viewingJobCard && handleEditJobCard(viewingJobCard)}
+            onBack={() => {
+              clearJobCardState();
+              setJobCardView('list');
+            }}
+          />
+        )
+      }
+    </div >
   );
 }
 export default App;

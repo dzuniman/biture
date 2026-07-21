@@ -76,7 +76,7 @@ export const generateQuotePDF = async (quote: Quote, save: boolean = false, retu
     formatAmount(item.totalPrice),
   ]);
 
-  const MAX_ROWS_PER_PAGE = 24 - imageCount - 1;
+  const MAX_ROWS_PER_PAGE = 24 - imageCount;
   const totalPages = Math.ceil(allRows.length / MAX_ROWS_PER_PAGE);
   const pageHeight = doc.internal.pageSize.getHeight();
   const footerBlockHeight = 55;

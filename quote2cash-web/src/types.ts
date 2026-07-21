@@ -352,3 +352,25 @@ export interface DocumentResponse {
   contentType: string;
   uploadedAt: string;
 }
+
+export interface Tool {
+  id: string;
+  code: string;
+  description: string;
+  quantity: number;
+  location?: string | null;
+  imagePath?: string | null;
+  value: number;
+  inspectionDate?: string | null;
+}
+
+export interface ToolCreateRequest {
+  code: string;
+  description: string;
+  quantity: number;
+  location?: string | null;
+  imagePath?: string | null;
+  value: number;
+  inspectionDate?: string | null;
+}
+

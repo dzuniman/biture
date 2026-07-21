@@ -2,15 +2,16 @@ interface Props {
   onViewDescriptions: () => void;
   onViewUsers: () => void;
   onViewDocuments: () => void;
+  onViewTools: () => void;
 }
 
-export default function AdminHomePage({ onViewDescriptions, onViewUsers, onViewDocuments }: Props) {
+export default function AdminHomePage({ onViewDescriptions, onViewUsers, onViewDocuments, onViewTools }: Props) {
   return (
     <div className="page-section">
       <div className="section-header">
         <div>
           <h2>Admin</h2>
-          <p>Manage quote lookup values and user accounts.</p>
+          <p>Manage quote lookup values, user accounts, and tool inventory.</p>
         </div>
       </div>
 
@@ -36,7 +37,15 @@ export default function AdminHomePage({ onViewDescriptions, onViewUsers, onViewD
             Manage Documents
           </button>
         </div>
+        <div className="card">
+          <h3>Tools</h3>
+          <p>Manage tool inventory, values, and inspection dates.</p>
+          <button className="btn-primary" onClick={onViewTools}>
+            Manage Tools
+          </button>
+        </div>
       </div>
     </div>
   );
 }
+
