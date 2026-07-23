@@ -1,3 +1,9 @@
 node_modules
 dist
 .env
+obj/
+*.exe
+*.dll
+*.log
+*.user
+*.vs/
