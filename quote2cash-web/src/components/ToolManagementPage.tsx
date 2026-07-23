@@ -29,8 +29,6 @@ async function fetchSecureToolImage(imagePath: string): Promise<string | undefin
   if (!imagePath) return undefined;
   const token = localStorage.getItem('token');
   const url = getToolImageUrl(imagePath);
-  console.log('Image Path: ', imagePath);
-  console.log('Image Url: ', url);
   try {
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${token}` }
