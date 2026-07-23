@@ -922,7 +922,7 @@ function App() {
       let imagePreviewUrl: string | undefined;
       if (tool.imagePath) {
         const token = localStorage.getItem('token');
-        const url = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/tools/images/${tool.imagePath}`;
+        const url = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:12345'}/api/tools/images/${tool.imagePath}`;
         try {
           const res = await fetch(url, {
             headers: { Authorization: `Bearer ${token}` }
