@@ -62,7 +62,8 @@ builder.Services.AddCors(options =>
             "https://quote2cash-api.onrender.com",
             "https://biture-api.onrender.com",
             "https://biture.onrender.com",
-            "http://localhost:4173"
+            "http://localhost:4173",
+            "http://localhost:5227"
         )
         .AllowAnyHeader()
         .AllowAnyMethod()
@@ -92,7 +93,7 @@ app.UseStaticFiles();
 app.UseRouting();
 
 // ✅ Handle OPTIONS preflight requests explicitly
-app.Use(async (context, next) =>
+/*app.Use(async (context, next) =>
 {
     if (context.Request.Method == HttpMethods.Options)
     {
@@ -104,13 +105,13 @@ app.Use(async (context, next) =>
         return;
     }
     await next();
-});
+});*/
 
 // ✅ Ensure CORS headers are applied globally
 app.UseCors("AllowFrontend");
 
 // ✅ Ensure errors also return CORS headers
-app.Use(async (context, next) =>
+/*app.Use(async (context, next) =>
 {
     try
     {
@@ -124,7 +125,7 @@ app.Use(async (context, next) =>
         context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
         await context.Response.WriteAsync($"Server error: {ex.Message}");
     }
-});
+});*/
 
 app.UseAuthentication();
 app.UseAuthorization();
