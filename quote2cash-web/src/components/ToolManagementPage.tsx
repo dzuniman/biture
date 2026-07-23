@@ -29,6 +29,8 @@ async function fetchSecureToolImage(imagePath: string): Promise<string | undefin
   if (!imagePath) return undefined;
   const token = localStorage.getItem('token');
   const url = getToolImageUrl(imagePath);
+  console.log('Image Path: ', imagePath);
+  console.log('Image Url: ', url);
   try {
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${token}` }
@@ -409,7 +411,7 @@ export default function ToolManagementPage({ onBack, onRefreshApp, onView }: Pro
                         ) : (
                           <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>No Image</span>
                         )}
-                        <label className="btn-secondary small" style={{ fontSize: '0.65rem', padding: '2px 6px', cursor: 'pointer', margin: 0 }}>
+                        <label className="btn-secondary small" style={{ fontSize: '0.65rem', color: 'black', padding: '2px 6px', cursor: 'pointer', margin: 0 }}>
                           Upload
                           <input
                             type="file"

@@ -1283,7 +1283,7 @@ function App() {
 
             <div className="dash-header">
               <div>
-                <h2>Dashboard</h2>
+                <h2>DASHBOARD</h2>
                 <p>Hello, {user?.username}. Here's the current health of your operations and activities.</p>
               </div>
               <div className="dash-summary-pills">
