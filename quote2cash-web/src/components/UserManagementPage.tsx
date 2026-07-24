@@ -114,9 +114,6 @@ export default function UserManagementPage({ users, onBack, onRefresh }: Props) 
           <p>Create, edit, or remove application users.</p>
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
-          <button onClick={onBack} className="btn-secondary">
-            ← Back
-          </button>
           {mode === 'list' && (
             <button onClick={startCreate} className="btn-primary">
               + New User

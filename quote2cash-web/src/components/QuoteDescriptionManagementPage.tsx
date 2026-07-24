@@ -117,9 +117,6 @@ export default function QuoteDescriptionManagementPage({ descriptions, onBack, o
           <p>Manage descriptions available for quote line items.</p>
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
-          <button onClick={onBack} className="btn-secondary">
-            ← Back
-          </button>
           {mode === 'list' && (
             <button onClick={startCreate} className="btn-primary">
               + New Description

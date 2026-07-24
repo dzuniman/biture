@@ -256,9 +256,6 @@ export default function ToolManagementPage({ onBack, onRefreshApp, onView }: Pro
           <p>Manage inventory tools, locations, images, and inspection schedules.</p>
         </div>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <button onClick={onBack} className="btn-secondary">
-            ← Back
-          </button>
           <button onClick={handleAddLine} className="btn-primary">
             + Add Tool Line
           </button>

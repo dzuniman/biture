@@ -60,9 +60,6 @@ export default function DocumentListPage({
           <p>Manage your business documents and templates.</p>
         </div>
         <div style={{ display: 'flex', gap: '12px' }}> {/* Added div for buttons */}
-          <button onClick={onBack} className="btn-secondary"> {/* Back button */}
-            ← Back
-          </button>
           <button onClick={onCreateNew} className="btn-primary-lg">
             + New Document
           </button>
