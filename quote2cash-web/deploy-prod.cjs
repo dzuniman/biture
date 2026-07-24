@@ -10,6 +10,7 @@ const config = {
     remoteRoot: "/public_html/erp_biture",
     include: ["*", "**/*"],
     deleteRemote: false,
+    overwrite: true,
     forcePasv: true
 };
 
