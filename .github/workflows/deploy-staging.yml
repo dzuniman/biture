@@ -1,0 +1,40 @@
+name: Auto Deploy to Staging
+
+on:
+  push:
+    branches:
+      - staging   # ✅ auto-deploy only when staging branch is updated
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment: staging   # ✅ targets the staging environment
+
+    steps:
+      # Checkout repo
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # Build with staging mode
+      - name: Build project (staging)
+        run: npm run build -- --mode staging
+
+      # Deploy via FTP
+      - name: Upload dist to staging
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.STAGING_FTP_SERVER }}
+          username: ${{ secrets.STAGING_FTP_USERNAME }}
+          password: ${{ secrets.STAGING_FTP_PASSWORD }}
+          local-dir: dist
+          server-dir: ${{ secrets.STAGING_FTP_PATH }}
