@@ -10,7 +10,7 @@ interface Props {
 }
 
 export default function ToolViewPage({ tool, imagePreviewUrl, onBack }: Props) {
-  console.log('Image URL: ', imagePreviewUrl);
+  console.log('ToolViewPage - Image URL: ', imagePreviewUrl);
   const formattedDate = tool.inspectionDate
     ? new Date(tool.inspectionDate).toLocaleDateString(undefined, {
       year: 'numeric',
