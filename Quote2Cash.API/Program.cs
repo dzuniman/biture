@@ -62,6 +62,7 @@ builder.Services.AddCors(options =>
             "https://quote2cash-api.onrender.com",
             "https://biture-api.onrender.com",
             "https://biture.onrender.com",
+            "https://erp.biture.co.za",
             "http://localhost:4173",
             "http://localhost:5227"
         )
