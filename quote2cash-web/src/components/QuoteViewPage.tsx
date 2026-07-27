@@ -4,7 +4,7 @@ import type { Quote, Client } from '../types'; // Ensure Client type is imported
 import { formatAmount } from '../../formatters';
 import logo from '../assets/logo.png';
 import { generateQuotePDF } from './QuotePdfGenerator'; // Import the Quote generator
-pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+pdfjs.GlobalWorkerOptions.workerSrc = import.meta.env.VITE_PDF_WORKER;
 
 interface Props {
   quote: Quote;

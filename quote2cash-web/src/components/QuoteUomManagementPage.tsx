@@ -28,7 +28,7 @@ export default function QuoteUomManagementPage({ uoms, onBack, onRefresh }: Prop
     setValue('');
     setError(null);
   };
-
+  
   const startEdit = (uom: QuoteUom) => {
     setMode('manage');
     setCurrent(uom);

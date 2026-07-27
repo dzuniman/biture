@@ -113,8 +113,8 @@ export default function QuoteDescriptionManagementPage({ descriptions, onBack, o
     <div className="page-section">
       <div className="section-header">
         <div>
-          <h2>Quote Description Management</h2>
-          <p>Manage descriptions available for quote line items.</p>
+          <h2>Product Management</h2>
+          <p>Manage products.</p>
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
           {mode === 'list' && (
