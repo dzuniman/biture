@@ -5,6 +5,7 @@ import { formatAmount } from '../../formatters';
 import logo from '../assets/logo.png';
 import { generateQuotePDF } from './QuotePdfGenerator'; // Import the Quote generator
 pdfjs.GlobalWorkerOptions.workerSrc = import.meta.env.VITE_PDF_WORKER;
+console.log("Worker path at runtime:", import.meta.env.VITE_PDF_WORKER);
 
 interface Props {
   quote: Quote;
