@@ -114,23 +114,32 @@ export interface QuoteUomUpdateRequest {
   value: string;
 }
 
-export interface QuoteDescription {
+export interface Product {
   id: string;
   code: string;
+  name: string;
   uom: string;
   description: string;
+  price: number;
+  image?: string | null;
 }
 
-export interface QuoteDescriptionCreateRequest {
+export interface ProductCreateRequest {
   code: string;
+  name: string;
   uom: string;
   description: string;
+  price: number;
+  image?: string | null;
 }
 
-export interface QuoteDescriptionUpdateRequest {
+export interface ProductUpdateRequest {
   code: string;
+  name: string;
   uom: string;
   description: string;
+  price: number;
+  image?: string | null;
 }
 
 export interface UserCreateRequest {

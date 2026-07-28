@@ -6,14 +6,14 @@ import type {
   InvoiceCreateRequest,
   Quote,
   QuoteCreateRequest,
-  QuoteDescription,
+  Product,
   User,
   UserCreateRequest,
   UserUpdateRequest,
   LoginRequest,
   LoginResponse,
-  QuoteDescriptionCreateRequest,
-  QuoteDescriptionUpdateRequest,
+  ProductCreateRequest,
+  ProductUpdateRequest,
   Statement,
   StatementCreateRequest,
   QuoteUom,
@@ -166,24 +166,37 @@ export const getInvoiceNextNumber = async (prefix: string): Promise<string> => {
   return response.data;
 };
 
-// Quote Descriptions
-export const getQuoteDescriptions = async (): Promise<QuoteDescription[]> => {
-  const response = await api.get('/quotedescriptions');
+// Products
+export const getProducts = async (): Promise<Product[]> => {
+  const response = await api.get('/products');
   return response.data;
 };
 
-export const createQuoteDescription = async (description: QuoteDescriptionCreateRequest): Promise<QuoteDescription> => {
-  const response = await api.post('/quotedescriptions', description);
+export const createProduct = async (product: ProductCreateRequest): Promise<Product> => {
+  const response = await api.post('/products', product);
   return response.data;
 };
 
-export const updateQuoteDescription = async (id: string, description: QuoteDescriptionUpdateRequest): Promise<QuoteDescription> => {
-  const response = await api.put(`/quotedescriptions/${id}`, description);
+export const updateProduct = async (id: string, product: ProductUpdateRequest): Promise<Product> => {
+  const response = await api.put(`/products/${id}`, product);
   return response.data;
 };
 
-export const deleteQuoteDescription = async (id: string): Promise<void> => {
-  await api.delete(`/quotedescriptions/${id}`);
+export const deleteProduct = async (id: string): Promise<void> => {
+  await api.delete(`/products/${id}`);
+};
+
+export const uploadProductImage = async (file: File): Promise<string> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await api.post('/products/upload-image', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+  return response.data.imagePath;
+};
+
+export const getProductImageUrl = (imagePath: string): string => {
+  return `${API_BASE_URL}/products/images/${imagePath}`;
 };
 
 // Quote UoMs

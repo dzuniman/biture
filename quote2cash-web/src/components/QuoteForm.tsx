@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useRef, type FormEvent } from 'react';
 import { formatAmount } from '../../formatters';
 import * as XLSX from 'xlsx';
-import type { Client, Quote, QuoteCreateRequest, QuoteItemCreateRequest, QuoteDescription } from '../types';
+import type { Client, Quote, QuoteCreateRequest, QuoteItemCreateRequest, Product } from '../types';
 import { getQuoteNextNumber, uploadQuoteItemImage, getQuoteItemImageUrl } from '../api';
 
 // Define the expected API response structure for next numbers
@@ -16,7 +16,7 @@ interface NextNumberApiResponse {
 
 interface Props {
   clients: Client[];
-  descriptionOptions: QuoteDescription[];
+  productOptions: Product[];
   initialData?: Quote;
   selectedClientId?: string;
   onSelectClientId?: (clientId: string) => void;
@@ -28,7 +28,7 @@ interface Props {
 
 type SuggestionOption = { id: string; value: string };
 
-type QuoteFormItem = QuoteItemCreateRequest & { unitPricePreview: number; imagePreview?: string; };
+type QuoteFormItem = QuoteItemCreateRequest & { name: string; unitPricePreview: number; imagePreview?: string; };
 
 interface SuggestionInputProps {
   options: SuggestionOption[];
@@ -139,6 +139,7 @@ const blankItem: QuoteFormItem = {
   itemNumber: 1,
   quantity: 1,
   code: '',
+  name: '',
   uom: '',
   description: '',
   unitPrice: 0,
@@ -156,7 +157,7 @@ const getBaseUnitPrice = (actualPrice: number, marginPercent: number) =>
 
 export default function QuoteForm({
   clients,
-  descriptionOptions,
+  productOptions,
   initialData,
   selectedClientId,
   onSelectClientId,
@@ -179,7 +180,7 @@ export default function QuoteForm({
   const [poNumber, setPoNumber] = useState(initialData?.poNumber ?? '');
   const [date, setDate] = useState(initialData?.date ? initialData.date.slice(0, 10) : today);
   const [validityDays, setValidityDays] = useState(initialData?.validityDays.toString() ?? '30');
-  const [items, setItems] = useState<QuoteFormItem[]>(initialData?.items?.length ? initialData.items.map((item) => ({ ...item, unitPricePreview: getBaseUnitPrice(item.unitPrice, initialData?.margin ?? 0) })) : [blankItem]);
+  const [items, setItems] = useState<QuoteFormItem[]>(initialData?.items?.length ? initialData.items.map((item) => ({ ...item, name: item.description, unitPricePreview: getBaseUnitPrice(item.unitPrice, initialData?.margin ?? 0) })) : [blankItem]);
   const [margin, setMargin] = useState<number>(initialData?.margin ?? 0);
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -195,7 +196,7 @@ export default function QuoteForm({
       setValidityDays(initialData.validityDays.toString());
       setMargin(initialData.margin ?? 0);
       const sorted = [...(initialData.items || [])].sort((a, b) => a.itemNumber - b.itemNumber);
-      const baseItems = sorted.map((item) => ({ ...item, unitPricePreview: getBaseUnitPrice(item.unitPrice, initialData.margin ?? 0), imagePreview: undefined }));
+      const baseItems = sorted.map((item) => ({ ...item, name: item.description, unitPricePreview: getBaseUnitPrice(item.unitPrice, initialData.margin ?? 0), imagePreview: undefined }));
       setItems(baseItems);
       // Then fetch previews asynchronously
       (async () => {
@@ -269,18 +270,17 @@ export default function QuoteForm({
     }
   }, [initialData, selectedClientId]);
 
-  const findDescriptionByCode = (value: string) => {
+  const findProductByCode = (value: string) => {
     if (!value.trim()) return undefined;
     const lookup = value.trim().toLowerCase();
-    return descriptionOptions.find((option) => option.code.trim().toLowerCase() === lookup);
+    return productOptions.find((option) => option.code.trim().toLowerCase() === lookup);
   };
 
   const reindexItems = (currentItems: QuoteFormItem[]) => {
     return currentItems.map((item, index) => ({ ...item, itemNumber: index + 1 }));
   };
 
-
-  const handleUpdateItem = (index: number, field: keyof QuoteItemCreateRequest, value: string) => {
+  const handleUpdateItem = async (index: number, field: keyof QuoteFormItem, value: string) => {
     setItems((current) => {
       const next = [...current];
       const item = { ...next[index] };
@@ -295,15 +295,27 @@ export default function QuoteForm({
         item.unitPrice = getActualUnitPrice(basePrice, margin);
       } else if (field === 'code') {
         item.code = value;
-        const matched = findDescriptionByCode(value);
+        const matched = findProductByCode(value);
         if (matched) {
           item.uom = matched.uom;
+          item.name = matched.name;
           item.description = matched.description;
+          item.unitPricePreview = matched.price;
+          item.unitPrice = getActualUnitPrice(matched.price, margin);
+          item.imagePath = matched.image; // Keep imagePath
+          // Asynchronously update the preview
+          if (matched.image) {
+            fetchSecureImage(matched.image).then(previewUrl => {
+              handleSetItemImage(index, matched.image ?? null, previewUrl);
+            });
+          }
         }
       } else if (field === 'uom') {
         item.uom = value;
       } else if (field === 'description') {
         item.description = value;
+      } else if (field === 'name') {
+        item.name = value;
       }
 
       item.totalPrice = parseFloat((item.quantity * item.unitPrice).toFixed(2));
@@ -318,12 +330,10 @@ export default function QuoteForm({
   };
 
   // Example: preload preview when setting image
-  const handleSetItemImage = async (index: number, imagePath: string | null) => {
-    const previewUrl = imagePath ? await fetchSecureImage(imagePath) : undefined;
-
+  const handleSetItemImage = (index: number, imagePath: string | null, previewUrl: string | undefined) => {
     setItems((current) => {
       const next = [...current];
-      next[index] = { ...next[index], imagePath, imagePreview: previewUrl };
+      next[index] = { ...next[index], imagePath: imagePath, imagePreview: previewUrl };
       return next;
     });
   };
@@ -332,7 +342,8 @@ export default function QuoteForm({
   const handleImageUpload = async (index: number, file: File) => {
     try {
       const path = await uploadQuoteItemImage(file);
-      handleSetItemImage(index, path);
+      const previewUrl = URL.createObjectURL(file);
+      handleSetItemImage(index, path, previewUrl);
     } catch (error) {
       console.error('Failed to upload image:', error);
       alert('Failed to upload image. Please try again.');
@@ -340,7 +351,7 @@ export default function QuoteForm({
   };
 
   const handleRemoveImage = (index: number) => {
-    handleSetItemImage(index, null);
+    handleSetItemImage(index, null, undefined);
   };
 
   const handleInsertItem = (index: number) => {
@@ -350,6 +361,7 @@ export default function QuoteForm({
         itemNumber: 0, // will be reassigned by reindexItems
         quantity: 1,
         code: '',
+        name: '',
         uom: '',
         description: '',
         unitPrice: 0,
@@ -367,6 +379,7 @@ export default function QuoteForm({
       itemNumber: current.length + 1,
       quantity: 1,
       code: '',
+      name: '',
       uom: '',
       description: '',
       unitPrice: 0,
@@ -420,6 +433,7 @@ export default function QuoteForm({
         const item: QuoteFormItem = {
           itemNumber: 0, // Will be re-indexed later
           code: row[headers.indexOf('code')] || '',
+          name: row[headers.indexOf('description')] || '',
           quantity: parseFloat(row[headers.indexOf('quantity')] || 0),
           uom: row[headers.indexOf('uom')] || '',
           description: row[headers.indexOf('description')] || '',
@@ -455,17 +469,17 @@ export default function QuoteForm({
 
   const uomSuggestionOptions = useMemo(() => {
     const seen = new Set<string>();
-    return descriptionOptions.reduce<{ id: string; value: string }[]>((list, option: QuoteDescription) => {
+    return productOptions.reduce<{ id: string; value: string }[]>((list, option: Product) => {
       const value = option.uom?.trim();
       if (!value || seen.has(value.toLowerCase())) return list;
       seen.add(value.toLowerCase());
       return [...list, { id: option.id, value }];
     }, []);
-  }, [descriptionOptions]);
+  }, [productOptions]);
 
   const codeSuggestionOptions = useMemo(() => {
-    return descriptionOptions.map((option: QuoteDescription) => ({ id: option.id, value: option.code }));
-  }, [descriptionOptions]);
+    return productOptions.map((option: Product) => ({ id: option.id, value: option.code }));
+  }, [productOptions]);
 
   const lineCount = useMemo(() => items.length, [items]);
 
@@ -628,10 +642,11 @@ export default function QuoteForm({
             />
           </div>
           <div className="items-grid">
-            <div className="item-row header" style={{ gridTemplateColumns: '50px 60px 100px 100px 1fr 100px 100px 100px 80px 80px' }}>
+            <div className="item-row header" style={{ gridTemplateColumns: '50px 60px 100px 1fr 100px 1fr 100px 100px 100px 80px 80px' }}>
               <span>Item</span>
               <span>Qty</span>
               <span>Code</span>
+              <span>Name</span>
               <span>UOM</span>
               <span>Description</span>
               <span>Unit Price</span>
@@ -641,7 +656,7 @@ export default function QuoteForm({
               <span style={{ textAlign: 'center' }}>Actions</span>
             </div>
             {items.map((item, index) => (
-              <div key={index} className="item-row" style={{ gridTemplateColumns: '50px 60px 100px 100px 1fr 100px 100px 100px 80px 80px' }}>
+              <div key={index} className="item-row" style={{ gridTemplateColumns: '50px 60px 100px 1fr 100px 1fr 100px 100px 100px 80px 80px' }}>
                 <input
                   type="number"
                   min="1"
@@ -665,6 +680,13 @@ export default function QuoteForm({
                   placeholder="Select or type code"
                 />
                 <SuggestionInput
+                  options={productOptions.map((option) => ({ id: option.id, value: option.name }))}
+                  value={item.name ?? ''}
+                  onChange={(value) => handleUpdateItem(index, 'name', value)}
+                  placeholder="Select or type name"
+                  required
+                />
+                <SuggestionInput
                   options={uomSuggestionOptions}
                   value={item.uom}
                   onChange={(value) => handleUpdateItem(index, 'uom', value)}
@@ -672,7 +694,7 @@ export default function QuoteForm({
                   required
                 />
                 <SuggestionInput
-                  options={descriptionOptions.map((option) => ({ id: option.id, value: option.description }))}
+                  options={productOptions.map((option) => ({ id: option.id, value: option.description }))}
                   value={item.description ?? ''}
                   onChange={(value) => handleUpdateItem(index, 'description', value)}
                   placeholder="Select or type description"
@@ -689,12 +711,12 @@ export default function QuoteForm({
                 <input value={formatAmount(item.totalPrice)} disabled />
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
                   {item.imagePath ? (
-                    <>
-                      <a href={item.imagePreview} target="_blank" rel="noreferrer" title="Click to view full image">
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                      <a href={item.imagePreview} target="_blank" rel="noopener noreferrer" title="Click to view full image">
                         <img src={item.imagePreview} alt="Item" style={{ width: '40px', height: '40px', objectFit: 'contain', cursor: 'pointer' }} />
                       </a>
                       <button type="button" onClick={() => handleRemoveImage(index)} style={{ padding: '2px 4px', fontSize: '10px' }} className="danger">Remove</button>
-                    </>
+                    </div>
                   ) : (
                     <>
                       <label htmlFor={`item-image-upload-${index}`} style={{ cursor: 'pointer', padding: '4px 8px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '12px' }}>

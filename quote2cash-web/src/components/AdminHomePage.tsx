@@ -1,11 +1,11 @@
 interface Props {
-  onViewDescriptions: () => void;
+  onViewProducts: () => void;
   onViewUsers: () => void;
   onViewDocuments: () => void;
   onViewTools: () => void;
 }
 
-export default function AdminHomePage({ onViewDescriptions, onViewUsers, onViewDocuments, onViewTools }: Props) {
+export default function AdminHomePage({ onViewProducts, onViewUsers, onViewDocuments, onViewTools }: Props) {
   return (
     <div className="page-section">
       <div className="section-header">
@@ -17,10 +17,10 @@ export default function AdminHomePage({ onViewDescriptions, onViewUsers, onViewD
 
       <div className="cards-grid">
         <div className="card">
-          <h3>Quote Descriptions</h3>
-          <p>Manage commonly used line item lookup entries.</p>
-          <button className="btn-primary" onClick={onViewDescriptions}>
-            Manage Descriptions
+          <h3>Products</h3>
+          <p>Manage products, prices, and other details.</p>
+          <button className="btn-primary" onClick={onViewProducts}>
+            Manage Products
           </button>
         </div>
         <div className="card">
@@ -48,4 +48,3 @@ export default function AdminHomePage({ onViewDescriptions, onViewUsers, onViewD
     </div>
   );
 }
-

@@ -14,7 +14,7 @@ import {
   getInvoices,
   getDocuments,
   getQuote,
-  getQuoteDescriptions,
+  getProducts,
   getQuoteNextNumber,
   getQuotes,
   getStatements,
@@ -51,7 +51,7 @@ import type {
   InvoiceCreateRequest,
   Quote,
   QuoteCreateRequest,
-  QuoteDescription,
+  Product,
   User,
   Statement,
   DocumentResponse,
@@ -77,7 +77,8 @@ import QuotesListPage from './components/QuotesListPage';
 import QuoteManagementPage from './components/QuoteManagementPage';
 import QuoteViewPage from './components/QuoteViewPage';
 import AdminHomePage from './components/AdminHomePage';
-import QuoteDescriptionManagementPage from './components/QuoteDescriptionManagementPage';
+import ProductManagementPage from './components/ProductManagementPage';
+import ProductViewPage from './components/ProductViewPage';
 import UserManagementPage from './components/UserManagementPage';
 import ToolManagementPage from './components/ToolManagementPage';
 import ToolViewPage from './components/ToolViewPage';
@@ -104,7 +105,8 @@ type StatementView = 'list' | 'manage' | 'view';
 type JobCardView = 'list' | 'manage' | 'view';
 type DeliveryNoteView = 'list' | 'manage' | 'view';
 type CreditNoteView = 'list' | 'manage' | 'view';
-type AdminView = 'home' | 'descriptions' | 'users' | 'documents' | 'tools';
+type AdminView = 'home' | 'products' | 'users' | 'documents' | 'tools';
+type ProductView = 'list' | 'view';
 
 function App() {
   const [section, setSection] = useState<Section>('dashboard');
@@ -126,6 +128,7 @@ function App() {
   const [editingCost, setEditingCost] = useState<Cost | null>(null);
   const [costView, setCostView] = useState<'list' | 'manage'>('list');
   const [toolView, setToolView] = useState<'list' | 'view'>('list');
+  const [productView, setProductView] = useState<ProductView>('list');
   const [documents, setDocuments] = useState<DocumentResponse[]>([]);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [editingQuote, setEditingQuote] = useState<Quote | null>(null);
@@ -140,7 +143,9 @@ function App() {
   const [viewingJobCard, setViewingJobCard] = useState<JobCard | null>(null);
   const [viewingDeliveryNote, setViewingDeliveryNote] = useState<DeliveryNote | null>(null);
   const [viewingCreditNote, setViewingCreditNote] = useState<CreditNote | null>(null);
-  const [quoteDescriptions, setQuoteDescriptions] = useState<QuoteDescription[]>([]);
+
+  const [viewingProduct, setViewingProduct] = useState<Product & { imagePreviewUrl?: string } | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [adminView, setAdminView] = useState<AdminView>('home');
   const [quickActionsOpen, setQuickActionsOpen] = useState(false);
@@ -177,10 +182,10 @@ function App() {
     try {
       setError(null);
       setIsLoading(true);
-      const [clientsData, quotesData, descriptionsData, usersData, invoicesData, statementsData, documentsData, jobCardsData, deliveryNotesData, creditNotesData, costsData] = await Promise.all([
+      const [clientsData, quotesData, productsData, usersData, invoicesData, statementsData, documentsData, jobCardsData, deliveryNotesData, creditNotesData, costsData] = await Promise.all([
         getClients(),
         getQuotes(),
-        getQuoteDescriptions(),
+        getProducts(),
         getUsers(),
         getInvoices(),
         getStatements(),
@@ -192,7 +197,7 @@ function App() {
       ]);
       setClients(clientsData);
       setQuotes(quotesData);
-      setQuoteDescriptions(descriptionsData);
+      setProducts(productsData);
       setUsers(usersData);
       setInvoices(invoicesData);
       setStatements(statementsData);
@@ -915,6 +920,36 @@ function App() {
     setCostView('list');
   };
 
+  // --- Product Handlers ---
+  const handleViewProduct = async (product: any) => {
+    try {
+      setIsLoading(true);
+      let imagePreviewUrl: string | undefined;
+      if (product.imagePath) {
+        const token = localStorage.getItem('token');
+        const url = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:12345'}/api/products/images/${product.imagePath}`;
+        try {
+          const res = await fetch(url, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const blob = await res.blob();
+            imagePreviewUrl = URL.createObjectURL(blob);
+          }
+        } catch (err) {
+          console.error('Failed to load product image', err);
+        }
+      }
+      setViewingProduct({ ...product, imagePreviewUrl });
+      setProductView('view');
+    } catch (err: any) {
+      setError(getErrorMessage(err, 'Unable to load product.'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
   // --- Tool Handlers ---
   const handleViewTool = async (tool: any) => {
     try {
@@ -1050,6 +1085,7 @@ function App() {
               {managementOpen && (
                 <div className="dropdown-menu">
                   <button type="button" onClick={() => { setSection('admin'); setAdminView('tools'); setManagementOpen(false); }}>Tools</button>
+                  <button type="button" onClick={() => { setSection('admin'); setAdminView('products'); setProductView('list'); setManagementOpen(false); }}>Products</button>
                   <button type="button" onClick={() => { setSection('admin'); setAdminView('documents'); setManagementOpen(false); }}>Documents</button>
                   <button type="button" onClick={() => { setSection('costs'); setCostView('list'); clearCostState(); setManagementOpen(false); }}>Costs</button>
                 </div>
@@ -1068,7 +1104,6 @@ function App() {
               {adminDropOpen && (
                 <div className="dropdown-menu">
                   <button type="button" onClick={() => { setSection('admin'); setAdminView('users'); setAdminDropOpen(false); }}>Users</button>
-                  <button type="button" onClick={() => { setSection('admin'); setAdminView('descriptions'); setAdminDropOpen(false); }}>Quote Descriptions</button>
                 </div>
               )}
             </div>
@@ -1478,7 +1513,7 @@ function App() {
             quote={editingQuote ?? undefined}
             clients={clients}
             selectedClientId={quoteClientId}
-            descriptionOptions={quoteDescriptions}
+            productOptions={products}
             onSelectClientId={setQuoteClientId}
             isNew={!editingQuote?.id}
             isDuplicate={isDuplicatingQuote}
@@ -1563,7 +1598,7 @@ function App() {
       {
         !isLoading && section === 'admin' && adminView === 'home' && (
           <AdminHomePage
-            onViewDescriptions={() => setAdminView('descriptions')}
+            onViewProducts={() => setAdminView('products')}
             onViewUsers={() => setAdminView('users')}
             onViewDocuments={() => setAdminView('documents')}
             onViewTools={() => setAdminView('tools')}
@@ -1572,8 +1607,18 @@ function App() {
       }
 
       {
-        !isLoading && section === 'admin' && adminView === 'descriptions' && (
-          <QuoteDescriptionManagementPage descriptions={quoteDescriptions} onBack={() => setAdminView('home')} onRefresh={loadAll} />
+        !isLoading && section === 'admin' && adminView === 'products' && productView === 'list' && (
+          <ProductManagementPage onBack={() => setAdminView('home')} onRefreshApp={loadAll} onView={handleViewProduct} />
+        )
+      }
+
+      {
+        !isLoading && section === 'admin' && adminView === 'products' && productView === 'view' && viewingProduct && (
+          <ProductViewPage
+            product={viewingProduct}
+            imagePreviewUrl={viewingProduct.imagePreviewUrl}
+            onBack={() => setProductView('list')}
+          />
         )
       }
 
@@ -1584,8 +1629,8 @@ function App() {
       }
 
       {
-        !isLoading && section === 'admin' && adminView === 'documents' && (
-          <DocumentManagementPage onBack={() => setAdminView('home')} onRefreshApp={loadAll} />
+        !isLoading && section === 'admin' && adminView === 'documents' && productView === 'list' && (
+          <ProductManagementPage onBack={() => setAdminView('home')} onRefreshApp={loadAll} onView={handleViewProduct} />
         )
       }
 
