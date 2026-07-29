@@ -4,9 +4,9 @@ import react from '@vitejs/plugin-react';
 export default defineConfig(({ mode }) => {
   let base = '/';
   if (mode === 'staging') {
-    base = '/staging_erp_biture/';
+    base = '/';
   } else if (mode === 'production') {
-    base = '/erp_biture/';
+    base = '/';
   }
   return {
     plugins: [react()],
