@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Quote2Cash.Domain.Entities;
@@ -33,6 +34,7 @@ namespace Quote2Cash.API.Controllers
             _httpClientFactory = httpClientFactory;
         }
 
+        [AllowAnonymous]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
         {
@@ -40,6 +42,7 @@ namespace Quote2Cash.API.Controllers
             return Ok(products);
         }
 
+        [AllowAnonymous]
         [HttpGet("search")]
         public async Task<ActionResult<IEnumerable<Product>>> SearchProducts([FromQuery] string? query)
         {
@@ -54,6 +57,7 @@ namespace Quote2Cash.API.Controllers
             return Ok(products);
         }
 
+        [AllowAnonymous]
         [HttpGet("by-code/{code}")]
         public async Task<ActionResult<Product>> GetProductByCode(string code)
         {
@@ -71,6 +75,7 @@ namespace Quote2Cash.API.Controllers
             return Ok(product);
         }
 
+        [AllowAnonymous]
         [HttpGet("{id}")]
         public async Task<ActionResult<Product>> GetProduct(Guid id)
         {
