@@ -2,9 +2,15 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
+  let base = '/';
+  if (mode === 'staging') {
+    base = '/staging_erp_biture/';
+  } else if (mode === 'production') {
+    base = '/erp_biture/';
+  }
   return {
     plugins: [react()],
-    base: mode === 'staging' ? '/staging_erp_biture/' : '/erp_biture/',
+    base,
     server: {
       port: 4173,
       host: true,

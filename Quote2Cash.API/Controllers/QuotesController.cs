@@ -3,11 +3,33 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Quote2Cash.Domain.Entities;
 using Quote2Cash.Persistence.Data;
+using System.IO;
 
 namespace Quote2Cash.API.Controllers
 {
-    public record QuoteItemDto(int ItemNumber, decimal Quantity, string Code, string Uom, string Description, decimal UnitPrice, decimal TotalPrice, string? ImagePath = null);
-    public record QuoteCreateDto(Guid? ClientId, string QuoteNumber, string Reference, DateTime Date, int ValidityDays, QuoteItemDto[] Items, string? PONumber, decimal Margin = 0);
+    public class QuoteItemDto
+    {
+        public int ItemNumber { get; set; }
+        public decimal Quantity { get; set; }
+        public string Code { get; set; } = string.Empty;
+        public string Uom { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public decimal UnitPrice { get; set; }
+        public decimal TotalPrice { get; set; }
+        public string? ImagePath { get; set; }
+    }
+
+    public class QuoteCreateDto
+    {
+        public Guid? ClientId { get; set; }
+        public string QuoteNumber { get; set; } = string.Empty;
+        public string Reference { get; set; } = string.Empty;
+        public DateTime Date { get; set; }
+        public int ValidityDays { get; set; }
+        public QuoteItemDto[] Items { get; set; } = Array.Empty<QuoteItemDto>();
+        public string? PONumber { get; set; }
+        public decimal Margin { get; set; }
+    }
 
     [ApiController]
     [Route("api/[controller]")]
@@ -120,9 +142,34 @@ namespace Quote2Cash.API.Controllers
         [HttpPost]
         public async Task<ActionResult<object>> CreateQuote([FromBody] QuoteCreateDto request)
         {
-            await EnsureQuoteItemDimensionsAsync(request.Items);
-
             var quoteDate = DateTime.SpecifyKind(request.Date, DateTimeKind.Utc);
+            var quoteItems = new List<QuoteItem>();
+            foreach (var item in request.Items)
+            {
+                var product = await GetOrAddProductFromQuoteItemAsync(item);
+                if (product != null)
+                {
+                    item.Uom = string.IsNullOrWhiteSpace(item.Uom) ? product.Uom : item.Uom;
+                    item.Description = string.IsNullOrWhiteSpace(item.Description) ? product.Description : item.Description;
+                    item.UnitPrice = item.UnitPrice == 0 ? product.Price : item.UnitPrice;
+                    item.ImagePath = string.IsNullOrWhiteSpace(item.ImagePath) ? product.Image : item.ImagePath;
+                }
+
+                quoteItems.Add(new QuoteItem
+                {
+                    Id = Guid.NewGuid(),
+                    ItemNumber = item.ItemNumber,
+                    Quantity = item.Quantity,
+                    Code = item.Code,
+                    Uom = item.Uom,
+                    Description = item.Description,
+                    UnitPrice = item.UnitPrice,
+                    TotalPrice = item.TotalPrice,
+                    ImagePath = item.ImagePath,
+                    ProductId = product?.Id
+                });
+            }
+
             var quote = new Quote
             {
                 Id = Guid.NewGuid(),
@@ -133,25 +180,14 @@ namespace Quote2Cash.API.Controllers
                 ValidityDays = request.ValidityDays,
                 PONumber = request.PONumber,
                 Margin = request.Margin,
-                Items = request.Items.Select(item => new QuoteItem
-                {
-                    Id = Guid.NewGuid(),
-                    ItemNumber = item.ItemNumber,
-                    Quantity = item.Quantity,
-                    Code = item.Code,
-                    Uom = item.Uom,
-                    Description = item.Description,
-                    UnitPrice = item.UnitPrice,
-                    TotalPrice = item.TotalPrice,
-                    ImagePath = item.ImagePath
-                }).ToList()
+                Items = quoteItems
             };
 
             _context.Quotes.Add(quote);
             await _context.SaveChangesAsync();
 
             // Rename temp images
-            RenameTempImages(quote);
+            RenameTempImages(quoteItems);
             await _context.SaveChangesAsync();
 
             var result = new
@@ -195,8 +231,6 @@ namespace Quote2Cash.API.Controllers
                 return NotFound();
             }
 
-            await EnsureQuoteItemDimensionsAsync(request.Items);
-
             quote.ClientId = request.ClientId;
             quote.QuoteNumber = request.QuoteNumber;
             quote.Reference = request.Reference;
@@ -212,19 +246,33 @@ namespace Quote2Cash.API.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            var newItems = request.Items.Select(item => new QuoteItem
+            var newItems = new List<QuoteItem>();
+            foreach (var item in request.Items)
             {
-                Id = Guid.NewGuid(),
-                QuoteId = quote.Id,
-                ItemNumber = item.ItemNumber,
-                Quantity = item.Quantity,
-                Code = item.Code,
-                Uom = item.Uom,
-                Description = item.Description,
-                UnitPrice = item.UnitPrice,
-                TotalPrice = item.TotalPrice,
-                ImagePath = item.ImagePath
-            }).ToList();
+                var product = await GetOrAddProductFromQuoteItemAsync(item);
+                if (product != null)
+                {
+                    item.Uom = string.IsNullOrWhiteSpace(item.Uom) ? product.Uom : item.Uom;
+                    item.Description = string.IsNullOrWhiteSpace(item.Description) ? product.Description : item.Description;
+                    item.UnitPrice = item.UnitPrice == 0 ? product.Price : item.UnitPrice;
+                    item.ImagePath = string.IsNullOrWhiteSpace(item.ImagePath) ? product.Image : item.ImagePath;
+                }
+
+                newItems.Add(new QuoteItem
+                {
+                    Id = Guid.NewGuid(),
+                    QuoteId = quote.Id,
+                    ItemNumber = item.ItemNumber,
+                    Quantity = item.Quantity,
+                    Code = item.Code,
+                    Uom = item.Uom,
+                    Description = item.Description,
+                    UnitPrice = item.UnitPrice,
+                    TotalPrice = item.TotalPrice,
+                    ImagePath = item.ImagePath,
+                    ProductId = product?.Id
+                });
+            }
 
             if (newItems.Any())
             {
@@ -232,7 +280,7 @@ namespace Quote2Cash.API.Controllers
                 await _context.SaveChangesAsync();
 
                 // Rename temp images and clean up old ones
-                RenameTempImages(quote);
+                RenameTempImages(newItems);
                 await _context.SaveChangesAsync();
             }
 
@@ -253,41 +301,7 @@ namespace Quote2Cash.API.Controllers
             return NoContent();
         }
 
-        private async Task EnsureQuoteItemDimensionsAsync(IEnumerable<QuoteItemDto> items)
-        {
-            var itemCodes = items.Select(i => i.Code.Trim()).Where(v => !string.IsNullOrWhiteSpace(v)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
-            if (!itemCodes.Any())
-            {
-                return;
-            }
-
-            var existingDescriptions = await _context.QuoteDescriptions.AsNoTracking()
-                .Where(d => itemCodes.Contains(d.Code))
-                .Select(d => d.Code)
-                .ToListAsync();
-
-            var newCodes = itemCodes.Except(existingDescriptions, StringComparer.OrdinalIgnoreCase).ToArray();
-            var newDescriptions = items
-                .Where(i => newCodes.Contains(i.Code.Trim(), StringComparer.OrdinalIgnoreCase))
-                .GroupBy(i => i.Code.Trim(), StringComparer.OrdinalIgnoreCase)
-                .Select(group => group.First())
-                .Select(item => new QuoteDescription
-                {
-                    Id = Guid.NewGuid(),
-                    Code = item.Code.Trim(),
-                    Uom = item.Uom.Trim(),
-                    Description = item.Description.Trim()
-                })
-                .ToList();
-
-            if (newDescriptions.Any())
-            {
-                _context.QuoteDescriptions.AddRange(newDescriptions);
-                await _context.SaveChangesAsync();
-            }
-        }
-
-        private void RenameTempImages(Quote quote)
+        private void RenameTempImages(IEnumerable<QuoteItem> quoteItems)
         {
             var storagePath = Path.Combine(_env.ContentRootPath, "quote_items");
             if (!Directory.Exists(storagePath))
@@ -295,18 +309,17 @@ namespace Quote2Cash.API.Controllers
                 Directory.CreateDirectory(storagePath);
             }
 
-            foreach (var item in quote.Items)
+            foreach (var item in quoteItems)
             {
                 if (!string.IsNullOrEmpty(item.ImagePath) && item.ImagePath.StartsWith("temp_"))
                 {
                     var extension = Path.GetExtension(item.ImagePath);
-                    var newFileName = $"{quote.QuoteNumber}_{item.ItemNumber}{extension}";
+                    var newFileName = $"{item.Id}{extension}";
                     var oldFilePath = Path.Combine(storagePath, item.ImagePath);
                     var newFilePath = Path.Combine(storagePath, newFileName);
 
                     if (System.IO.File.Exists(oldFilePath))
                     {
-                        // Overwrite if exists
                         if (System.IO.File.Exists(newFilePath))
                         {
                             System.IO.File.Delete(newFilePath);
@@ -316,6 +329,58 @@ namespace Quote2Cash.API.Controllers
                     }
                 }
             }
+        }
+
+        private async Task<Product?> GetOrAddProductFromQuoteItemAsync(QuoteItemDto item)
+        {
+            if (string.IsNullOrWhiteSpace(item.Code))
+            {
+                return null;
+            }
+
+            var code = item.Code.Trim();
+            var product = await _context.Products.FirstOrDefaultAsync(p => p.Code == code);
+            if (product != null)
+            {
+                return product;
+            }
+
+            var name = string.IsNullOrWhiteSpace(item.Description) ? code : item.Description.Trim();
+            var productImage = item.ImagePath?.Trim();
+            if (!string.IsNullOrWhiteSpace(productImage))
+            {
+                var sourcePaths = new[]
+                {
+                    Path.Combine(_env.ContentRootPath, "quote_items", productImage),
+                    Path.Combine(_env.ContentRootPath, "products", productImage),
+                    productImage
+                };
+
+                var sourceFile = sourcePaths.FirstOrDefault(path => System.IO.File.Exists(path));
+                if (!string.IsNullOrWhiteSpace(sourceFile))
+                {
+                    var extension = Path.GetExtension(sourceFile);
+                    var savedFileName = $"product_{Guid.NewGuid()}{extension}";
+                    var destinationPath = Path.Combine(_env.ContentRootPath, "products", savedFileName);
+                    System.IO.File.Copy(sourceFile, destinationPath, overwrite: true);
+                    productImage = savedFileName;
+                }
+            }
+
+            product = new Product
+            {
+                Id = Guid.NewGuid(),
+                Code = code,
+                Name = name,
+                Uom = item.Uom ?? string.Empty,
+                Description = item.Description,
+                Price = item.UnitPrice,
+                Image = productImage
+            };
+
+            _context.Products.Add(product);
+            await _context.SaveChangesAsync();
+            return product;
         }
     }
 }

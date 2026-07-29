@@ -5,7 +5,6 @@ import { formatAmount } from '../../formatters';
 import logo from '../assets/logo.png';
 import { generateQuotePDF } from './QuotePdfGenerator'; // Import the Quote generator
 pdfjs.GlobalWorkerOptions.workerSrc = import.meta.env.VITE_PDF_WORKER;
-console.log("Worker path at runtime:", import.meta.env.VITE_PDF_WORKER);
 
 interface Props {
   quote: Quote;
@@ -16,8 +15,8 @@ interface Props {
 
 export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Props) {
   // Override any other module-level worker settings to use the correct local worker
-  pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
-
+  pdfjs.GlobalWorkerOptions.workerSrc = import.meta.env.VITE_PDF_WORKER;
+  console.log("PDF Worker path: ", import.meta.env.VITE_PDF_WORKER);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [numPages, setNumPages] = useState<number>(0);
   const [width, setWidth] = useState<number>(Math.min(window.innerWidth - 32, 800));
@@ -31,7 +30,6 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
   }, []);
 
   useEffect(() => {
-    pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
     let url: string | null = null;
     const updatePdf = async () => {
       try {
@@ -67,7 +65,6 @@ export default function QuoteViewPage({ quote, onEdit, onDuplicate, onBack }: Pr
     month: 'long',
     day: 'numeric'
   });
-
 
   return (
     <div className="page-section">

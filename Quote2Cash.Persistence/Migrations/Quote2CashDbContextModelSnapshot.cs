@@ -77,7 +77,7 @@ namespace Quote2Cash.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Clients");
+                    b.ToTable("Clients", (string)null);
                 });
 
             modelBuilder.Entity("Quote2Cash.Domain.Entities.Cost", b =>
@@ -100,7 +100,7 @@ namespace Quote2Cash.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Costs");
+                    b.ToTable("Costs", (string)null);
                 });
 
             modelBuilder.Entity("Quote2Cash.Domain.Entities.CostQuoteItem", b =>
@@ -165,7 +165,7 @@ namespace Quote2Cash.Persistence.Migrations
 
                     b.HasIndex("CostId");
 
-                    b.ToTable("CostQuoteItems");
+                    b.ToTable("CostQuoteItems", (string)null);
                 });
 
             modelBuilder.Entity("Quote2Cash.Domain.Entities.CreditNote", b =>
@@ -198,7 +198,7 @@ namespace Quote2Cash.Persistence.Migrations
 
                     b.HasIndex("ClientId");
 
-                    b.ToTable("CreditNotes");
+                    b.ToTable("CreditNotes", (string)null);
                 });
 
             modelBuilder.Entity("Quote2Cash.Domain.Entities.DeliveryNote", b =>
@@ -232,7 +232,7 @@ namespace Quote2Cash.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("DeliveryNotes");
+                    b.ToTable("DeliveryNotes", (string)null);
                 });
 
             modelBuilder.Entity("Quote2Cash.Domain.Entities.Document", b =>
@@ -273,7 +273,7 @@ namespace Quote2Cash.Persistence.Migrations
                     b.HasIndex("DocumentName")
                         .IsUnique();
 
-                    b.ToTable("Documents");
+                    b.ToTable("Documents", (string)null);
                 });
 
             modelBuilder.Entity("Quote2Cash.Domain.Entities.Invoice", b =>
@@ -318,7 +318,7 @@ namespace Quote2Cash.Persistence.Migrations
 
                     b.HasIndex("QuoteId");
 
-                    b.ToTable("Invoices");
+                    b.ToTable("Invoices", (string)null);
                 });
 
             modelBuilder.Entity("Quote2Cash.Domain.Entities.JobCard", b =>
@@ -352,93 +352,7 @@ namespace Quote2Cash.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("JobCards");
-                });
-
-            modelBuilder.Entity("Quote2Cash.Domain.Entities.Quote", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("ClientId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<DateTime?>("DueDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal>("Margin")
-                        .ValueGeneratedOnAdd()
-                        .HasPrecision(5, 2)
-                        .HasColumnType("numeric(5,2)")
-                        .HasDefaultValue(0m);
-
-                    b.Property<string>("PONumber")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("QuoteNumber")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
-
-                    b.Property<string>("Reference")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("ValidityDays")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ClientId");
-
-                    b.ToTable("Quotes");
-                });
-
-            modelBuilder.Entity("Quote2Cash.Domain.Entities.QuoteDescription", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<string>("Uom")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Code")
-                        .IsUnique();
-
-                    b.ToTable("QuoteDescriptions");
+                    b.ToTable("JobCards", (string)null);
                 });
 
             modelBuilder.Entity("Quote2Cash.Domain.Entities.QuoteItem", b =>
@@ -472,11 +386,11 @@ namespace Quote2Cash.Persistence.Migrations
 
                     b.Property<decimal>("TotalPrice")
                         .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
+                        .HasColumnType("decimal(18, 2)");
 
                     b.Property<decimal>("UnitPrice")
                         .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
+                        .HasColumnType("decimal(18, 2)");
 
                     b.Property<string>("Uom")
                         .IsRequired()
@@ -487,8 +401,9 @@ namespace Quote2Cash.Persistence.Migrations
 
                     b.HasIndex("QuoteId");
 
-                    b.ToTable("QuoteItems");
+                    b.ToTable("QuoteItems", (string)null);
                 });
+
 
             modelBuilder.Entity("Quote2Cash.Domain.Entities.Statement", b =>
                 {
@@ -514,7 +429,7 @@ namespace Quote2Cash.Persistence.Migrations
 
                     b.HasIndex("ClientId");
 
-                    b.ToTable("Statements");
+                    b.ToTable("Statements", (string)null);
                 });
 
             modelBuilder.Entity("Quote2Cash.Domain.Entities.StatementItem", b =>
@@ -552,7 +467,7 @@ namespace Quote2Cash.Persistence.Migrations
 
                     b.HasIndex("StatementId");
 
-                    b.ToTable("StatementItems");
+                    b.ToTable("StatementItems", (string)null);
                 });
 
             modelBuilder.Entity("Quote2Cash.Domain.Entities.Tool", b =>
@@ -592,7 +507,7 @@ namespace Quote2Cash.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Tools");
+                    b.ToTable("Tools", (string)null);
                 });
 
             modelBuilder.Entity("Quote2Cash.Domain.Entities.User", b =>
@@ -623,7 +538,7 @@ namespace Quote2Cash.Persistence.Migrations
                     b.HasIndex("Username")
                         .IsUnique();
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("Quote2Cash.Domain.Entities.CostQuoteItem", b =>
@@ -674,11 +589,18 @@ namespace Quote2Cash.Persistence.Migrations
 
             modelBuilder.Entity("Quote2Cash.Domain.Entities.QuoteItem", b =>
                 {
+                    b.HasOne("Quote2Cash.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Quote2Cash.Domain.Entities.Quote", "Quote")
                         .WithMany("Items")
                         .HasForeignKey("QuoteId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Product");
 
                     b.Navigation("Quote");
                 });

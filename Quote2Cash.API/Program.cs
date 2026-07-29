@@ -51,6 +51,7 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 builder.Services.AddPersistenceServices(builder.Configuration);
+builder.Services.AddHttpClient();
 
 // ✅ Configure CORS
 builder.Services.AddCors(options =>

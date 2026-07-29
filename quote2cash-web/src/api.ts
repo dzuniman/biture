@@ -195,6 +195,7 @@ export const uploadProductImage = async (file: File): Promise<string> => {
   return response.data.imagePath;
 };
 
+
 export const getProductImageUrl = (imagePath: string): string => {
   return `${API_BASE_URL}/products/images/${imagePath}`;
 };

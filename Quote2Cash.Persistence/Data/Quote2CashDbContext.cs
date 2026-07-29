@@ -16,6 +16,7 @@ namespace Quote2Cash.Persistence.Data
         public DbSet<Quote> Quotes { get; set; } = null!;
         public DbSet<QuoteItem> QuoteItems { get; set; } = null!;
         public DbSet<QuoteDescription> QuoteDescriptions { get; set; } = null!;
+        public DbSet<Product> Products { get; set; } = null!;
         public DbSet<JobCard> JobCards { get; set; } = null!;
         public DbSet<DeliveryNote> DeliveryNotes { get; set; } = null!;
         public DbSet<CreditNote> CreditNotes { get; set; } = null!;
@@ -78,6 +79,8 @@ namespace Quote2Cash.Persistence.Data
                 entity.Property(e => e.UnitPrice).HasPrecision(18, 2);
                 entity.Property(e => e.TotalPrice).HasPrecision(18, 2);
                 entity.HasOne(e => e.Quote).WithMany(q => q.Items).HasForeignKey(e => e.QuoteId).OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(e => e.Product).WithMany().HasForeignKey(e => e.ProductId).OnDelete(DeleteBehavior.SetNull);
+                entity.HasIndex(e => e.ProductId);
             });
 
             modelBuilder.Entity<QuoteDescription>(entity =>
@@ -86,6 +89,18 @@ namespace Quote2Cash.Persistence.Data
                 entity.Property(e => e.Code).IsRequired().HasMaxLength(150);
                 entity.Property(e => e.Uom).IsRequired().HasMaxLength(150);
                 entity.Property(e => e.Description).IsRequired().HasMaxLength(1000);
+                entity.HasIndex(e => e.Code).IsUnique();
+            });
+
+            modelBuilder.Entity<Product>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Code).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.Uom).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Description).HasMaxLength(1000);
+                entity.Property(e => e.Price).HasPrecision(18, 2);
+                entity.Property(e => e.Image).HasMaxLength(500);
                 entity.HasIndex(e => e.Code).IsUnique();
             });
 
