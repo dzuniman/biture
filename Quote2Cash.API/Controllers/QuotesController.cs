@@ -304,6 +304,7 @@ namespace Quote2Cash.API.Controllers
         private void RenameTempImages(IEnumerable<QuoteItem> quoteItems)
         {
             var storagePath = Path.Combine(_env.ContentRootPath, "quote_items");
+            var productsStorage = Path.Combine(_env.ContentRootPath, "products");
             if (!Directory.Exists(storagePath))
             {
                 Directory.CreateDirectory(storagePath);
@@ -311,7 +312,13 @@ namespace Quote2Cash.API.Controllers
 
             foreach (var item in quoteItems)
             {
-                if (!string.IsNullOrEmpty(item.ImagePath) && item.ImagePath.StartsWith("temp_"))
+                if (string.IsNullOrWhiteSpace(item.ImagePath))
+                {
+                    continue;
+                }
+
+                // If the image is already a temporary quote image, rename it to the quote item's final filename.
+                if (item.ImagePath.StartsWith("temp_"))
                 {
                     var extension = Path.GetExtension(item.ImagePath);
                     var newFileName = $"{item.Id}{extension}";
@@ -325,6 +332,24 @@ namespace Quote2Cash.API.Controllers
                             System.IO.File.Delete(newFilePath);
                         }
                         System.IO.File.Move(oldFilePath, newFilePath);
+                        item.ImagePath = newFileName;
+                    }
+
+                    continue;
+                }
+
+                // If a product image path was used, copy it from products into quote_items.
+                var currentQuoteImagePath = Path.Combine(storagePath, item.ImagePath);
+                if (!System.IO.File.Exists(currentQuoteImagePath))
+                {
+                    var sourceFile = Path.Combine(productsStorage, item.ImagePath);
+                    if (System.IO.File.Exists(sourceFile))
+                    {
+                        var extension = Path.GetExtension(item.ImagePath);
+                        var newFileName = $"{item.Id}{extension}";
+                        var newFilePath = Path.Combine(storagePath, newFileName);
+
+                        System.IO.File.Copy(sourceFile, newFilePath, overwrite: true);
                         item.ImagePath = newFileName;
                     }
                 }

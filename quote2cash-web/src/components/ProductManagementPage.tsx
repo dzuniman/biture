@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { getProducts, createProduct, updateProduct, deleteProduct, uploadProductImage, getProductImageUrl } from '../api';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { getProducts, createProduct, updateProduct, deleteProduct, uploadProductImage, getProductImageUrl, downloadProductsTemplate, uploadProductsExcel } from '../api';
 import type { Product, ProductCreateRequest } from '../types';
 import { formatAmount } from '../../formatters';
+import Pagination from './Pagination';
 import ProductViewPage from './ProductViewPage'; // Import the new view page
 
 interface Props {
@@ -47,6 +48,10 @@ export default function ProductManagementPage({ onBack, onRefreshApp, onView }: 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(12);
+  const [uploadMessage, setUploadMessage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -243,6 +248,46 @@ export default function ProductManagementPage({ onBack, onRefreshApp, onView }: 
     return rows.reduce((sum, r) => sum + (Number(r.price) || 0), 0);
   }, [rows]);
 
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / itemsPerPage));
+  const pageRows = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredRows.slice(start, start + itemsPerPage);
+  }, [filteredRows, currentPage, itemsPerPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, rows.length]);
+
+  const handleDownloadTemplate = async () => {
+    try {
+      const fileBlob = await downloadProductsTemplate();
+      const url = URL.createObjectURL(fileBlob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = 'products_template.xlsx';
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert('Failed to download template: ' + (err.message || 'Unknown error'));
+    }
+  };
+
+  const handleFileUpload = async (file: File) => {
+    try {
+      setUploadMessage(null);
+      const response = await uploadProductsExcel(file);
+      setUploadMessage(response.message || 'Products imported successfully.');
+      await loadData();
+      setCurrentPage(1);
+    } catch (err: any) {
+      alert('Failed to import products: ' + (err.response?.data?.message || err.message || 'Unknown error'));
+    } finally {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   return (
     <div className="page-section">
       <div className="section-header">
@@ -286,14 +331,34 @@ export default function ProductManagementPage({ onBack, onRefreshApp, onView }: 
       )}
 
       <div className="table-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
-        <input
-          type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by Code, Name, Description, ID..."
-          className="search-input"
-          style={{ width: '320px', padding: '8px 12px', borderRadius: '8px', border: '1px solid #d1d5db' }}
-        />
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by Code, Name, Description, ID..."
+            className="search-input"
+            style={{ width: '320px', padding: '8px 12px', borderRadius: '8px', border: '1px solid #d1d5db' }}
+          />
+          <button type="button" className="btn-secondary" onClick={handleDownloadTemplate}>
+            ⬇ Download Template
+          </button>
+          <button type="button" className="btn-secondary" onClick={() => fileInputRef.current?.click()}>
+            ⬆ Upload Excel
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                handleFileUpload(file);
+              }
+            }}
+          />
+        </div>
         <div style={{ display: 'flex', gap: '16px', fontSize: '0.9rem', fontWeight: 600 }}>
           <span style={{ background: '#f3f4f6', padding: '6px 14px', borderRadius: '20px', color: '#374151' }}>
             Total Products: <strong>{rows.length}</strong>
@@ -303,6 +368,11 @@ export default function ProductManagementPage({ onBack, onRefreshApp, onView }: 
           </span>
         </div>
       </div>
+      {uploadMessage && (
+        <div style={{ marginBottom: '16px', padding: '12px 16px', borderRadius: '8px', background: '#f0fdf4', color: '#064e3b' }}>
+          {uploadMessage}
+        </div>
+      )}
 
       {isLoading ? (
         <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>Loading products…</div>
@@ -328,7 +398,7 @@ export default function ProductManagementPage({ onBack, onRefreshApp, onView }: 
                   </td>
                 </tr>
               ) : (
-                filteredRows.map((row) => (
+                pageRows.map((row) => (
                   <tr
                     key={row.tempId}
                     style={{
@@ -473,6 +543,17 @@ export default function ProductManagementPage({ onBack, onRefreshApp, onView }: 
               )}
             </tbody>
           </table>
+        </div>
+      )}
+      {filteredRows.length > 0 && (
+        <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'flex-end' }}>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            itemsPerPage={itemsPerPage}
+            totalItems={filteredRows.length}
+            onPageChange={setCurrentPage}
+          />
         </div>
       )}
     </div>

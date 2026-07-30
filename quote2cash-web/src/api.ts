@@ -195,6 +195,21 @@ export const uploadProductImage = async (file: File): Promise<string> => {
   return response.data.imagePath;
 };
 
+export const downloadProductsTemplate = async (): Promise<Blob> => {
+  const response = await api.get('/products/template', {
+    responseType: 'blob'
+  });
+  return response.data;
+};
+
+export const uploadProductsExcel = async (file: File): Promise<{ message: string }> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await api.post('/products/upload-excel', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+  return response.data;
+};
 
 export const getProductImageUrl = (imagePath: string): string => {
   return `${API_BASE_URL}/products/images/${imagePath}`;

@@ -238,50 +238,26 @@ namespace Quote2Cash.API.Controllers
                     var rowCount = worksheet.Dimension.Rows;
                     for (int row = 2; row <= rowCount; row++)
                     {
+                        var code = worksheet.Cells[row, 1].Value?.ToString()?.Trim();
+                        var name = worksheet.Cells[row, 2].Value?.ToString()?.Trim();
+                        if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(name))
+                        {
+                            continue;
+                        }
+
+                        var imageValue = worksheet.Cells[row, 6].Value?.ToString()?.Trim();
+                        var imageFileName = await ResolveProductImageAsync(imageValue);
+
                         var product = new Product
                         {
                             Id = Guid.NewGuid(),
-                            Code = worksheet.Cells[row, 1].Value?.ToString()?.Trim(),
-                            Name = worksheet.Cells[row, 2].Value?.ToString()?.Trim(),
+                            Code = code,
+                            Name = name,
                             Uom = worksheet.Cells[row, 3].Value?.ToString()?.Trim(),
                             Description = worksheet.Cells[row, 4].Value?.ToString()?.Trim(),
                             Price = decimal.TryParse(worksheet.Cells[row, 5].Value?.ToString(), out var price) ? price : 0,
-                            Image = worksheet.Cells[row, 6].Value?.ToString()?.Trim()
+                            Image = imageFileName
                         };
-
-                        if (!string.IsNullOrWhiteSpace(product.Image) && Uri.IsWellFormedUriString(product.Image, UriKind.Absolute))
-                        {
-                            var client = _httpClientFactory.CreateClient();
-                            try
-                            {
-                                var response = await client.GetAsync(product.Image);
-                                if (response.IsSuccessStatusCode)
-                                {
-                                    var imageBytes = await response.Content.ReadAsByteArrayAsync();
-                                    var extension = Path.GetExtension(new Uri(product.Image).AbsolutePath);
-                                    var newFileName = $"product_{Guid.NewGuid()}{extension}";
-                                    var fullPath = Path.Combine(_storagePath, newFileName);
-                                    await System.IO.File.WriteAllBytesAsync(fullPath, imageBytes);
-                                    product.Image = newFileName;
-                                }
-                                else
-                                {
-                                    // Log the error or handle it as needed
-                                    product.Image = null;
-                                }
-                            }
-                            catch (Exception)
-                            {
-                                // Log the error or handle it as needed
-                                product.Image = null;
-                            }
-                        }
-                        else if (!string.IsNullOrWhiteSpace(product.Image))
-                        {
-                            // If it's not a URL, it might be a local file path which we can't access.
-                            // For now, we will just save the name and assume the file will be uploaded separately.
-                        }
-
 
                         products.Add(product);
                     }
@@ -295,6 +271,76 @@ namespace Quote2Cash.API.Controllers
             }
 
             return Ok(new { message = $"{products.Count} products imported successfully." });
+        }
+
+        private async Task<string?> ResolveProductImageAsync(string? imageValue)
+        {
+            if (string.IsNullOrWhiteSpace(imageValue))
+            {
+                return null;
+            }
+
+            var trimmed = imageValue.Trim();
+
+            if (Uri.IsWellFormedUriString(trimmed, UriKind.Absolute))
+            {
+                try
+                {
+                    var client = _httpClientFactory.CreateClient();
+                    var response = await client.GetAsync(trimmed);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var imageBytes = await response.Content.ReadAsByteArrayAsync();
+                        var extension = Path.GetExtension(new Uri(trimmed).AbsolutePath);
+                        if (string.IsNullOrWhiteSpace(extension))
+                        {
+                            extension = ".jpg";
+                        }
+
+                        var fileName = $"product_{Guid.NewGuid()}{extension}";
+                        var fullPath = Path.Combine(_storagePath, fileName);
+                        await System.IO.File.WriteAllBytesAsync(fullPath, imageBytes);
+                        return fileName;
+                    }
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+
+            var possiblePaths = new List<string>
+            {
+                trimmed,
+                Path.Combine(_storagePath, trimmed),
+                Path.Combine(_storagePath, Path.GetFileName(trimmed)),
+                Path.Combine(Directory.GetCurrentDirectory(), trimmed),
+                Path.Combine(Directory.GetCurrentDirectory(), Path.GetFileName(trimmed)),
+                Path.Combine(_storagePath, trimmed.Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar))
+            };
+
+            var sourcePath = possiblePaths.FirstOrDefault(path => !string.IsNullOrWhiteSpace(path) && System.IO.File.Exists(path));
+            if (sourcePath != null)
+            {
+                // If the file already exists inside the products folder by that name, keep its current name.
+                if (Path.GetDirectoryName(sourcePath)?.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)?.Equals(_storagePath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar), StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    return Path.GetFileName(sourcePath);
+                }
+
+                var extension = Path.GetExtension(sourcePath);
+                if (string.IsNullOrWhiteSpace(extension))
+                {
+                    extension = ".jpg";
+                }
+
+                var newFileName = $"product_{Guid.NewGuid()}{extension}";
+                var destinationPath = Path.Combine(_storagePath, newFileName);
+                System.IO.File.Copy(sourcePath, destinationPath, overwrite: true);
+                return newFileName;
+            }
+
+            return null;
         }
     }
 }
