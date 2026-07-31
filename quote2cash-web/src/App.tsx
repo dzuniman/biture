@@ -1005,7 +1005,7 @@ function App() {
 
   return (
     <div className="app-shell">
-      <header className="site-header no-print">
+      <header className="site-header no-print" style={{ background: `${import.meta.env.VITE_ENV_COLOR}` }}>
         <div className="header-left">
           <div
             className="brand-block"
@@ -1122,33 +1122,35 @@ function App() {
         </div>
       </header>
 
-      {error && (
-        <div
-          style={{
-            background: '#fee2e2',
-            color: '#991b1b',
-            padding: '16px',
-            borderRadius: '8px',
-            marginBottom: '24px',
-            border: '1px solid #fecaca'
-          }}
-        >
-          {error}
-          <button
-            onClick={() => setError(null)}
+      {
+        error && (
+          <div
             style={{
-              marginLeft: '12px',
-              background: 'none',
-              border: 'none',
+              background: '#fee2e2',
               color: '#991b1b',
-              cursor: 'pointer',
-              fontWeight: 'bold'
+              padding: '16px',
+              borderRadius: '8px',
+              marginBottom: '24px',
+              border: '1px solid #fecaca'
             }}
           >
-            ✕
-          </button>
-        </div>
-      )}
+            {error}
+            <button
+              onClick={() => setError(null)}
+              style={{
+                marginLeft: '12px',
+                background: 'none',
+                border: 'none',
+                color: '#991b1b',
+                cursor: 'pointer',
+                fontWeight: 'bold'
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        )
+      }
 
       {
         !isLoading && section === 'statements' && (

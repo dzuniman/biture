@@ -26,10 +26,10 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="login-container" style={{ color: '#000' }}>
-      <form onSubmit={handleSubmit} className="login-form">
+    <div className="login-container" style={{ color: '#000000', background: `${import.meta.env.VITE_ENV_COLOR}` }}>
+      <form onSubmit={handleSubmit} className="login-form" >
         <img src={logo} alt="Logo" style={{ display: 'block', margin: '0 auto 20px', height: '60px', width: 'auto' }} />
-        <h2>Login to BITURE ERP</h2>
+        <h2>Login to BITURE ERP {import.meta.env.VITE_ENV_NAME}</h2>
         {error && <p className="login-error">{error}</p>}
         <div className="login-field">
           <label htmlFor="username">Username</label>
