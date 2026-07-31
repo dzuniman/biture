@@ -157,7 +157,7 @@ body {
 
 .user-block {
   display: flex;
-  align-items: center;
+  align-items: right;
   justify-content: flex-end;
   gap: 18px;
 }
@@ -421,7 +421,7 @@ button.secondary.large {
 
   .site-toolbar,
   .user-block {
-    justify-content: center;
+    justify-content: right;
   }
 }
 

@@ -54,7 +54,7 @@ export default function ClientsListPage({
       <div className="section-header">
         <div>
           <h2>Clients</h2>
-          <p>Manage your client profiles and information</p>
+          <p>Client profiles and information</p>
         </div>
         <button onClick={onCreateNew} className="btn-primary-lg">
           + New Client
@@ -98,20 +98,19 @@ export default function ClientsListPage({
                   <td>{client.vendorNumber || '—'}</td>
                   <td>{client.representativeName || '—'}</td>
                   <td>{client.representativeNumber || '—'}</td>
-                  <td className="actions-row">
-                    <button type="button" onClick={() => onView(client)}>
-                      View
-                    </button>
-                    <button type="button" onClick={() => onEdit(client)}>
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="danger"
-                      onClick={() => onDelete(client.id)}
-                    >
-                      Delete
-                    </button>
+                  <td style={{ padding: '8px 6px', textAlign: 'center' }}>
+                    <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                      <button type="button" onClick={() => onView(client)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'black' }}>
+                        View
+                      </button>
+                      <button type="button" onClick={() => onEdit(client)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'green' }}>
+                        Edit
+                      </button>
+                      <button
+                        type="button" onClick={() => onDelete(client.id)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'darkred' }}>
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -121,13 +120,13 @@ export default function ClientsListPage({
       </div>
 
       {filteredClients.length > 0 && (
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-            itemsPerPage={ITEMS_PER_PAGE}
-            totalItems={filteredClients.length}
-          />
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+          itemsPerPage={ITEMS_PER_PAGE}
+          totalItems={filteredClients.length}
+        />
       )}
     </div>
   );

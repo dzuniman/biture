@@ -111,16 +111,18 @@ export default function DeliveryNoteListPage({
                   <td>
                     {dn.createdAt ? new Date(dn.createdAt).toLocaleDateString() : '—'}
                   </td>
-                  <td className="actions-row">
-                    <button type="button" onClick={() => onView(dn)}>
-                      View
-                    </button>
-                    <button type="button" onClick={() => onEdit(dn)}>
-                      Edit
-                    </button>
-                    <button type="button" className="danger" onClick={() => onDelete(dn.id)}>
-                      Delete
-                    </button>
+                  <td style={{ padding: '8px 6px', textAlign: 'center' }}>
+                    <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                      <button type="button" onClick={() => onView(dn)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'black' }}>
+                        View
+                      </button>
+                      <button type="button" onClick={() => onEdit(dn)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'green' }}>
+                        Edit
+                      </button>
+                      <button type="button" onClick={() => onDelete(dn.id)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'darkred' }}>
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))

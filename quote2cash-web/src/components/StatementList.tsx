@@ -94,16 +94,18 @@ export default function StatementList({ statements, invoices, onEdit, onView, on
                   <td style={{ color: totalOutstanding > 0 ? '#dc2626' : '#22c55e', fontWeight: 'bold' }}>
                     {formatAmount(totalOutstanding)}
                   </td>
-                  <td className="actions-row">
-                    <button type="button" onClick={() => onView(statement)}>
-                      View
-                    </button>
-                    <button type="button" onClick={() => onEdit(statement)}>
-                      Edit
-                    </button>
-                    <button type="button" className="danger" onClick={() => onDelete(statement.id)}>
-                      Delete
-                    </button>
+                  <td style={{ padding: '8px 6px', textAlign: 'center' }}>
+                    <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                      <button type="button" onClick={() => onView(statement)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'black' }}>
+                        View
+                      </button>
+                      <button type="button" onClick={() => onEdit(statement)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'green' }}>
+                        Edit
+                      </button>
+                      <button type="button" onClick={() => onDelete(statement.id)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'darkred' }}>
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );

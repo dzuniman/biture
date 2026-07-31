@@ -111,7 +111,7 @@ export default function UserManagementPage({ users, onBack, onRefresh }: Props) 
       <div className="section-header">
         <div>
           <h2>User Management</h2>
-          <p>Create, edit, or remove application users.</p>
+          <p>Create, edit, or remove application users</p>
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
           {mode === 'list' && (
@@ -152,13 +152,15 @@ export default function UserManagementPage({ users, onBack, onRefresh }: Props) 
                     <tr key={user.id} style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }} className="table-row-dark-hover">
                       <td>{user.username}</td>
                       <td>{user.role}</td>
-                      <td className="actions-column">
-                        <button className="btn-secondary small" onClick={() => startEdit(user)}>
-                          Edit
-                        </button>
-                        <button className="btn-danger small" onClick={() => handleDelete(user.id)}>
-                          Delete
-                        </button>
+                      <td style={{ padding: '8px 6px', textAlign: 'center' }}>
+                        <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                          <button onClick={() => startEdit(user)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'green' }}>
+                            Edit
+                          </button>
+                          <button onClick={() => handleDelete(user.id)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'darkred' }}>
+                            Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))

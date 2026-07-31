@@ -1112,13 +1112,11 @@ function App() {
 
         <div className="user-block">
           <div className="user-copy">
-            <span>Signed in as</span>
-            <strong>{user?.username}</strong>
-            <span className="user-role">{user?.role}</span>
+            <strong>{user?.username} | {user?.role}</strong>
+            <button className="btn-logout" onClick={logout}>
+              Logout
+            </button>
           </div>
-          <button className="btn-logout" onClick={logout}>
-            Logout
-          </button>
         </div>
       </header>
 
@@ -1321,7 +1319,7 @@ function App() {
             <div className="dash-header">
               <div>
                 <h2>DASHBOARD</h2>
-                <p>Hello, {user?.username}. Here's the current health of your operations and activities.</p>
+                <p>Current health of operations and activities</p>
               </div>
               <div className="dash-summary-pills">
                 <span className="badge accent-blue" style={{ padding: '10px 20px', borderRadius: '25px', fontWeight: 'bold' }}>{clients.length} Active Clients</span>
@@ -1631,8 +1629,8 @@ function App() {
       }
 
       {
-        !isLoading && section === 'admin' && adminView === 'documents' && productView === 'list' && (
-          <ProductManagementPage onBack={() => setAdminView('home')} onRefreshApp={loadAll} onView={handleViewProduct} />
+        !isLoading && section === 'admin' && adminView === 'documents' && (
+          <DocumentManagementPage onBack={() => setAdminView('home')} onRefreshApp={loadAll} />
         )
       }
 

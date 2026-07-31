@@ -101,20 +101,18 @@ export default function DocumentListPage({
                   <td>
                     {(document as any).uploadedAt ? new Date((document as any).uploadedAt).toLocaleDateString() : '—'}
                   </td>
-                  <td className="actions-row">
-                    <button type="button" onClick={() => onDownload(document)}>
-                      Download
-                    </button>
-                    <button type="button" onClick={() => onEdit(document)}>
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="danger"
-                      onClick={() => onDelete(document.id)}
-                    >
-                      Delete
-                    </button>
+                  <td style={{ padding: '8px 6px', textAlign: 'center' }}>
+                    <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                      <button type="button" onClick={() => onDownload(document)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'black' }}>
+                        Download
+                      </button>
+                      <button type="button" onClick={() => onEdit(document)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'green' }}>
+                        Edit
+                      </button>
+                      <button type="button" onClick={() => onDelete(document.id)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'darkred' }}>
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))

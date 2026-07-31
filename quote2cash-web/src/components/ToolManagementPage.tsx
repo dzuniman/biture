@@ -253,7 +253,7 @@ export default function ToolManagementPage({ onBack, onRefreshApp, onView }: Pro
       <div className="section-header">
         <div>
           <h2>Tools Inventory Management</h2>
-          <p>Manage inventory tools, locations, images, and inspection schedules.</p>
+          <p>Manage inventory tools and inspection schedules</p>
         </div>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
           <button onClick={handleAddLine} className="btn-primary">
@@ -481,11 +481,7 @@ export default function ToolManagementPage({ onBack, onRefreshApp, onView }: Pro
                           className="btn-primary small"
                           onClick={() => handleSaveRow(row)}
                           disabled={row.isSaving || (!row.isDirty && !row.isNew)}
-                          style={{
-                            padding: '4px 8px',
-                            fontSize: '0.75rem',
-                            opacity: !row.isDirty && !row.isNew ? 0.6 : 1
-                          }}
+                          style={{ padding: '4px 8px', fontSize: '0.75rem', opacity: !row.isDirty && !row.isNew ? 0.6 : 1 }}
                         >
                           {row.isSaving ? '...' : row.isDirty || row.isNew ? 'Save' : 'Saved'}
                         </button>

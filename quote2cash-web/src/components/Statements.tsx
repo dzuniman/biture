@@ -43,7 +43,7 @@ export const Statements: React.FC<{
       <div className="section-header">
         <div>
           <h2>Statements / Payments</h2>
-          <p>Track customer payments and account balances.</p>
+          <p>Customer payments and account balances</p>
         </div>
         {view === 'list' ? (
           <button onClick={handleCreate} className="btn-primary-lg">+ New Statement</button>
@@ -80,4 +80,4 @@ export const Statements: React.FC<{
       )}
     </div>
   );
-};
+};

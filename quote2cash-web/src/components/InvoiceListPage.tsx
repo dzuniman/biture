@@ -78,23 +78,23 @@ export default function InvoiceListPage({
       </div>
 
       <SearchBox
-          placeholder="Search invoices by number, client, reference, or status..."
-          value={searchTerm}
-          onChange={setSearchTerm}
-        />
+        placeholder="Search invoices by number, client, reference, or status..."
+        value={searchTerm}
+        onChange={setSearchTerm}
+      />
 
       <div className="table-card">
         <table>
           <thead>
             <tr>
-                <TableHeader columnKey="invoiceNumber" label="Invoice Number" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-                <TableHeader columnKey="clientName" label="Client" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-                <TableHeader columnKey="reference" label="Reference" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-                <TableHeader columnKey="amount" label="Amount" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-                <TableHeader columnKey="createdAt" label="Created" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-                <TableHeader columnKey="dueDate" label="Due" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-                <TableHeader columnKey="status" label="Status" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-                <TableHeader columnKey="overdue" label="Overdue" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
+              <TableHeader columnKey="invoiceNumber" label="Invoice Number" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
+              <TableHeader columnKey="clientName" label="Client" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
+              <TableHeader columnKey="reference" label="Reference" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
+              <TableHeader columnKey="amount" label="Amount" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
+              <TableHeader columnKey="createdAt" label="Created" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
+              <TableHeader columnKey="dueDate" label="Due" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
+              <TableHeader columnKey="status" label="Status" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
+              <TableHeader columnKey="overdue" label="Overdue" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
               <th className="actions-column">Actions</th>
             </tr>
           </thead>
@@ -112,30 +112,32 @@ export default function InvoiceListPage({
                   style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}
                   className="table-row-dark-hover"
                 >
-                    <td>{invoice.invoiceNumber}</td>
-                    <td>{(invoice.client?.name || invoice.quote?.client?.name) ?? '—'}</td>
-                    <td>{invoice.quote?.reference ?? '—'}</td>
-                    <td>{formatAmount(invoice.amount)}</td>
+                  <td>{invoice.invoiceNumber}</td>
+                  <td>{(invoice.client?.name || invoice.quote?.client?.name) ?? '—'}</td>
+                  <td>{invoice.quote?.reference ?? '—'}</td>
+                  <td>{formatAmount(invoice.amount)}</td>
                   <td>
                     {invoice.createdAt ? new Date(invoice.createdAt).toLocaleDateString() : '—'}
                   </td>
                   <td>
                     {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '—'}
                   </td>
-                    <td>{invoice.status}</td>
-                    <td>{invoice.isOverdue ? 'Yes' : 'No'}</td>
-                  <td className="actions-row">
-                      <button type="button" onClick={() => onView(invoice)}>
+                  <td>{invoice.status}</td>
+                  <td>{invoice.isOverdue ? 'Yes' : 'No'}</td>
+                  <td style={{ padding: '6px 6px', textAlign: 'center' }}>
+                    <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                      <button type="button" onClick={() => onView(invoice)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'black' }}>
                         View
                       </button>
-                      <button type="button" onClick={() => onEdit(invoice)}>
+                      <button type="button" onClick={() => onEdit(invoice)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'green' }}>
                         Edit
                       </button>
-                      <button type="button" className="danger" onClick={() => onDelete(invoice.id)}>
+                      <button type="button" onClick={() => onDelete(invoice.id)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'darkred' }}>
                         Delete
                       </button>
-                    </td>
-                  </tr>
+                    </div>
+                  </td>
+                </tr>
               ))
             )}
           </tbody>

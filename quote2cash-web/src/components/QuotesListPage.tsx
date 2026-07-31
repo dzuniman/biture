@@ -122,19 +122,21 @@ export default function QuotesListPage({
                     <td>{new Date(quote.date).toLocaleDateString()}</td>
                     <td>{quote.margin != null ? `${quote.margin}%` : '—'}</td>
                     <td>{formatAmount(quote.total)}</td>
-                    <td className="actions-row">
-                      <button type="button" onClick={() => onView(quote)}>
-                        View
-                      </button>
-                      <button type="button" onClick={() => onEdit(quote)}>
-                        Edit
-                      </button>
-                      <button type="button" onClick={() => onDuplicate(quote)}>
-                        Duplicate
-                      </button>
-                      <button type="button" className="danger" onClick={() => onDelete(quote.id)}>
-                        Delete
-                      </button>
+                    <td style={{ padding: '8px 6px', textAlign: 'center' }}>
+                      <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                        <button type="button" onClick={() => onView(quote)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'black' }}>
+                          View
+                        </button>
+                        <button type="button" onClick={() => onEdit(quote)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'green' }}>
+                          Edit
+                        </button>
+                        <button type="button" onClick={() => onDuplicate(quote)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'blue' }}>
+                          Duplicate
+                        </button>
+                        <button type="button" onClick={() => onDelete(quote.id)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'darkred' }}>
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

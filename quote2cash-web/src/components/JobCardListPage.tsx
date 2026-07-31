@@ -110,16 +110,18 @@ export default function JobCardListPage({
                   <td>
                     {jc.createdAt ? new Date(jc.createdAt).toLocaleDateString() : '—'}
                   </td>
-                  <td className="actions-row">
-                    <button type="button" onClick={() => onView(jc)}>
-                      View
-                    </button>
-                    <button type="button" onClick={() => onEdit(jc)}>
-                      Edit
-                    </button>
-                    <button type="button" className="danger" onClick={() => onDelete(jc.id)}>
-                      Delete
-                    </button>
+                  <td style={{ padding: '8px 6px', textAlign: 'center' }}>
+                    <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                      <button type="button" onClick={() => onView(jc)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'black' }}>
+                        View
+                      </button>
+                      <button type="button" onClick={() => onEdit(jc)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'green' }}>
+                        Edit
+                      </button>
+                      <button type="button" onClick={() => onDelete(jc.id)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'darkred' }}>
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))

@@ -293,7 +293,7 @@ export default function ProductManagementPage({ onBack, onRefreshApp, onView }: 
       <div className="section-header">
         <div>
           <h2>Products Management</h2>
-          <p>Manage products, prices, and images.</p>
+          <p>Manage products</p>
         </div>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
           <button onClick={handleAddLine} className="btn-primary">

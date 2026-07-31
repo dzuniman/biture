@@ -111,16 +111,18 @@ export default function CostsListPage({ costs, onEdit, onDelete, onDuplicate, on
                     <td>{cost.margin != null ? `${cost.margin}%` : '—'}</td>
                     <td>{cost.itemCount ?? (cost.items?.length ?? 0)}</td>
                     <td>{formatAmount(cost.totalQuoteAmount ?? 0)}</td>
-                    <td className="actions-row">
-                      <button type="button" onClick={() => onEdit(cost)}>
-                        Edit
-                      </button>
-                      <button type="button" onClick={() => onDuplicate(cost)}>
-                        Duplicate
-                      </button>
-                      <button type="button" className="danger" onClick={() => onDelete(cost.id)}>
-                        Delete
-                      </button>
+                    <td style={{ padding: '8px 6px', textAlign: 'center' }}>
+                      <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                        <button type="button" onClick={() => onEdit(cost)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'green' }}>
+                          Edit
+                        </button>
+                        <button type="button" onClick={() => onDuplicate(cost)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'blue' }}>
+                          Duplicate
+                        </button>
+                        <button type="button" onClick={() => onDelete(cost.id)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'darkred' }}>
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
