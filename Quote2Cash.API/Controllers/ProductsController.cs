@@ -86,6 +86,25 @@ namespace Quote2Cash.API.Controllers
             }
             return Ok(product);
         }
+        [HttpPost("upload-manual")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadImageManual(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest(new { message = "File is empty." });
+            }
+
+            // Save using the original filename provided in the upload
+            var fullPath = Path.Combine(_storagePath, file.FileName);
+
+            using (var stream = new FileStream(fullPath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            return Ok(new { imagePath = file.FileName });
+        }
 
         [HttpPost]
         public async Task<ActionResult<Product>> CreateProduct([FromBody] Product request)
