@@ -1069,6 +1069,7 @@ function App() {
                   <button type="button" onClick={() => { setSection('clients'); setClientView('list'); clearClientState(); setBusinessOpen(false); }}>Clients</button>
                   <button type="button" onClick={() => { setSection('jobcards'); setJobCardView('list'); clearJobCardState(); setBusinessOpen(false); }}>Job Cards</button>
                   <button type="button" onClick={() => { setSection('deliverynotes'); setDeliveryNoteView('list'); clearDeliveryNoteState(); setBusinessOpen(false); }}>Delivery Notes</button>
+                  <button type="button" onClick={() => { setSection('creditnotes'); setCreditNoteView('list'); clearCreditNoteState(); setBusinessOpen(false); }}>Credit Notes</button>
                 </div>
               )}
             </div>
