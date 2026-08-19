@@ -309,8 +309,8 @@ export const generateStatementPDF = async (statement: Statement,
       const inv = invoiceMap[id];
       if (!inv) return;
 
-      const paid = paymentsByInvoice[id] || 0;
-      const outstanding = (inv?.amount ?? 0) - paid;
+      const outstanding = (inv?.amount ?? 0);
+      console.log("Oustanding: ", outstanding);
       if (outstanding <= 0) return;
 
       const dueDate = new Date(inv.dueDate);
@@ -341,7 +341,8 @@ export const generateStatementPDF = async (statement: Statement,
       startY: currentY,
       head: [['Current', '30 Days Overdue', '60 Days Overdue', '90+ Days Overdue']],
       body: [[
-        formatAmount(currentBucket),
+        //formatAmount(currentBucket),
+        formatAmount(totalOutstanding),
         formatAmount(overdue30),
         formatAmount(overdue60),
         formatAmount(overdue90)

@@ -38,10 +38,10 @@ export default function CreditNoteForm({ clients, initialData, isNew, onSubmit, 
       return;
     }
     const parsedAmount = parseFloat(amount);
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+    /*if (isNaN(parsedAmount) || parsedAmount <= 0) {
       alert('Please enter a valid amount greater than 0.');
       return;
-    }
+    }*/
 
     setIsSaving(true);
     try {
@@ -112,7 +112,7 @@ export default function CreditNoteForm({ clients, initialData, isNew, onSubmit, 
               <input
                 type="number"
                 step="0.01"
-                min="0.01"
+                min="-999999999999999"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 required
