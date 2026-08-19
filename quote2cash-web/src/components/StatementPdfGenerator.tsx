@@ -263,8 +263,8 @@ export const generateStatementPDF = async (statement: Statement,
         0: { cellWidth: 28 },
         1: { cellWidth: 30 },
         2: { cellWidth: 28 },
-        3: { cellWidth: 20 },
-        4: { cellWidth: 'auto', halign: 'right' },
+        3: { cellWidth: 'auto', halign: 'right' },
+        4: { cellWidth: 28, halign: 'right' },
         5: { cellWidth: 28, halign: 'right' },
       }, didDrawCell: (data) => {
         if (
