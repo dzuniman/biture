@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { login as apiLogin } from '../api';
 import { useAuth } from '../AuthContext';
 import logo from '../assets/logo.png';
@@ -9,6 +9,19 @@ export const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+
+  useEffect(() => {
+    // Clear browser storage
+    localStorage.clear();
+    sessionStorage.clear();
+
+    // Clear service workers cache (if any)
+    if ('caches' in window) {
+      caches.keys().then((names) => {
+        names.forEach((name) => caches.delete(name));
+      });
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
