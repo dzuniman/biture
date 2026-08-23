@@ -4,7 +4,7 @@ import type { Statement, Invoice, Client, CreditNote } from '../types';
 import { formatAmount } from '../../formatters';
 import logo from '../assets/logo.png';
 import { generateStatementPDF } from './StatementPdfGenerator';
-pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
+pdfjs.GlobalWorkerOptions.workerSrc = import.meta.env.VITE_PDF_WORKER;
 
 interface Props {
   statement: Statement;
@@ -16,7 +16,7 @@ interface Props {
 
 export const StatementViewPage: React.FC<Props> = ({ statement, invoices, creditNotes = [], onEdit, onBack }) => {
   // Override any other module-level worker settings to use the correct local worker
-  pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+  pdfjs.GlobalWorkerOptions.workerSrc = import.meta.env.VITE_PDF_WORKER;
 
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [numPages, setNumPages] = useState<number>(0);
@@ -31,7 +31,7 @@ export const StatementViewPage: React.FC<Props> = ({ statement, invoices, credit
   }, []);
 
   useEffect(() => {
-    pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+    pdfjs.GlobalWorkerOptions.workerSrc = import.meta.env.VITE_PDF_WORKER;
     let url: string | null = null;
     const updatePdf = async () => {
       try {
