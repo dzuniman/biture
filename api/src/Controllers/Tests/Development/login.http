@@ -1,0 +1,8 @@
+### Test Login Endpoint
+POST http://localhost:5227/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin"
+}

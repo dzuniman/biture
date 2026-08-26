@@ -1,16 +1,16 @@
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+FROM composer:2 AS composer
+
+FROM php:8.2-cli
+
 WORKDIR /app
-EXPOSE 80
+COPY --from=composer /usr/bin/composer /usr/bin/composer
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends libpq-dev \
+	&& docker-php-ext-install pdo_pgsql pdo_sqlite \
+	&& rm -rf /var/lib/apt/lists/*
+COPY api ./api
+RUN composer install --no-dev --working-dir=/app/api --prefer-dist --no-interaction
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /src
-COPY . .
-
-# Restore and publish the API project directly
-RUN dotnet restore Quote2Cash.API/Quote2Cash.API.csproj
-RUN dotnet publish Quote2Cash.API/Quote2Cash.API.csproj -c Release -o /app/publish
-
-FROM base AS final
-WORKDIR /app
-COPY --from=build /app/publish .
-ENTRYPOINT ["dotnet", "Quote2Cash.API.dll"]
+ENV DATA_DIR=/app/api/data
+EXPOSE 10000
+CMD ["php", "-S", "0.0.0.0:10000", "-t", "/app/api", "/app/api/index.php"]
