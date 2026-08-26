@@ -14,9 +14,9 @@ final class AuthController
             throw new InvalidArgumentException('Username and password are required');
         }
 
-        $query = $pdo->prepare('SELECT * FROM users WHERE username = ?');
+        $query = $pdo->prepare('SELECT * FROM users WHERE ' . dbColumn('username') . ' = ?');
         $query->execute([$username]);
-        $user = $query->fetch(PDO::FETCH_ASSOC);
+        $user = databaseRow($query->fetch(PDO::FETCH_ASSOC) ?: []);
         if (!$user || !self::verifyPassword($password, $user['password_hash'] ?? $user['PasswordHash'] ?? '')) {
             throw new RuntimeException('Invalid username or password');
         }

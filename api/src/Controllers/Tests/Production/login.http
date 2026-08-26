@@ -1,0 +1,23 @@
+### Test Login Endpoint
+POST http://localhost:5227/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "adminpass"
+}
+
+### Test Login Endpoint
+POST https://api.erp.biture.co.za/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "adminpass"
+}
+
+### Ping
+
+GET http://localhost:5227/ping
+Content-Type: application/json
+

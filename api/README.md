@@ -4,17 +4,17 @@ The API is a PHP front controller at `index.php` with explicit controllers and s
 
 ## Local development
 
-Requirements: PHP 8.2+ with `pdo_pgsql`, `pdo_sqlite`, `fileinfo`, `zip`, `xml`, and `openssl` enabled. Install dependencies with `composer install` from the `api` folder. The repository includes `api/php.ini` for the Windows PHP distribution used by local development.
+Requirements: PHP 8.2+ with `pdo_mysql`, `fileinfo`, `zip`, `xml`, and `openssl` enabled. Install dependencies with `composer install` from the `api` folder. The repository includes `api/php.ini` for the Windows PHP distribution used by local development.
 
 ```powershell
 php -c api/php.ini -S localhost:5227 -t api api/index.php
 ```
 
-If PHP is installed elsewhere, update `extension_dir` in `api/php.ini` to that installation's `ext` directory. Without `pdo_sqlite`, PHP reports `could not find driver` before the API can initialize its database.
+If PHP is installed elsewhere, update `extension_dir` in `api/php.ini` to that installation's `ext` directory. Without `pdo_mysql`, PHP reports `could not find driver` before the API can initialize its database.
 
-The SQLite database and uploaded files are created in `api/data`. The initial accounts are `admin` / `adminpass` and `user` / `userpass`; change these before production use.
+Uploaded files are stored in `DATA_DIR`. The initial accounts are `admin` / `adminpass` and `user` / `userpass`; change these before production use.
 
-Set `DATABASE_URL` to use PostgreSQL instead of the local SQLite database, for example `postgres://user:password@host:5432/Biture`. The PHP PostgreSQL extension must be enabled. Set `DATA_DIR` to move the database and upload storage, and `JWT_KEY` to replace the development signing key.
+Set `DATABASE_URL` to your MySQL connection, for example `mysql://root:password@localhost:3306/erp_biture?charset=utf8mb4`. Set `DATA_DIR` to move upload storage, and `JWT_KEY` to replace the development signing key.
 
 ## Login
 
@@ -70,4 +70,4 @@ Use JSON request bodies for normal create/update calls. Quote, cost, and stateme
 
 ## Deployment
 
-The root `Dockerfile` runs PHP 8.2 on port `10000`, and `render.yaml` is configured for the container deployment. Persistent storage should be configured for `DATA_DIR` in production so SQLite data and uploads survive redeployments.
+The root `Dockerfile` runs PHP 8.2 on port `10000`, and `render.yaml` is configured for the container deployment. Configure `DATABASE_URL` and persistent storage for `DATA_DIR` in production so MySQL data access and uploads remain available.

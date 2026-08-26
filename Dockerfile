@@ -5,8 +5,7 @@ FROM php:8.2-cli
 WORKDIR /app
 COPY --from=composer /usr/bin/composer /usr/bin/composer
 RUN apt-get update \
-	&& apt-get install -y --no-install-recommends libpq-dev \
-	&& docker-php-ext-install pdo_pgsql pdo_sqlite \
+	&& docker-php-ext-install pdo_mysql \
 	&& rm -rf /var/lib/apt/lists/*
 COPY api ./api
 RUN composer install --no-dev --working-dir=/app/api --prefer-dist --no-interaction
