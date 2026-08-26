@@ -151,9 +151,15 @@ if ($resource === 'auth' && $method === 'POST' && $segment === 'login') {
 
 $adminResources = ['clients', 'users'];
 if ($resource === '' || $resource === 'health') jsonResponse(['status' => 'ok']);
+
 if ($method === 'GET' && $resource === 'products' && $segment === 'by-code') {
     $q = $pdo->prepare('SELECT * FROM products WHERE code = ?'); $q->execute([$action]); $row = $q->fetch(PDO::FETCH_ASSOC);
     if (!$row) fail('Not found', 404); jsonResponse(serializeRow($pdo, $resource, $row, true));
+}
+// Ping endpoint using PingController
+if ($resource === 'ping' && $method === 'GET') {
+    $controller = new PingController($pdo, $resource, $resource);
+    jsonResponse($controller->pong());
 }
 requireAuth();
 if ($resource === 'documents' && $action === 'download' && $method === 'GET') {
@@ -180,6 +186,7 @@ $table = $tableMap[$resource];
 $controllerTypes = ['clients' => ClientsController::class, 'products' => ProductsController::class, 'quoteuoms' => QuoteDescriptionsController::class, 'users' => UsersController::class, 'quotes' => QuotesController::class, 'invoices' => InvoicesController::class, 'jobcards' => JobCardsController::class, 'deliverynotes' => DeliveryNotesController::class, 'creditnotes' => CreditNotesController::class, 'costs' => CostsController::class, 'statements' => StatementsController::class, 'tools' => ToolsController::class, 'documents' => DocumentsController::class];
 $controllerType = $controllerTypes[$resource];
 $controller = new $controllerType($pdo, $table, $resource);
+
 if ($resource === 'invoices' && $method === 'PATCH' && $action === 'status') {
     requireAuth(); $body = input(); $controller->updateStatus($segment, (string)($body['status'] ?? '')); jsonResponse(null, 204);
 }

@@ -8,11 +8,15 @@ class ResourceController
     {
     }
 
-    public function index(string $order): array
-    {
-        $rows = $this->pdo->query("SELECT * FROM {$this->table} ORDER BY $order")->fetchAll(PDO::FETCH_ASSOC);
-        return array_map(fn(array $row): array => serializeRow($this->pdo, $this->resource, $row, false), $rows);
+    public function index(string $order = 'id DESC'): array
+{
+    $sql = "SELECT * FROM {$this->table}";
+    if ($order) {
+        $sql .= " ORDER BY $order";
     }
+    $rows = $this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+    return array_map(fn(array $row): array => serializeRow($this->pdo, $this->resource, $row, false), $rows);
+}
 
     public function show(string $id): array
     {
