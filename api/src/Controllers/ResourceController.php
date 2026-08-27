@@ -13,7 +13,15 @@ class ResourceController
         $sql = "SELECT * FROM {$this->table}";
         if ($order) {
             $orderParts = preg_split('/\s+/', trim($order));
-            $sql .= ' ORDER BY ' . dbColumn($orderParts[0]) . (isset($orderParts[1]) ? ' ' . strtoupper($orderParts[1]) : '');
+            $column = $orderParts[0];
+
+            // fallback if column doesn't exist
+            $stmt = $this->pdo->query("SHOW COLUMNS FROM {$this->table} LIKE '$column'");
+            if (!$stmt->fetch()) {
+                $column = 'id';
+            }
+
+            $sql .= ' ORDER BY ' . dbColumn($column) . (isset($orderParts[1]) ? ' ' . strtoupper($orderParts[1]) : '');
         }
         $rows = $this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
         return array_map(fn(array $row): array => serializeRow($this->pdo, $this->resource, databaseRow($row), false), $rows);
