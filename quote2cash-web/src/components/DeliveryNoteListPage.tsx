@@ -80,12 +80,12 @@ export default function DeliveryNoteListPage({
         <table>
           <thead>
             <tr>
-              <th><TableHeader columnKey="deliveryNoteNumber" label="Delivery Note Number" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
-              <th><TableHeader columnKey="quoteNumber" label="Quote Number" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
-              <th><TableHeader columnKey="reference" label="Reference" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
-              <th><TableHeader columnKey="description" label="Description" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
-              <th><TableHeader columnKey="client" label="Client" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
-              <th><TableHeader columnKey="createdAt" label="Created" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
+              <TableHeader columnKey="deliveryNoteNumber" label="Delivery Note Number" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
+              <TableHeader columnKey="quoteNumber" label="Quote Number" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
+              <TableHeader columnKey="reference" label="Reference" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
+              <TableHeader columnKey="description" label="Description" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
+              <TableHeader columnKey="client" label="Client" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
+              <TableHeader columnKey="createdAt" label="Created" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
               <th className="actions-column">Actions</th>
             </tr>
           </thead>

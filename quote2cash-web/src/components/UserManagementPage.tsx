@@ -135,8 +135,8 @@ export default function UserManagementPage({ users, onBack, onRefresh }: Props) 
             <table>
               <thead>
                 <tr>
-                  <th><TableHeader columnKey="username" label="Username" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
-                  <th><TableHeader columnKey="role" label="Role" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
+                  <TableHeader columnKey="username" label="Username" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
+                  <TableHeader columnKey="role" label="Role" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
                   <th className="actions-column">Actions</th>
                 </tr>
               </thead>

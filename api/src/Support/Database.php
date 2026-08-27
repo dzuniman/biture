@@ -68,7 +68,8 @@ final class Database
             "CREATE TABLE IF NOT EXISTS costquoteitems (id $id PRIMARY KEY, cost_id $id NOT NULL, item_number INTEGER NOT NULL, quantity NUMERIC NOT NULL, uom $text, description $text, unit_price NUMERIC NOT NULL, supplier_name $text, supplier_description $text, supplier_cost NUMERIC NOT NULL, other_name $text, other_description $text, other_cost NUMERIC NOT NULL)",
             "CREATE TABLE IF NOT EXISTS statements (id $id PRIMARY KEY, statement_number $text NOT NULL, due_days INTEGER NOT NULL DEFAULT 30, client_id $id NOT NULL, created_at $text NOT NULL)",
             "CREATE TABLE IF NOT EXISTS statementitems (id $id PRIMARY KEY, statement_id $id NOT NULL, invoice_id $id, credit_note_id $id, payment_amount NUMERIC NOT NULL, description $text, payment_date $text NOT NULL)",
-            "CREATE TABLE IF NOT EXISTS documents (id $id PRIMARY KEY, document_name $text NOT NULL UNIQUE, description $text, file_name $text NOT NULL, file_path $text NOT NULL, content_type $text NOT NULL, uploaded_at $text NOT NULL)",
+            "CREATE TABLE IF NOT EXISTS document_folders (id $id PRIMARY KEY, name $text NOT NULL, parent_id $id NULL, created_at $text NOT NULL)",
+            "CREATE TABLE IF NOT EXISTS documents (id $id PRIMARY KEY, document_name $text NOT NULL UNIQUE, description $text, file_name $text NOT NULL, file_path $text NOT NULL, content_type $text NOT NULL, uploaded_at $text NOT NULL, folder_id $id NULL)",
             "CREATE TABLE IF NOT EXISTS tools (id $id PRIMARY KEY, code $text NOT NULL, description $text, quantity NUMERIC NOT NULL, location $text, image_path $text, value NUMERIC NOT NULL, inspection_date $text)"
         ];
         foreach ($schema as $statement) $pdo->exec($statement);

@@ -45,7 +45,7 @@ $tableMap = [
     'clients' => 'clients', 'products' => 'products', 'quoteuoms' => 'quoteuoms',
     'users' => 'users', 'quotes' => 'quotes', 'invoices' => 'invoices',
     'jobcards' => 'jobcards', 'deliverynotes' => 'deliverynotes', 'creditnotes' => 'creditnotes',
-    'costs' => 'costs', 'statements' => 'statements', 'tools' => 'tools', 'documents' => 'documents',
+    'costs' => 'costs', 'statements' => 'statements', 'tools' => 'tools', 'documents' => 'documents', 'folders' => 'document_folders',
 ];
 $controllerMap = [
     'clients' => ClientsController::class, 'products' => ProductsController::class,
@@ -54,7 +54,7 @@ $controllerMap = [
     'jobcards' => JobCardsController::class, 'deliverynotes' => DeliveryNotesController::class,
     'creditnotes' => CreditNotesController::class, 'costs' => CostsController::class,
     'statements' => StatementsController::class, 'tools' => ToolsController::class,
-    'documents' => DocumentsController::class,
+    'documents' => DocumentsController::class, 'folders' => ResourceController::class,
 ];
 if (!isset($tableMap[$resource])) fail('Route not found', 404);
 if (in_array($resource, ['clients', 'users'], true) && in_array($method, ['POST', 'PUT', 'DELETE'], true)) requireAuth(true);
@@ -79,6 +79,33 @@ if ($resource === 'documents' && $method === 'GET' && $action === 'download') {
     $document = $controller->show($segment); $path = $document['filePath'] ?? '';
     if (!is_file($path)) fail('File not found on server.', 404);
     header('Content-Type: ' . ($document['contentType'] ?? 'application/octet-stream')); readfile($path); exit;
+}
+if ($resource === 'documents' && $method === 'POST' && $segment === null) {
+    requireAuth(true);
+    (new DocumentUploadService($pdo, $dataDir))->upload();
+}
+if ($resource === 'folders' && $method === 'POST' && $segment === null) {
+    try {
+        jsonResponse($controller->store(input()), 201);
+    } catch (InvalidArgumentException $exception) {
+        fail($exception->getMessage(), 400);
+    }
+}
+if ($resource === 'folders' && $method === 'PUT' && $segment) {
+    try {
+        $controller->update($segment, input());
+        jsonResponse(null, 204);
+    } catch (InvalidArgumentException $exception) {
+        fail($exception->getMessage(), 400);
+    }
+}
+if ($resource === 'folders' && $method === 'DELETE' && $segment) {
+    try {
+        $controller->destroy($segment);
+        jsonResponse(null, 204);
+    } catch (InvalidArgumentException $exception) {
+        fail($exception->getMessage(), 400);
+    }
 }
 if ($resource === 'products' && $method === 'POST' && in_array($segment, ['upload-image', 'upload-manual'], true)) { requireAuth(true); handleUpload($pdo, $dataDir, 'products'); }
 if ($resource === 'tools' && $method === 'POST' && in_array($segment, ['upload-image', 'upload-manual'], true)) { requireAuth(true); handleUpload($pdo, $dataDir, 'tools'); }

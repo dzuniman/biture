@@ -71,11 +71,11 @@ export default function ClientsListPage({
         <table>
           <thead>
             <tr>
-              <th><TableHeader columnKey="name" label="Name" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
-              <th><TableHeader columnKey="vatNumber" label="VAT Number" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
-              <th><TableHeader columnKey="vendorNumber" label="Vendor #" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
-              <th><TableHeader columnKey="representativeName" label="Representative" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
-              <th><TableHeader columnKey="representativeNumber" label="Phone" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
+              <TableHeader columnKey="name" label="Name" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
+              <TableHeader columnKey="vatNumber" label="VAT Number" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
+              <TableHeader columnKey="vendorNumber" label="Vendor #" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
+              <TableHeader columnKey="representativeName" label="Representative" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
+              <TableHeader columnKey="representativeNumber" label="Phone" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
               <th className="actions-column">Actions</th>
             </tr>
           </thead>

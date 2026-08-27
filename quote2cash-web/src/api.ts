@@ -28,6 +28,7 @@ import type {
   Cost,
   CostCreateRequest,
   DocumentResponse,
+  DocumentFolder,
   Tool,
   ToolCreateRequest
 } from './types';
@@ -261,6 +262,24 @@ export const getDocuments = async () => {
   return response.data;
 };
 
+export const getDocumentFolders = async (): Promise<DocumentFolder[]> => {
+  const response = await api.get<DocumentFolder[]>('/folders');
+  return response.data;
+};
+
+export const createDocumentFolder = async (name: string, parentId: string | null): Promise<DocumentFolder> => {
+  const response = await api.post<DocumentFolder>('/folders', { name, parentId });
+  return response.data;
+};
+
+export const updateDocumentFolder = async (id: string, name: string, parentId: string | null): Promise<void> => {
+  await api.put(`/folders/${id}`, { name, parentId });
+};
+
+export const deleteDocumentFolder = async (id: string): Promise<void> => {
+  await api.delete(`/folders/${id}`);
+};
+
 export const deleteDocument = async (id: string) => {
   await api.delete(`/documents/${id}`);
 };
@@ -281,7 +300,7 @@ export const createDocument = async (formData: FormData) => {
   return response.data;
 };
 
-export const updateDocument = async (id: string, payload: { documentName: string; description?: string }) => {
+export const updateDocument = async (id: string, payload: { documentName: string; description?: string; folderId?: string | null }) => {
   await api.put(`/documents/${id}`, payload);
 };
 

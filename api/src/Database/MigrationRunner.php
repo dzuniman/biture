@@ -20,12 +20,11 @@ final class MigrationRunner
             if (isset($applied[$version])) continue;
             $migration = require $file;
             if (!$migration instanceof Migration) throw new RuntimeException("Migration $version must return a Migration instance");
-            $this->pdo->beginTransaction();
             try {
                 $migration->up($this->pdo);
                 $query = $this->pdo->prepare('INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)');
                 $query->execute([$version, gmdate('c')]);
-                $this->pdo->commit();
+                if ($this->pdo->inTransaction()) $this->pdo->commit();
             } catch (Throwable $exception) {
                 if ($this->pdo->inTransaction()) $this->pdo->rollBack();
                 throw $exception;

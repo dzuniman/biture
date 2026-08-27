@@ -88,11 +88,11 @@ export default function CreditNoteListPage({
         <table>
           <thead>
             <tr>
-              <th><TableHeader columnKey="creditNoteNumber" label="Credit Note Number" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
-              <th><TableHeader columnKey="client" label="Client" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
-              <th><TableHeader columnKey="description" label="Description" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
-              <th style={{ textAlign: 'right' }}><TableHeader columnKey="amount" label="Amount" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
-              <th><TableHeader columnKey="createdAt" label="Created" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
+              <TableHeader columnKey="creditNoteNumber" label="Credit Note Number" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
+              <TableHeader columnKey="client" label="Client" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
+              <TableHeader columnKey="description" label="Description" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
+              <TableHeader columnKey="amount" label="Amount" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
+              <TableHeader columnKey="createdAt" label="Created" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
               <th className="actions-column">Actions</th>
             </tr>
           </thead>

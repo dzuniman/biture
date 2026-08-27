@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { DocumentResponse } from '../types';
+import type { DocumentFolder, DocumentResponse } from '../types';
 import SearchBox from './SearchBox';
 import Pagination from './Pagination';
 import TableHeader from './TableHeader';
@@ -7,6 +7,12 @@ import useTableSort from '../hooks/useTableSort';
 
 interface Props {
   documents: DocumentResponse[];
+  folders: DocumentFolder[];
+  currentFolderId: string | null;
+  onFolderChange: (folderId: string | null) => void;
+  onCreateFolder: (parentId: string | null) => void;
+  onEditFolder: (folder: DocumentFolder) => void;
+  onDeleteFolder: (folder: DocumentFolder) => void;
   onEdit: (document: DocumentResponse) => void;
   onDelete: (documentId: string) => void;
   onCreateNew: () => void;
@@ -18,6 +24,12 @@ const ITEMS_PER_PAGE = 10;
 
 export default function DocumentListPage({
   documents,
+  folders,
+  currentFolderId,
+  onFolderChange,
+  onCreateFolder,
+  onEditFolder,
+  onDeleteFolder,
   onEdit,
   onDelete,
   onCreateNew,
@@ -27,16 +39,18 @@ export default function DocumentListPage({
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
+  const visibleFolders = folders.filter(folder => (folder.parentId ?? null) === currentFolderId);
   const filteredDocuments = useMemo(() => {
     const term = searchTerm.toLowerCase();
-    if (!term) return documents;
+    const inFolder = documents.filter(doc => (doc.folderId ?? null) === currentFolderId);
+    if (!term) return inFolder;
 
-    return documents.filter(
+    return inFolder.filter(
       (doc) =>
         (doc.documentName?.toLowerCase() || '').includes(term) ||
         (doc.description?.toLowerCase() || '').includes(term)
     );
-  }, [documents, searchTerm]);
+  }, [documents, searchTerm, currentFolderId]);
 
   const { sortedData, sortKey, sortDirection, setSort } = useTableSort(filteredDocuments);
   const totalPages = Math.ceil(sortedData.length / ITEMS_PER_PAGE);
@@ -72,13 +86,26 @@ export default function DocumentListPage({
         onChange={setSearchTerm}
       />
 
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', margin: '16px 0' }}>
+        <button type="button" className="btn-secondary small" onClick={() => onFolderChange(null)}>Root</button>
+        {currentFolderId && <button type="button" className="btn-secondary small" onClick={() => onFolderChange(folders.find(f => f.id === currentFolderId)?.parentId ?? null)}>Up</button>}
+        {visibleFolders.map(folder => (
+          <span key={folder.id} style={{ display: 'inline-flex', gap: '4px', alignItems: 'center' }}>
+            <button type="button" className="btn-secondary small" onClick={() => onFolderChange(folder.id)}>Folder: {folder.name}</button>
+            <button type="button" className="btn-secondary small" title="Rename folder" onClick={() => onEditFolder(folder)}>Edit</button>
+            <button type="button" className="btn-secondary small" title="Delete empty folder" onClick={() => onDeleteFolder(folder)}>Delete</button>
+          </span>
+        ))}
+        <button type="button" className="btn-secondary small" onClick={() => onCreateFolder(currentFolderId)}>+ Folder</button>
+      </div>
+
       <div className="table-card">
         <table>
           <thead>
             <tr>
-              <th><TableHeader columnKey="documentName" label="Document Name" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
-              <th><TableHeader columnKey="description" label="Description" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
-              <th><TableHeader columnKey="uploadedAt" label="Uploaded At" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} /></th>
+              <TableHeader columnKey="documentName" label="Document Name" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
+              <TableHeader columnKey="description" label="Description" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
+              <TableHeader columnKey="uploadedAt" label="Uploaded At" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
               <th className="actions-column">Actions</th>
             </tr>
           </thead>

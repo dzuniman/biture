@@ -1,18 +1,21 @@
 import React, { useState } from 'react';
 import { createDocument, updateDocument } from '../api';
-import { DocumentResponse } from '../types';
+import { DocumentFolder, DocumentResponse } from '../types';
 
 interface Props {
   document?: DocumentResponse;
   onSuccess: () => void;
   onCancel: () => void;
+  folders: DocumentFolder[];
+  defaultFolderId?: string | null;
 }
 
-export default function DocumentForm({ document, onSuccess, onCancel }: Props) {
+export default function DocumentForm({ document, onSuccess, onCancel, folders, defaultFolderId = null }: Props) {
   const [name, setName] = useState(document?.documentName || '');
   const [description, setDescription] = useState(document?.description || '');
   const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+  const [folderId, setFolderId] = useState<string | null>(document?.folderId ?? defaultFolderId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,7 +26,8 @@ export default function DocumentForm({ document, onSuccess, onCancel }: Props) {
         // Update existing metadata
         await updateDocument(document.id, {
           documentName: name,
-          description: description
+          description: description,
+          folderId,
         });
       } else {
         // Upload new document
@@ -33,9 +37,10 @@ export default function DocumentForm({ document, onSuccess, onCancel }: Props) {
           return;
         }
         const formData = new FormData();
-        formData.append('DocumentName', name);
-        formData.append('Description', description);
-        formData.append('File', file);
+        formData.append('documentName', name);
+        formData.append('description', description);
+        if (folderId) formData.append('folderId', folderId);
+        formData.append('file', file);
         await createDocument(formData);
       }
       onSuccess();
@@ -51,19 +56,26 @@ export default function DocumentForm({ document, onSuccess, onCancel }: Props) {
     <form onSubmit={handleSubmit} className="management-form">
       <div className="form-group">
         <label>Document Name</label>
-        <input 
-          type="text" 
-          value={name} 
-          onChange={e => setName(e.target.value)} 
-          required 
+        <input
+          type="text"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          required
           placeholder="e.g. Terms and Conditions"
         />
       </div>
       <div className="form-group">
+        <label>Folder</label>
+        <select value={folderId ?? ''} onChange={e => setFolderId(e.target.value || null)}>
+          <option value="">Root documents</option>
+          {folders.map(folder => <option key={folder.id} value={folder.id}>{folder.parentId ? '↳ ' : ''}{folder.name}</option>)}
+        </select>
+      </div>
+      <div className="form-group">
         <label>Description</label>
-        <textarea 
-          value={description} 
-          onChange={e => setDescription(e.target.value)} 
+        <textarea
+          value={description}
+          onChange={e => setDescription(e.target.value)}
           placeholder="Briefly describe this document"
         />
       </div>

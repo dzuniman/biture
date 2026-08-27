@@ -18,6 +18,7 @@ final class Application
         'statements' => [StatementRepository::class, StatementService::class],
         'tools' => [ToolRepository::class, ToolService::class],
         'documents' => [DocumentRepository::class, DocumentService::class],
+        'folders' => [DocumentFolderRepository::class, DocumentFolderService::class],
     ];
 
     public static function controller(Container $container, string $type, PDO $pdo, string $table, string $resource): ResourceController

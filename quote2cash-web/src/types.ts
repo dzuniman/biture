@@ -283,7 +283,7 @@ export interface Statement {
   statementNumber: string;
   dueDays: string;
   client?: Client | null;
-  createdAt: string; 
+  createdAt: string;
   items: StatementItem[];
 }
 
@@ -360,6 +360,14 @@ export interface DocumentResponse {
   fileName: string;
   contentType: string;
   uploadedAt: string;
+  folderId?: string | null;
+}
+
+export interface DocumentFolder {
+  id: string;
+  name: string;
+  parentId?: string | null;
+  createdAt?: string;
 }
 
 export interface Tool {

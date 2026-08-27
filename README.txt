@@ -13,21 +13,34 @@ Fonrend (Inside /biture/quote2cash-web):
 Production:
 2. npm run deploy:production:frontend
 
-Create a migration
+Migrations
+Migration names matter because files are applied alphabetically. Use: timestamp_descriptive_name.php.
+Example:
+20260827143000_add_client_phone.php
+20260827150000_create_document_folders.php
+20260827153000_add_invoice_indexes.php
 
-From the api directory:
-php bin/create-migration.php AddClientPhone
+1. Create the migration
+- From the api directory run: php bin/create-migration.php AddClientPhone
+- This creates a file similar to: src/Database/Migrations/20260827143000_addclientphone.php
+2. Edit the generated up() method:
+<?php
+public function up(PDO $pdo): void
+{
+    $pdo->exec('ALTER TABLE clients ADD COLUMN Phone VARCHAR(255) NULL');
+}
+3. Apply migrations in dev
+- Run: cd api
+- Run: $env:APP_ENV = "development"
+- Or skip this run: $env:APP_ENV = "development"
+- Run: composer db:migrate
 
-Edit the generated file in Migrations.
-composer db:migrate
+4. Apply migrations in dev
+- Run: cd api
+- Run: $env:APP_ENV = "staging"
+- Run: composer db:migrate
 
-Apply migrations
-composer db:migrate
-
-For staging or production:
-$env:APP_ENV = "staging"
-composer db:migrate
-
-Run migrations before the FTP backend deployment. Never edit an already-applied migration. The legacy DomainLogic.php remains temporarily for upload, nested-item, and response compatibility while the resource CRUD path now uses the new entity/repository/service graph.
-
-All PHP syntax checks, Composer validation, bootstrap loading, migration object loading, and diagnostics passed. The migration was not executed against the configured database.
+5. Apply migrations in dev
+- Run: cd api
+- Run: $env:APP_ENV = "production"
+- Run: composer db:migrate

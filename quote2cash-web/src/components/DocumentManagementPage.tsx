@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import DocumentListPage from './DocumentListPage'; // New component for listing documents
 import DocumentForm from './DocumentForm'; // Existing component for document form
-import { getDocuments, deleteDocument, downloadDocument } from '../api'; // Assuming downloadDocument exists
-import type { DocumentResponse } from '../types';
+import { getDocuments, getDocumentFolders, createDocumentFolder, updateDocumentFolder, deleteDocumentFolder, deleteDocument, downloadDocument } from '../api';
+import type { DocumentFolder, DocumentResponse } from '../types';
 
 
 interface Props {
@@ -15,6 +15,8 @@ type DocumentView = 'list' | 'manage';
 export default function DocumentManagementPage({ onBack, onRefreshApp }: Props) { // Added onRefreshApp
   const [documentView, setDocumentView] = useState<DocumentView>('list');
   const [documents, setDocuments] = useState<DocumentResponse[]>([]);
+  const [folders, setFolders] = useState<DocumentFolder[]>([]);
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [editingDocument, setEditingDocument] = useState<DocumentResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,6 +27,7 @@ export default function DocumentManagementPage({ onBack, onRefreshApp }: Props) 
     try {
       const data = await getDocuments();
       setDocuments(data);
+      setFolders(await getDocumentFolders());
     } catch (err: any) {
       setError('Failed to load documents: ' + (err.message || 'Unknown error'));
       console.error('Failed to load documents:', err);
@@ -40,6 +43,41 @@ export default function DocumentManagementPage({ onBack, onRefreshApp }: Props) 
   const handleCreateNew = () => {
     setEditingDocument(null);
     setDocumentView('manage');
+  };
+
+  const handleCreateFolder = async (parentId: string | null) => {
+    const name = window.prompt('Folder name');
+    if (!name?.trim()) return;
+    try {
+      await createDocumentFolder(name.trim(), parentId);
+      setFolders(await getDocumentFolders());
+    } catch (err: any) {
+      const message = err?.response?.data?.message || err?.message || 'Unknown error';
+      setError('Failed to create folder: ' + message);
+      console.error('Failed to create folder:', err);
+    }
+  };
+
+  const handleEditFolder = async (folder: DocumentFolder) => {
+    const name = window.prompt('Folder name', folder.name);
+    if (!name?.trim()) return;
+    try {
+      await updateDocumentFolder(folder.id, name.trim(), folder.parentId ?? null);
+      setFolders(await getDocumentFolders());
+    } catch (err: any) {
+      setError('Failed to edit folder: ' + (err?.response?.data?.message || err?.message || 'Unknown error'));
+    }
+  };
+
+  const handleDeleteFolder = async (folder: DocumentFolder) => {
+    if (!window.confirm(`Delete folder "${folder.name}"? It must be empty.`)) return;
+    try {
+      await deleteDocumentFolder(folder.id);
+      if (currentFolderId === folder.id) setCurrentFolderId(folder.parentId ?? null);
+      setFolders(await getDocumentFolders());
+    } catch (err: any) {
+      setError('Failed to delete folder: ' + (err?.response?.data?.message || err?.message || 'Unknown error'));
+    }
   };
 
   const handleEditDocument = (doc: DocumentResponse) => {
@@ -138,6 +176,12 @@ export default function DocumentManagementPage({ onBack, onRefreshApp }: Props) 
       {!isLoading && documentView === 'list' && (
         <DocumentListPage
           documents={documents}
+          folders={folders}
+          currentFolderId={currentFolderId}
+          onFolderChange={setCurrentFolderId}
+          onCreateFolder={handleCreateFolder}
+          onEditFolder={handleEditFolder}
+          onDeleteFolder={handleDeleteFolder}
           onEdit={handleEditDocument}
           onDelete={handleDeleteDocument}
           onCreateNew={handleCreateNew}
@@ -159,6 +203,8 @@ export default function DocumentManagementPage({ onBack, onRefreshApp }: Props) 
           </div>
           <DocumentForm
             document={editingDocument ?? undefined}
+            folders={folders}
+            defaultFolderId={editingDocument?.folderId ?? currentFolderId}
             onSuccess={handleDocumentFormSuccess}
             onCancel={handleDocumentFormCancel}
           />
