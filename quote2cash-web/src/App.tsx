@@ -42,7 +42,8 @@ import {
   createCost,
   updateCost,
   deleteCost,
-  duplicateCost
+  duplicateCost,
+  getTools
 } from './api';
 import type {
   Client,
@@ -62,7 +63,8 @@ import type {
   CreditNote,
   CreditNoteCreateRequest,
   Cost,
-  CostCreateRequest
+  CostCreateRequest,
+  Tool
 } from './types';
 import { useAuth } from './AuthContext';
 import { Login } from './components/Login';
@@ -94,10 +96,12 @@ import CreditNoteForm from './components/CreditNoteForm';
 import CreditNoteViewPage from './components/CreditNoteViewPage';
 import CostsListPage from './components/CostsListPage';
 import CostForm from './components/CostForm';
+import ReportsPage from './components/ReportsPage';
+import DashboardPage from './components/DashboardPage';
 import logo from './assets/logo.png';
 
 
-type Section = 'dashboard' | 'clients' | 'quotes' | 'invoices' | 'admin' | 'statements' | 'jobcards' | 'deliverynotes' | 'creditnotes' | 'costs';
+type Section = 'dashboard' | 'clients' | 'quotes' | 'invoices' | 'admin' | 'statements' | 'jobcards' | 'deliverynotes' | 'creditnotes' | 'costs' | 'reports';
 type ClientView = 'list' | 'manage' | 'view';
 type QuoteView = 'list' | 'manage' | 'view';
 type InvoiceView = 'list' | 'manage' | 'view';
@@ -125,6 +129,7 @@ function App() {
   const [deliveryNotes, setDeliveryNotes] = useState<DeliveryNote[]>([]);
   const [creditNotes, setCreditNotes] = useState<CreditNote[]>([]);
   const [costs, setCosts] = useState<Cost[]>([]);
+  const [tools, setTools] = useState<Tool[]>([]);
   const [editingCost, setEditingCost] = useState<Cost | null>(null);
   const [costView, setCostView] = useState<'list' | 'manage'>('list');
   const [toolView, setToolView] = useState<'list' | 'view'>('list');
@@ -182,7 +187,7 @@ function App() {
     try {
       setError(null);
       setIsLoading(true);
-      const [clientsData, quotesData, productsData, usersData, invoicesData, statementsData, documentsData, jobCardsData, deliveryNotesData, creditNotesData, costsData] = await Promise.all([
+      const [clientsData, quotesData, productsData, usersData, invoicesData, statementsData, documentsData, jobCardsData, deliveryNotesData, creditNotesData, costsData, toolsData] = await Promise.all([
         getClients(),
         getQuotes(),
         getProducts(),
@@ -193,7 +198,8 @@ function App() {
         getJobCards(),
         getDeliveryNotes(),
         getCreditNotes(),
-        getCosts()
+        getCosts(),
+        getTools()
       ]);
       setClients(clientsData);
       setQuotes(quotesData);
@@ -206,6 +212,7 @@ function App() {
       setDeliveryNotes(deliveryNotesData);
       setCreditNotes(creditNotesData);
       setCosts(costsData);
+      setTools(toolsData);
     } catch (err: any) {
       setError(getErrorMessage(err, 'Unable to load data. Confirm the API is running.'));
     } finally {
@@ -1032,6 +1039,24 @@ function App() {
           </div>
 
           <div className="site-toolbar">
+            {/* Reports DataGrid Button */}
+            <button
+              type="button"
+              className={`nav-item ${section === 'reports' ? 'active' : ''}`}
+              onClick={() => setSection('reports')}
+            /*style={{
+              background: section === 'reports' ? '#38bdf8' : 'transparent',
+              color: section === 'reports' ? '#0f172a' : '#f8fafc',
+              fontWeight: 700,
+            border: 'none',
+            padding: '8px 16px',
+            borderRadius: '8px',
+            cursor: 'pointer'
+            }}*/
+            >
+              📊 Reports
+            </button>
+
             {/* QuickActions dropdown */}
             <div className="dropdown" ref={quickActionsRef}>
               <button
@@ -1119,7 +1144,7 @@ function App() {
             </button>
           </div>
         </div>
-      </header>
+      </header >
 
       {
         error && (
@@ -1270,177 +1295,47 @@ function App() {
 
       {
         !isLoading && section === 'dashboard' && (
-          <div className="page-section dashboard-new">
-            <style dangerouslySetInnerHTML={{
-              __html: `
-            .dashboard-new { max-width: 1400px; margin: 0 auto; padding: 20px; }
-            .dash-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-            .dash-header h2 { margin: 0; font-size: 1.8rem; color: #e6e6e6; }
-            .dash-header p { margin: 4px 0 0; color: #ffffff; font-size: 0.95rem; }
-            
-            .metrics-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 40px; }
-            .metric-card { background: white; padding: 24px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); transition: transform 0.2s; }
-            .metric-card:hover { transform: translateY(-2px); }
-            .metric-card .m-label { display: block; font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
-            .metric-card .m-value { display: block; font-size: 1.75rem; font-weight: 800; color: #0f172a; margin-top: 10px; }
-            .metric-card .m-sub { display: block; font-size: 0.75rem; color: #94a3b8; margin-top: 6px; font-weight: 500; }
-            
-            .m-card-quotes { border-top: 5px solid #3b82f6; }
-            .m-card-invoices { border-top: 5px solid #10b981; }
-            .m-card-payments { border-top: 5px solid #8b5cf6; }
-            .m-card-outstanding { border-top: 5px solid #ef4444; }
+          <DashboardPage
+            clients={clients}
+            quotes={quotes}
+            invoices={invoices}
+            statements={statements}
+            jobCards={jobCards}
+            deliveryNotes={deliveryNotes}
+            creditNotes={creditNotes}
+            products={products}
+            tools={tools}
+            costs={costs}
+            onNavigate={(sec, view, item) => {
+              setSection(sec as Section);
+              if (sec === 'quotes' && view === 'view' && item) handleViewQuote(item);
+              if (sec === 'invoices' && view === 'view' && item) handleViewInvoice(item);
+              if (sec === 'statements' && view === 'view' && item) handleViewStatement(item);
+              if (sec === 'clients' && view === 'view' && item) handleViewClient(item);
+              if (sec === 'jobcards' && view === 'view' && item) handleViewJobCard(item);
+              if (sec === 'deliverynotes' && view === 'view' && item) handleViewDeliveryNote(item);
+              if (sec === 'creditnotes' && view === 'view' && item) handleViewCreditNote(item);
+            }}
+          />
+        )
+      }
 
-            .activity-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px; }
-            .activity-block { background: white; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-            .block-header { padding: 18px 24px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
-            .block-header h3 { margin: 0; font-size: 1.05rem; font-weight: 700; color: #334155; }
-            .block-header button { font-size: 0.8rem; font-weight: 700; color: #3b82f6; background: white; border: 1px solid #e2e8f0; cursor: pointer; padding: 6px 12px; border-radius: 8px; transition: all 0.2s; }
-            .block-header button:hover { background: #eff6ff; border-color: #3b82f6; }
-            
-            .list-scroll { flex: 1; max-height: 400px; overflow-y: auto; }
-            .dash-item { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: background 0.2s; }
-            .dash-item:hover { background: #f8fafc; }
-            .dash-item:last-child { border-bottom: none; }
-            .item-main { display: flex; flex-direction: column; gap: 4px; }
-            .item-main .title { font-size: 0.95rem; font-weight: 700; color: #1e293b; }
-            .item-main .subtitle { font-size: 0.8rem; color: #64748b; }
-            .item-side { text-align: right; }
-            .item-side .amount { font-size: 1rem; font-weight: 700; color: #0f172a; display: block; }
-            .item-side .date { font-size: 0.75rem; color: #94a3b8; }
-            
-            .status-tag { font-size: 0.65rem; font-weight: 800; padding: 4px 8px; border-radius: 6px; text-transform: uppercase; margin-right: 10px; display: inline-block; vertical-align: middle; }
-            .status-tag.paid { background: #dcfce7; color: #166534; }
-            .status-tag.draft { background: #f1f5f9; color: #475569; }
-            .status-tag.sent { background: #dbeafe; color: #1e40af; }
-            .status-tag.overdue { background: #fee2e2; color: #991b1b; }
-            
-            .empty-msg { padding: 60px; text-align: center; color: #94a3b8; font-style: italic; font-size: 0.95rem; }
-          ` }} />
-
-            <div className="dash-header">
-              <div>
-                <h2>DASHBOARD</h2>
-                <p>Current health of operations and activities</p>
-              </div>
-              <div className="dash-summary-pills">
-                <span className="badge accent-blue" style={{ padding: '10px 20px', borderRadius: '25px', fontWeight: 'bold' }}>{clients.length} Active Clients</span>
-              </div>
-            </div>
-
-            <div className="metrics-row">
-              <div className="metric-card m-card-quotes">
-                <span className="m-label">Quoted Pipeline</span>
-                <span className="m-value">{formatAmount(totalQuoteValue)}</span>
-                <span className="m-sub">Value of {quotes.length} total quotes</span>
-              </div>
-              <div className="metric-card m-card-invoices">
-                <span className="m-label">Billed Revenue</span>
-                <span className="m-value">{formatAmount(totalInvoiceValue)}</span>
-                <span className="m-sub">{invoices.length} invoices generated</span>
-              </div>
-              <div className="metric-card m-card-payments">
-                <span className="m-label">Cash Collected</span>
-                <span className="m-value" style={{ color: '#10b981' }}>{formatAmount(totalPaymentsRecorded)}</span>
-                <span className="m-sub">{collectionRate.toFixed(1)}% collection efficiency</span>
-              </div>
-              <div className="metric-card m-card-outstanding">
-                <span className="m-label">Pending Receivables</span>
-                <span className="m-value" style={{ color: totalOutstanding > 0 ? '#ef4444' : '#10b981' }}>
-                  {formatAmount(totalOutstanding)}
-                </span>
-                <span className="m-sub">Balance from issued invoices</span>
-              </div>
-            </div>
-
-            <div className="activity-grid">
-              {/* Recent Payments */}
-              <div className="activity-block">
-                <div className="block-header">
-                  <h3>Recent Collection Activity</h3>
-                  <button onClick={() => setSection('statements')}>Statement Logs</button>
-                </div>
-                <div className="list-scroll" style={{ maxHeight: '300px' }}>
-                  {recentStatements.length === 0 ? (
-                    <div className="empty-msg">No payment history recorded</div>
-                  ) : (
-                    recentStatements.map(s => {
-                      const sItems = (s as any).items || (s as any).Items || [];
-                      const sTotal = sItems.reduce((sum: number, i: any) => sum + (i.paymentAmount || i.PaymentAmount || 0), 0);
-                      const clientName = (s as any).client?.name || (s as any).Client?.Name || 'Unknown Client';
-                      const sNum = (s as any).statementNumber || (s as any).StatementNumber;
-                      return (
-                        <div key={s.id} className="dash-item" onClick={() => handleViewStatement(s)}>
-                          <div className="item-main">
-                            <span className="title">Payment Advice #{sNum}</span>
-                            <span className="subtitle">{clientName}</span>
-                          </div>
-                          <div className="item-side">
-                            <span className="amount" style={{ color: '#10b981' }}>+{formatAmount(sTotal)}</span>
-                            <span className="date">{new Date((s as any).createdAt || (s as any).CreatedAt).toLocaleDateString()}</span>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-
-              {/* Recent Invoices */}
-              <div className="activity-block">
-                <div className="block-header">
-                  <h3>Latest Invoices</h3>
-                  <button onClick={() => setSection('invoices')}>Manage Invoices</button>
-                </div>
-                <div className="list-scroll" style={{ maxHeight: '300px' }}>
-                  {recentInvoices.length === 0 ? (
-                    <div className="empty-msg">No invoicing activity found</div>
-                  ) : (
-                    recentInvoices.map(inv => (
-                      <div key={inv.id} className="dash-item" onClick={() => handleViewInvoice(inv)}>
-                        <div className="item-main">
-                          <span className="title">
-                            <span className={`status-tag ${inv.status.toLowerCase()}`}>{inv.status}</span>
-                            #{inv.invoiceNumber}
-                          </span>
-                          <span className="subtitle">{inv.client?.name || inv.quote?.client?.name || 'Unknown Client'}</span>
-                        </div>
-                        <div className="item-side">
-                          <span className="amount">{formatAmount(inv.amount)}</span>
-                          <span className="date">{inv.createdAt ? new Date(inv.createdAt).toLocaleDateString() : ''}</span>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              {/* Recent Quotes */}
-              <div className="activity-block">
-                <div className="block-header">
-                  <h3>Active Quotes</h3>
-                  <button onClick={() => setSection('quotes')}>Manage Quotes</button>
-                </div>
-                <div className="list-scroll">
-                  {recentQuotes.length === 0 ? (
-                    <div className="empty-msg">No quotations created yet</div>
-                  ) : (
-                    recentQuotes.map(q => (
-                      <div key={q.id} className="dash-item" onClick={() => handleViewQuote(q)}>
-                        <div className="item-main">
-                          <span className="title">#{q.quoteNumber}</span>
-                          <span className="subtitle">{q.client?.name || 'Private Client'} — {q.reference}</span>
-                        </div>
-                        <div className="item-side">
-                          <span className="amount">{formatAmount(q.total)}</span>
-                          <span className="date">{new Date(q.date).toLocaleDateString()}</span>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
+      {
+        !isLoading && section === 'reports' && (
+          <ReportsPage
+            clients={clients}
+            quotes={quotes}
+            invoices={invoices}
+            statements={statements}
+            jobCards={jobCards}
+            deliveryNotes={deliveryNotes}
+            creditNotes={creditNotes}
+            products={products}
+            tools={tools}
+            costs={costs}
+            documents={documents}
+            onBack={() => setSection('dashboard')}
+          />
         )
       }
 

@@ -75,6 +75,34 @@ if ($resource === 'products' && $method === 'GET' && $segment === 'search') {
     $query = $pdo->prepare('SELECT * FROM ' . Database::table('products') . ' WHERE ' . dbColumn('code') . ' LIKE ? OR ' . dbColumn('name') . ' LIKE ? ORDER BY ' . dbColumn('code'));
     $term = '%' . ($_GET['query'] ?? '') . '%'; $query->execute([$term, $term]); jsonResponse($query->fetchAll(PDO::FETCH_ASSOC));
 }
+if ($resource === 'products' && $method === 'GET' && $segment === null) {
+    $table = Database::table('products');
+    if (isset($_GET['all']) || (!isset($_GET['page']) && !isset($_GET['pageSize']) && !isset($_GET['search']))) {
+        $query = $pdo->query("SELECT * FROM $table ORDER BY " . dbColumn('code'));
+        $rows = array_map(fn(array $row): array => serializeRow($pdo, 'products', databaseRow($row), false), $query->fetchAll(PDO::FETCH_ASSOC));
+        jsonResponse($rows);
+    }
+    $page = max(1, (int)($_GET['page'] ?? 1));
+    $pageSize = min(500, max(1, (int)($_GET['pageSize'] ?? 12)));
+    $term = trim((string)($_GET['search'] ?? ''));
+    $where = '';
+    $parameters = [];
+    if ($term !== '') {
+        $where = ' WHERE ' . dbColumn('code') . ' LIKE ? OR ' . dbColumn('name') . ' LIKE ? OR ' . dbColumn('description') . ' LIKE ?';
+        $like = '%' . $term . '%';
+        $parameters = [$like, $like, $like];
+    }
+    $count = $pdo->prepare("SELECT COUNT(*) FROM $table$where");
+    $count->execute($parameters);
+    $total = (int)$count->fetchColumn();
+    $query = $pdo->prepare("SELECT * FROM $table$where ORDER BY " . dbColumn('code') . ' LIMIT ? OFFSET ?');
+    foreach ($parameters as $index => $parameter) $query->bindValue($index + 1, $parameter, PDO::PARAM_STR);
+    $query->bindValue(count($parameters) + 1, $pageSize, PDO::PARAM_INT);
+    $query->bindValue(count($parameters) + 2, ($page - 1) * $pageSize, PDO::PARAM_INT);
+    $query->execute();
+    $rows = array_map(fn(array $row): array => serializeRow($pdo, 'products', databaseRow($row), false), $query->fetchAll(PDO::FETCH_ASSOC));
+    jsonResponse(['data' => $rows, 'total' => $total, 'page' => $page, 'pageSize' => $pageSize, 'totalPages' => max(1, (int)ceil($total / $pageSize))]);
+}
 if ($resource === 'documents' && $method === 'GET' && $action === 'download') {
     $document = $controller->show($segment); $path = $document['filePath'] ?? '';
     if (!is_file($path)) fail('File not found on server.', 404);
@@ -106,6 +134,37 @@ if ($resource === 'folders' && $method === 'DELETE' && $segment) {
     } catch (InvalidArgumentException $exception) {
         fail($exception->getMessage(), 400);
     }
+}
+if ($resource === 'products' && $method === 'GET' && $segment === 'images' && !empty($action)) {
+    $filePath = $dataDir . DIRECTORY_SEPARATOR . 'products' . DIRECTORY_SEPARATOR . basename($action);
+    if (!is_file($filePath)) fail('File not found', 404);
+    $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+    $mimeTypes = ['jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'gif' => 'image/gif', 'webp' => 'image/webp', 'svg' => 'image/svg+xml'];
+    header('Content-Type: ' . ($mimeTypes[$ext] ?? 'image/jpeg'));
+    header('Cache-Control: public, max-age=86400');
+    header('Content-Length: ' . filesize($filePath));
+    readfile($filePath); exit;
+}
+if ($resource === 'tools' && $method === 'GET' && $segment === 'images' && !empty($action)) {
+    $filePath = $dataDir . DIRECTORY_SEPARATOR . 'tools' . DIRECTORY_SEPARATOR . basename($action);
+    if (!is_file($filePath)) fail('File not found', 404);
+    $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+    $mimeTypes = ['jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'gif' => 'image/gif', 'webp' => 'image/webp', 'svg' => 'image/svg+xml'];
+    header('Content-Type: ' . ($mimeTypes[$ext] ?? 'image/jpeg'));
+    header('Cache-Control: public, max-age=86400');
+    header('Content-Length: ' . filesize($filePath));
+    readfile($filePath); exit;
+}
+if ($resource === 'quotes' && $method === 'GET' && $segment === 'items' && $action === 'images') {
+    $fileName = $parts[3] ?? '';
+    $filePath = $dataDir . DIRECTORY_SEPARATOR . 'quote_items' . DIRECTORY_SEPARATOR . basename($fileName);
+    if (!$fileName || !is_file($filePath)) fail('File not found', 404);
+    $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+    $mimeTypes = ['jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'gif' => 'image/gif', 'webp' => 'image/webp', 'svg' => 'image/svg+xml'];
+    header('Content-Type: ' . ($mimeTypes[$ext] ?? 'image/jpeg'));
+    header('Cache-Control: public, max-age=86400');
+    header('Content-Length: ' . filesize($filePath));
+    readfile($filePath); exit;
 }
 if ($resource === 'products' && $method === 'POST' && in_array($segment, ['upload-image', 'upload-manual'], true)) { requireAuth(true); handleUpload($pdo, $dataDir, 'products'); }
 if ($resource === 'tools' && $method === 'POST' && in_array($segment, ['upload-image', 'upload-manual'], true)) { requireAuth(true); handleUpload($pdo, $dataDir, 'tools'); }

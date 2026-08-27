@@ -169,7 +169,20 @@ export const getInvoiceNextNumber = async (prefix: string): Promise<string> => {
 
 // Products
 export const getProducts = async (): Promise<Product[]> => {
-  const response = await api.get('/products');
+  const response = await api.get('/products', { params: { all: 1 } });
+  return Array.isArray(response.data) ? response.data : (response.data?.data || []);
+};
+
+export interface ProductPage {
+  data: Product[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export const getProductsPage = async (page: number, pageSize: number, search = ''): Promise<ProductPage> => {
+  const response = await api.get<ProductPage>('/products', { params: { page, pageSize, search } });
   return response.data;
 };
 

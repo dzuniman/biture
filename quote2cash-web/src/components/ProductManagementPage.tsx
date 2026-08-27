@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { getProducts, createProduct, updateProduct, deleteProduct, uploadProductImage, getProductImageUrl, downloadProductsTemplate, uploadProductsExcel } from '../api';
+import { getProductsPage, createProduct, updateProduct, deleteProduct, uploadProductImage, getProductImageUrl, downloadProductsTemplate, uploadProductsExcel } from '../api';
 import type { Product, ProductCreateRequest } from '../types';
 import { formatAmount } from '../../formatters';
 import Pagination from './Pagination';
@@ -49,7 +49,8 @@ export default function ProductManagementPage({ onBack, onRefreshApp, onView }: 
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(12);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
+  const [totalProducts, setTotalProducts] = useState(0);
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -57,28 +58,21 @@ export default function ProductManagementPage({ onBack, onRefreshApp, onView }: 
     setIsLoading(true);
     setError(null);
     try {
-      const data = await getProducts();
-      const loadedRows: EditableProductRow[] = await Promise.all(
-        data.map(async (product) => {
-          let imagePreviewUrl: string | undefined;
-          if (product.image) {
-            imagePreviewUrl = await fetchSecureProductImage(product.image);
-          }
-          return {
-            id: product.id,
-            tempId: product.id,
-            code: product.code || '',
-            name: product.name || '',
-            uom: product.uom || '',
-            description: product.description || '',
-            price: product.price || 0,
-            imagePath: product.image || null,
-            isDirty: false,
-            isNew: false,
-            imagePreviewUrl
-          };
-        })
-      );
+      const page = await getProductsPage(currentPage, itemsPerPage, search);
+      setTotalProducts(page.total);
+      const loadedRows: EditableProductRow[] = page.data.map((product) => ({
+        id: product.id,
+        tempId: product.id,
+        code: product.code || '',
+        name: product.name || '',
+        uom: product.uom || '',
+        description: product.description || '',
+        price: product.price || 0,
+        imagePath: product.image || null,
+        isDirty: false,
+        isNew: false,
+        imagePreviewUrl: product.image ? (product.image.startsWith('blob:') || product.image.startsWith('http') ? product.image : getProductImageUrl(product.image)) : undefined
+      }));
       setRows(loadedRows);
     } catch (err: any) {
       setError('Failed to load products: ' + (err.message || 'Unknown error'));
@@ -87,9 +81,7 @@ export default function ProductManagementPage({ onBack, onRefreshApp, onView }: 
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, [currentPage, itemsPerPage, search]);
 
   const handleAddLine = () => {
     const newTempId = 'new_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
@@ -232,31 +224,13 @@ export default function ProductManagementPage({ onBack, onRefreshApp, onView }: 
     }
   };
 
-  const filteredRows = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    if (!term) return rows;
-    return rows.filter(
-      (r) =>
-        r.code.toLowerCase().includes(term) ||
-        r.name.toLowerCase().includes(term) ||
-        r.description.toLowerCase().includes(term) ||
-        (r.id && r.id.toLowerCase().includes(term))
-    );
-  }, [rows, search]);
-
   const totalValue = useMemo(() => {
     return rows.reduce((sum, r) => sum + (Number(r.price) || 0), 0);
   }, [rows]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredRows.length / itemsPerPage));
-  const pageRows = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredRows.slice(start, start + itemsPerPage);
-  }, [filteredRows, currentPage, itemsPerPage]);
-
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, rows.length]);
+  }, [search]);
 
   const handleDownloadTemplate = async () => {
     try {
@@ -361,7 +335,7 @@ export default function ProductManagementPage({ onBack, onRefreshApp, onView }: 
         </div>
         <div style={{ display: 'flex', gap: '16px', fontSize: '0.9rem', fontWeight: 600 }}>
           <span style={{ background: '#f3f4f6', padding: '6px 14px', borderRadius: '20px', color: '#374151' }}>
-            Total Products: <strong>{rows.length}</strong>
+            Total Products: <strong>{totalProducts}</strong>
           </span>
           <span style={{ background: '#ecfdf5', padding: '6px 14px', borderRadius: '20px', color: '#065f46' }}>
             Total Value: <strong>{formatAmount(totalValue)}</strong>
@@ -391,14 +365,14 @@ export default function ProductManagementPage({ onBack, onRefreshApp, onView }: 
               </tr>
             </thead>
             <tbody>
-              {filteredRows.length === 0 ? (
+              {rows.length === 0 ? (
                 <tr>
                   <td colSpan={7} style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>
                     No products found. Click <strong>"+ Add Product"</strong> to add your first product.
                   </td>
                 </tr>
               ) : (
-                pageRows.map((row) => (
+                rows.map((row) => (
                   <tr
                     key={row.tempId}
                     style={{
@@ -545,13 +519,30 @@ export default function ProductManagementPage({ onBack, onRefreshApp, onView }: 
           </table>
         </div>
       )}
-      {filteredRows.length > 0 && (
-        <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'flex-end' }}>
+      {totalProducts > 0 && (
+        <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: '#475569' }}>
+            <label style={{ fontWeight: 600 }}>Items per page:</label>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: 'white', fontWeight: 600, cursor: 'pointer' }}
+            >
+              <option value={10}>10</option>
+              <option value={12}>12</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+          </div>
           <Pagination
             currentPage={currentPage}
-            totalPages={totalPages}
+            totalPages={Math.max(1, Math.ceil(totalProducts / itemsPerPage))}
             itemsPerPage={itemsPerPage}
-            totalItems={filteredRows.length}
+            totalItems={totalProducts}
             onPageChange={setCurrentPage}
           />
         </div>
