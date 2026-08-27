@@ -8,5 +8,9 @@
     ],
     "require": {
         "vlucas/phpdotenv": "^5.7"
+    },
+    "scripts": {
+        "db:migrate": "php bin/migrate.php",
+        "db:create-migration": "php bin/create-migration.php"
     }
 }

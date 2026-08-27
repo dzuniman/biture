@@ -1,0 +1,1 @@
+<?php declare(strict_types=1); final class ToolEntity extends ResourceEntity {}

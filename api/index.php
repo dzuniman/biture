@@ -59,7 +59,8 @@ $controllerMap = [
 if (!isset($tableMap[$resource])) fail('Route not found', 404);
 if (in_array($resource, ['clients', 'users'], true) && in_array($method, ['POST', 'PUT', 'DELETE'], true)) requireAuth(true);
 $controllerType = $controllerMap[$resource];
-$controller = new $controllerType($pdo, Database::table($tableMap[$resource]), $resource);
+$container = new Container();
+$controller = Application::controller($container, $controllerType, $pdo, Database::table($tableMap[$resource]), $resource);
 
 if ($resource === 'invoices' && $method === 'PATCH' && $action === 'status') {
     $controller->updateStatus($segment, (string)(input()['status'] ?? ''));

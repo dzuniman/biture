@@ -1,0 +1,1 @@
+<?php declare(strict_types=1); final class CreditNoteRepository extends PdoResourceRepository { protected function entityClass(): string { return CreditNoteEntity::class; } }

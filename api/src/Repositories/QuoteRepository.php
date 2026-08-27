@@ -1,0 +1,1 @@
+<?php declare(strict_types=1); final class QuoteRepository extends PdoResourceRepository { protected function entityClass(): string { return QuoteEntity::class; } }

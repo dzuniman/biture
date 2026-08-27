@@ -6,6 +6,17 @@ $envName = getenv('APP_ENV') ?: 'development';
 
 require_once __DIR__ . '/Http.php';
 require_once __DIR__ . '/Database.php';
+require_once __DIR__ . '/Container.php';
+require_once __DIR__ . '/Application.php';
+require_once __DIR__ . '/../Entities/Entity.php';
+require_once __DIR__ . '/../Entities/ResourceEntity.php';
+require_once __DIR__ . '/../Repositories/ResourceRepositoryInterface.php';
+require_once __DIR__ . '/../Repositories/PdoResourceRepository.php';
+require_once __DIR__ . '/../Services/ResourceService.php';
+foreach (glob(__DIR__ . '/../Entities/*Entity.php') as $entityFile) require_once $entityFile;
+foreach (glob(__DIR__ . '/../Repositories/*Repository.php') as $repositoryFile) require_once $repositoryFile;
+foreach (glob(__DIR__ . '/../Services/*Service.php') as $serviceFile) require_once $serviceFile;
+require_once __DIR__ . '/../Database/MigrationRunner.php';
 require_once __DIR__ . '/../Services/TokenService.php';
 require_once __DIR__ . '/../Controllers/ResourceController.php';
 require_once __DIR__ . '/../Controllers/AuthController.php';
@@ -20,4 +31,4 @@ header('Access-Control-Allow-Origin: ' . $origin);
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
 header('Access-Control-Allow-Credentials: true');
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') { http_response_code(204); exit; }

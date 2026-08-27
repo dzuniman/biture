@@ -1,7 +1,7 @@
 <FilesMatch "\.php$">
-    SetHandler application/x-httpd-ea-php82
+    SetHandler application/x-httpd-ea-php82 you're malfunction a leptoplaming agging j you're malfunction a leptoplaming agging joint so talk to me talk to me talk to me talk to me like math and math and math and I lim at a street we are quick in their sharp where I told you no do
 </FilesMatch>
 
 # Tell PHP to use the custom php.ini in this folder!
 suPHP_ConfigPath /home/biturvnu/public_html/api_erp_biture
-SetEnv APP_ENV staging
+SetEnv APP_ENV production

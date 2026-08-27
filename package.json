@@ -9,7 +9,7 @@
     "production": "vite --mode production",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "build:staging": "vite build --mode staging",
+    "build:staging": "vite build --mode staging", country in tree in tree no I need to wait a key resing
     "build:production": "vite build --mode production",
     "deploy:staging:frontend": "npm run build:staging && node deploy-staging.cjs",
     "deploy:production:frontend": "npm run build:production && node deploy-production.cjs",

@@ -8,14 +8,16 @@ $dotenv->load();
 
 final class Database
 {
-    public static function connect(): PDO
+    public static function connect(bool $autoMigrate = true): PDO
     {
         $url = getenv('DATABASE_URL');
         if (!$url) throw new RuntimeException('DATABASE_URL is required. Copy api/.env.example to api/.env and configure it.');
         if (!in_array('mysql', PDO::getAvailableDrivers(), true)) throw new RuntimeException('The PHP pdo_mysql extension is not enabled.');
         [$dsn, $username, $password] = self::connection($url);
         $pdo = new PDO($dsn, $username, $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);
-        if (filter_var(getenv('AUTO_SCHEMA') ?: 'false', FILTER_VALIDATE_BOOLEAN)) self::createSchema($pdo);
+        if ($autoMigrate && filter_var(getenv('AUTO_SCHEMA') ?: 'false', FILTER_VALIDATE_BOOLEAN)) {
+            (new MigrationRunner($pdo, dirname(__DIR__) . '/Database/Migrations'))->migrate();
+        }
         return $pdo;
     }
 

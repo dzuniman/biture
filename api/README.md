@@ -16,6 +16,26 @@ Uploaded files are stored in `DATA_DIR`. The initial accounts are `admin` / `adm
 
 Set `DATABASE_URL` to your MySQL connection, for example `mysql://root:password@localhost:3306/erp_biture?charset=utf8mb4`. Set `DATA_DIR` to move upload storage, and `JWT_KEY` to replace the development signing key.
 
+## Database migrations
+
+Database schema changes are versioned in `src/Database/Migrations`. Run them from the `api` directory after configuring the matching environment file:
+
+```powershell
+composer db:migrate
+```
+
+The runner creates `schema_migrations` and applies each migration once. Run this command as a deployment step against staging or production before sending traffic to a new backend version. FTP deployment copies files only; it cannot run SQL on the remote database. `AUTO_SCHEMA=true` remains available for local compatibility, but keep it disabled in production and run migrations explicitly.
+
+To create a migration, run this from `api` and pass a PascalCase name:
+
+```powershell
+php bin/create-migration.php AddClientPhone
+```
+
+Edit the generated file in `src/Database/Migrations`, then apply it with `composer db:migrate`. Migrations are forward-only and tracked in `schema_migrations`; never edit an already-applied migration. For production, run the command from a machine that can reach the production MySQL server, using the production environment variables, before the backend FTP deploy.
+
+The backend now separates persistence into PDO repositories, resource entities, application services, and a small composition container. Existing controllers and REST response shapes remain unchanged, so this structure can be expanded resource by resource.
+
 ## Login
 
 The login endpoint is:

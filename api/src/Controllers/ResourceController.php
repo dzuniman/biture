@@ -4,58 +4,35 @@ declare(strict_types=1);
 
 class ResourceController
 {
-    public function __construct(protected PDO $pdo, protected string $table, protected string $resource)
+    protected ResourceService $service;
+
+    public function __construct(protected PDO $pdo, protected string $table, protected string $resource, ?ResourceService $service = null)
     {
+        $this->service = $service ?? new ResourceService(new PdoResourceRepository($pdo, $table, $resource));
     }
 
     public function index(string $order = 'id DESC'): array
     {
-        $sql = "SELECT * FROM {$this->table}";
-        if ($order) {
-            $orderParts = preg_split('/\s+/', trim($order));
-            $column = $orderParts[0];
-
-            // fallback if column doesn't exist
-            $stmt = $this->pdo->query("SHOW COLUMNS FROM {$this->table} LIKE '$column'");
-            if (!$stmt->fetch()) {
-                $column = 'id';
-            }
-
-            $sql .= ' ORDER BY ' . dbColumn($column) . (isset($orderParts[1]) ? ' ' . strtoupper($orderParts[1]) : '');
-        }
-        $rows = $this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
-        return array_map(fn(array $row): array => serializeRow($this->pdo, $this->resource, databaseRow($row), false), $rows);
+        return array_map(fn(ResourceEntity $entity): array => serializeRow($this->pdo, $this->resource, $entity->toArray(), false), $this->service->index($order));
     }
 
     public function show(string $id): array
     {
-        $query = $this->pdo->prepare("SELECT * FROM {$this->table} WHERE " . dbColumn('id') . " = ?");
-        $query->execute([$id]);
-        $row = $query->fetch(PDO::FETCH_ASSOC);
-        if (!$row) fail('Not found', 404);
-        return serializeRow($this->pdo, $this->resource, databaseRow($row), true);
+        return serializeRow($this->pdo, $this->resource, $this->service->show($id)->toArray(), true);
     }
 
     public function store(array $body): array
     {
-        $row = createRow($this->resource, $body);
-        $columns = array_map('dbColumn', array_keys($row));
-        $marks = implode(',', array_fill(0, count($columns), '?'));
-        $this->pdo->prepare("INSERT INTO {$this->table} (" . implode(',', $columns) . ") VALUES ($marks)")->execute(array_values($row));
-        return serializeRow($this->pdo, $this->resource, $row, true);
+        return serializeRow($this->pdo, $this->resource, $this->service->store($body)->toArray(), true);
     }
 
     public function update(string $id, array $body): void
     {
-        $row = createRow($this->resource, $body, false);
-        unset($row['id'], $row['created_at']);
-        if (!$row) return;
-        $sets = implode(',', array_map(fn(string $column): string => dbColumn($column) . ' = ?', array_keys($row)));
-        $this->pdo->prepare("UPDATE {$this->table} SET $sets WHERE " . dbColumn('id') . " = ?")->execute([...array_values($row), $id]);
+        $this->service->update($id, $body);
     }
 
     public function destroy(string $id): void
     {
-        $this->pdo->prepare("DELETE FROM {$this->table} WHERE " . dbColumn('id') . " = ?")->execute([$id]);
+        $this->service->destroy($id);
     }
 }
