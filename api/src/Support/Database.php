@@ -1,6 +1,10 @@
 <?php
-
 declare(strict_types=1);
+require_once __DIR__ . '/../../vendor/autoload.php';
+
+$envName = getenv('APP_ENV') ?: 'development';
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../../', [".env.$envName"]);
+$dotenv->load();
 
 final class Database
 {

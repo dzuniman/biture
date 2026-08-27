@@ -1,9 +1,13 @@
 <?php
 
 declare(strict_types=1);
-
+require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/src/Support/Bootstrap.php';
 require_once __DIR__ . '/src/Support/DomainLogic.php';
+
+$envName = getenv('APP_ENV') ?: 'development';
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__, ".env.$envName");
+$dotenv->load();
 
 try {
     $pdo = Database::connect();

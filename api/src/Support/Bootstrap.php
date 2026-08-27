@@ -1,6 +1,8 @@
 <?php
-
 declare(strict_types=1);
+require_once __DIR__ . '/../../vendor/autoload.php';
+
+$envName = getenv('APP_ENV') ?: 'development';
 
 require_once __DIR__ . '/Http.php';
 require_once __DIR__ . '/Database.php';
@@ -11,7 +13,7 @@ foreach (glob(__DIR__ . '/../Controllers/*Controller.php') as $controllerFile) r
 $autoload = dirname(__DIR__, 2) . '/vendor/autoload.php';
 if (is_file($autoload)) require_once $autoload;
 
-loadEnvFile(dirname(__DIR__, 2) . '/.env');
+loadEnvFile(dirname(__DIR__, 2) . "/.env.$envName");
 
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '*';
 header('Access-Control-Allow-Origin: ' . $origin);

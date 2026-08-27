@@ -11,8 +11,10 @@
     "preview": "vite preview",
     "build:staging": "vite build --mode staging",
     "build:production": "vite build --mode production",
-    "deploy:staging": "npm run build:staging && node deploy-staging.cjs",
-    "deploy:production": "npm run build:production && node deploy-production.cjs"
+    "deploy:staging:frontend": "npm run build:staging && node deploy-staging.cjs",
+    "deploy:production:frontend": "npm run build:production && node deploy-production.cjs",
+    "deploy:staging:backend": "node deploy-staging-backend.cjs",
+    "deploy:production:backend": "node deploy-production-backend.cjs"
   },
   "dependencies": {
     "add": "^2.0.6",
