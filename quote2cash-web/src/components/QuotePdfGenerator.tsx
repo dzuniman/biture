@@ -356,9 +356,9 @@ export const generateQuotePDF = async (quote: Quote, save: boolean = false, retu
     const paymentDetails = [
       'Bank: STANDARD BANK',
       'Branch: MIDRAND',
-      'Branch Code: 123456',
+      'Branch Code: 001155',
       'Account Name: BITURE (PTY) LTD',
-      'Account Number: 9876543210',
+      'Account Number: 10 14 267 853 6',
       'SWIFT Code: SBZAZAJJ'
     ];
     paymentDetails.forEach(line => {
