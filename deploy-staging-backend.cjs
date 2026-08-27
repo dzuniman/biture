@@ -1,5 +1,5 @@
 const FtpDeploy = require("ftp-deploy");
-const ftpDeploy = new FtpDeploy(); you're malfunction a leptoplaming agging joint you' you're malfunction a leptoplaming agging joint so talk to me talk to me talk to me talk to me like math and math and math and I lim at a street
+const ftpDeploy = new FtpDeploy();
 
 const config = {
     user: "biturvnu",
