@@ -1,9 +1,7 @@
-import { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import type { DeliveryNote } from '../types';
-import SearchBox from './SearchBox';
-import TableHeader from './TableHeader';
-import Pagination from './Pagination';
-import useTableSort from '../hooks/useTableSort';
+import DataGrid, { ColumnDef } from './DataGrid';
+import ActionMenu from './ActionMenu';
 
 interface Props {
   deliveryNotes: DeliveryNote[];
@@ -13,8 +11,6 @@ interface Props {
   onCreateNew: () => void;
 }
 
-const ITEMS_PER_PAGE = 10;
-
 export default function DeliveryNoteListPage({
   deliveryNotes,
   onView,
@@ -22,34 +18,36 @@ export default function DeliveryNoteListPage({
   onDelete,
   onCreateNew
 }: Props) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-
-  const filteredDeliveryNotes = useMemo(() => {
-    const term = searchTerm.toLowerCase();
-    if (!term) return deliveryNotes;
-
-    return deliveryNotes.filter(
-      (dn) =>
-        (dn.deliveryNoteNumber?.toLowerCase() || '').includes(term) ||
-        (dn.quoteNumber?.toLowerCase() || '').includes(term) ||
-        (dn.reference?.toLowerCase() || '').includes(term) ||
-        (dn.description?.toLowerCase() || '').includes(term) ||
-        (dn.client?.name?.toLowerCase() || '').includes(term)
-    );
-  }, [deliveryNotes, searchTerm]);
-
-  const { sortedData, sortKey, sortDirection, setSort } = useTableSort(filteredDeliveryNotes);
-  const totalPages = Math.ceil(sortedData.length / ITEMS_PER_PAGE);
-  const paginatedDeliveryNotes = sortedData.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+  const columns: ColumnDef<DeliveryNote>[] = useMemo(
+    () => [
+      { key: 'deliveryNoteNumber', label: 'Delivery Note Number', type: 'text' },
+      { key: 'quoteNumber', label: 'Quote Number', type: 'text' },
+      { key: 'reference', label: 'Reference', type: 'text', getValue: r => r.reference || '—' },
+      { key: 'description', label: 'Description', type: 'text', getValue: r => r.description || '—' },
+      { key: 'client', label: 'Client', type: 'text', getValue: r => r.client?.name || '—' },
+      { key: 'createdAt', label: 'Created', type: 'date', format: v => (v ? new Date(v).toLocaleDateString() : '—') }
+    ],
+    []
   );
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  const statsSummary = (
+    <div className="stats-row" style={{ display: 'flex', gap: '16px', marginBottom: '8px' }}>
+      <div className="stat-box" style={{ background: 'white', padding: '16px', borderRadius: '12px', flex: 1, border: '1px solid #e2e8f0' }}>
+        <span className="stat-label" style={{ fontSize: '0.82rem', color: '#64748b' }}>Total Delivery Notes</span>
+        <div className="stat-value" style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a' }}>{deliveryNotes.length}</div>
+      </div>
+    </div>
+  );
+
+  const renderActions = (dn: DeliveryNote) => (
+    <ActionMenu
+      items={[
+        { label: 'View', icon: '👁️', onClick: () => onView(dn) },
+        { label: 'Edit', icon: '✏️', onClick: () => onEdit(dn) },
+        { label: 'Delete', icon: '🗑️', onClick: () => onDelete(dn.id), variant: 'danger' }
+      ]}
+    />
+  );
 
   return (
     <div className="page-section">
@@ -63,83 +61,14 @@ export default function DeliveryNoteListPage({
         </button>
       </div>
 
-      <div className="stats-row">
-        <div className="stat-box">
-          <span className="stat-label">Total Delivery Notes</span>
-          <span className="stat-value">{filteredDeliveryNotes.length}</span>
-        </div>
-      </div>
-
-      <SearchBox
-        placeholder="Search delivery notes by number, quote, reference, description, or client..."
-        value={searchTerm}
-        onChange={setSearchTerm}
+      <DataGrid
+        columns={columns}
+        data={deliveryNotes}
+        renderActions={renderActions}
+        statsSummary={statsSummary}
+        searchPlaceholder="Search delivery notes by number, quote, reference, description, or client..."
+        emptyMessage="No delivery notes found. Click '+ New Delivery Note' to get started."
       />
-
-      <div className="table-card">
-        <table>
-          <thead>
-            <tr>
-              <TableHeader columnKey="deliveryNoteNumber" label="Delivery Note Number" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-              <TableHeader columnKey="quoteNumber" label="Quote Number" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-              <TableHeader columnKey="reference" label="Reference" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-              <TableHeader columnKey="description" label="Description" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-              <TableHeader columnKey="client" label="Client" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-              <TableHeader columnKey="createdAt" label="Created" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-              <th className="actions-column">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedDeliveryNotes.length === 0 ? (
-              <tr style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}>
-                <td colSpan={7} className="empty-row" style={{ textAlign: 'center' }}>
-                  {searchTerm ? 'No delivery notes match your search.' : 'No delivery notes found. Click "+ New Delivery Note" to get started.'}
-                </td>
-              </tr>
-            ) : (
-              paginatedDeliveryNotes.map((dn) => (
-                <tr
-                  key={dn.id}
-                  style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}
-                  className="table-row-dark-hover"
-                >
-                  <td>{dn.deliveryNoteNumber}</td>
-                  <td>{dn.quoteNumber}</td>
-                  <td>{dn.reference || '—'}</td>
-                  <td>{dn.description || '—'}</td>
-                  <td>{dn.client?.name || '—'}</td>
-                  <td>
-                    {dn.createdAt ? new Date(dn.createdAt).toLocaleDateString() : '—'}
-                  </td>
-                  <td style={{ padding: '8px 6px', textAlign: 'center' }}>
-                    <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                      <button type="button" onClick={() => onView(dn)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'black' }}>
-                        View
-                      </button>
-                      <button type="button" onClick={() => onEdit(dn)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'green' }}>
-                        Edit
-                      </button>
-                      <button type="button" onClick={() => onDelete(dn.id)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'darkred' }}>
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {filteredDeliveryNotes.length > 0 && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-          itemsPerPage={ITEMS_PER_PAGE}
-          totalItems={filteredDeliveryNotes.length}
-        />
-      )}
     </div>
   );
 }

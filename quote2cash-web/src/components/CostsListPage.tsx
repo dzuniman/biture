@@ -1,10 +1,8 @@
-import { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { formatAmount } from '../../formatters';
 import type { Cost } from '../types';
-import SearchBar from './SearchBar';
-import Pagination from './Pagination';
-import TableHeader from './TableHeader';
-import useTableSort from '../hooks/useTableSort';
+import DataGrid, { ColumnDef } from './DataGrid';
+import ActionMenu from './ActionMenu';
 
 interface Props {
   costs: Cost[];
@@ -14,36 +12,44 @@ interface Props {
   onCreateNew: () => void;
 }
 
-const ITEMS_PER_PAGE = 10;
-
 export default function CostsListPage({ costs, onEdit, onDelete, onDuplicate, onCreateNew }: Props) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
+  const totalQuoteValue = useMemo(() => {
+    return costs.reduce((sum, c) => sum + (c.totalQuoteAmount ?? 0), 0);
+  }, [costs]);
 
-  const filteredCosts = useMemo(() => {
-    const term = searchTerm.toLowerCase();
-    if (!term) return costs;
-    return costs.filter(
-      (c) =>
-        (c.description?.toLowerCase() || '').includes(term) ||
-        (c.date ? new Date(c.date).toLocaleDateString() : '').includes(term)
-    );
-  }, [costs, searchTerm]);
-
-  const { sortedData, sortKey, sortDirection, setSort } = useTableSort(filteredCosts);
-
-  const totalPages = Math.ceil(sortedData.length / ITEMS_PER_PAGE);
-  const paginatedCosts = sortedData.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+  const columns: ColumnDef<Cost>[] = useMemo(
+    () => [
+      { key: 'description', label: 'Description', type: 'text', getValue: r => r.description || '—' },
+      { key: 'date', label: 'Date', type: 'date', format: v => (v ? new Date(v).toLocaleDateString() : '—') },
+      { key: 'margin', label: 'Margin', type: 'number', getValue: r => r.margin, format: v => (v != null ? `${v}%` : '—') },
+      { key: 'itemCount', label: 'Items', type: 'number', getValue: r => r.itemCount ?? (r.items?.length ?? 0) },
+      { key: 'totalQuoteAmount', label: 'Quote Value', type: 'currency', getValue: r => r.totalQuoteAmount ?? 0, format: v => formatAmount(Number(v) || 0) }
+    ],
+    []
   );
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  const statsSummary = (
+    <div className="stats-row" style={{ display: 'flex', gap: '16px', marginBottom: '8px' }}>
+      <div className="stat-box" style={{ background: 'white', padding: '16px', borderRadius: '12px', flex: 1, border: '1px solid #e2e8f0' }}>
+        <span className="stat-label" style={{ fontSize: '0.82rem', color: '#64748b' }}>Total Cost Sheets</span>
+        <div className="stat-value" style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a' }}>{costs.length}</div>
+      </div>
+      <div className="stat-box" style={{ background: 'white', padding: '16px', borderRadius: '12px', flex: 1, border: '1px solid #e2e8f0' }}>
+        <span className="stat-label" style={{ fontSize: '0.82rem', color: '#64748b' }}>Total Quote Value</span>
+        <div className="stat-value" style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0284c7' }}>{formatAmount(totalQuoteValue)}</div>
+      </div>
+    </div>
+  );
 
-  const totalQuoteValue = filteredCosts.reduce((sum, c) => sum + (c.totalQuoteAmount ?? 0), 0);
+  const renderActions = (cost: Cost) => (
+    <ActionMenu
+      items={[
+        { label: 'Edit', icon: '✏️', onClick: () => onEdit(cost) },
+        { label: 'Duplicate', icon: '📋', onClick: () => onDuplicate(cost), variant: 'primary' },
+        { label: 'Delete', icon: '🗑️', onClick: () => onDelete(cost.id), variant: 'danger' }
+      ]}
+    />
+  );
 
   return (
     <div className="page-section">
@@ -57,87 +63,14 @@ export default function CostsListPage({ costs, onEdit, onDelete, onDuplicate, on
         </button>
       </div>
 
-      <div className="stats-row">
-        <div className="stat-box">
-          <span className="stat-label">Total Cost Sheets</span>
-          <span className="stat-value">{filteredCosts.length}</span>
-        </div>
-        <div className="stat-box">
-          <span className="stat-label">Total Quote Value</span>
-          <span className="stat-value">{formatAmount(totalQuoteValue)}</span>
-        </div>
-      </div>
-
-      <SearchBar
-        placeholder="Search cost sheets by description or date..."
-        value={searchTerm}
-        onChange={setSearchTerm}
+      <DataGrid
+        columns={columns}
+        data={costs}
+        renderActions={renderActions}
+        statsSummary={statsSummary}
+        searchPlaceholder="Search cost sheets by description or date..."
+        emptyMessage="No cost sheets found. Click '+ New Cost Sheet' to get started."
       />
-
-      {paginatedCosts.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-state-icon">💰</div>
-          <h3>No cost sheets found</h3>
-          <p>
-            {filteredCosts.length === 0 && searchTerm
-              ? 'Try adjusting your search terms'
-              : 'Get started by creating your first cost sheet'}
-          </p>
-          {!searchTerm && (
-            <button type="button" onClick={onCreateNew} className="btn-primary">
-              Create Cost Sheet
-            </button>
-          )}
-        </div>
-      ) : (
-        <>
-          <div className="table-card">
-            <table>
-              <thead>
-                <tr>
-                  <TableHeader columnKey="description" label="Description" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-                  <TableHeader columnKey="date" label="Date" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-                  <TableHeader columnKey="margin" label="Margin" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-                  <TableHeader columnKey="itemCount" label="Items" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-                  <TableHeader columnKey="totalQuoteAmount" label="Quote Value" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedCosts.map((cost) => (
-                  <tr key={cost.id} style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }} className="table-row-dark-hover">
-                    <td>{cost.description || '—'}</td>
-                    <td>{cost.date ? new Date(cost.date).toLocaleDateString() : '—'}</td>
-                    <td>{cost.margin != null ? `${cost.margin}%` : '—'}</td>
-                    <td>{cost.itemCount ?? (cost.items?.length ?? 0)}</td>
-                    <td>{formatAmount(cost.totalQuoteAmount ?? 0)}</td>
-                    <td style={{ padding: '8px 6px', textAlign: 'center' }}>
-                      <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                        <button type="button" onClick={() => onEdit(cost)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'green' }}>
-                          Edit
-                        </button>
-                        <button type="button" onClick={() => onDuplicate(cost)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'blue' }}>
-                          Duplicate
-                        </button>
-                        <button type="button" onClick={() => onDelete(cost.id)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'darkred' }}>
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-            itemsPerPage={ITEMS_PER_PAGE}
-            totalItems={filteredCosts.length}
-          />
-        </>
-      )}
     </div>
   );
 }

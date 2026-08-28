@@ -1,10 +1,8 @@
-import { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import type { CreditNote } from '../types';
-import SearchBox from './SearchBox';
-import Pagination from './Pagination';
 import { formatAmount } from '../../formatters';
-import TableHeader from './TableHeader';
-import useTableSort from '../hooks/useTableSort';
+import DataGrid, { ColumnDef } from './DataGrid';
+import ActionMenu from './ActionMenu';
 
 interface Props {
   creditNotes: CreditNote[];
@@ -14,8 +12,6 @@ interface Props {
   onCreateNew: () => void;
 }
 
-const ITEMS_PER_PAGE = 10;
-
 export default function CreditNoteListPage({
   creditNotes,
   onView,
@@ -23,37 +19,43 @@ export default function CreditNoteListPage({
   onDelete,
   onCreateNew
 }: Props) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
+  const totalCreditAmount = useMemo(() => {
+    return creditNotes.reduce((sum, cn) => sum + (cn.amount || 0), 0);
+  }, [creditNotes]);
 
-  const filteredCreditNotes = useMemo(() => {
-    const term = searchTerm.toLowerCase();
-    if (!term) return creditNotes;
-
-    return creditNotes.filter(
-      (cn) =>
-        (cn.creditNoteNumber?.toLowerCase() || '').includes(term) ||
-        (cn.description?.toLowerCase() || '').includes(term) ||
-        (cn.client?.name?.toLowerCase() || '').includes(term) ||
-        cn.amount.toString().includes(term)
-    );
-  }, [creditNotes, searchTerm]);
-
-  const { sortedData, sortKey, sortDirection, setSort } = useTableSort(filteredCreditNotes);
-  const totalPages = Math.ceil(sortedData.length / ITEMS_PER_PAGE);
-  const paginatedCreditNotes = sortedData.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+  const columns: ColumnDef<CreditNote>[] = useMemo(
+    () => [
+      { key: 'creditNoteNumber', label: 'Credit Note Number', type: 'text' },
+      { key: 'client', label: 'Client', type: 'text', getValue: r => r.client?.name || '—' },
+      { key: 'description', label: 'Description', type: 'text', getValue: r => r.description || '—' },
+      { key: 'amount', label: 'Amount', type: 'currency', getValue: r => r.amount, format: v => formatAmount(Number(v) || 0) },
+      { key: 'createdAt', label: 'Created', type: 'date', format: v => (v ? new Date(v).toLocaleDateString() : '—') }
+    ],
+    []
   );
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  const statsSummary = (
+    <div className="stats-row" style={{ display: 'flex', gap: '16px', marginBottom: '8px' }}>
+      <div className="stat-box" style={{ background: 'white', padding: '16px', borderRadius: '12px', flex: 1, border: '1px solid #e2e8f0' }}>
+        <span className="stat-label" style={{ fontSize: '0.82rem', color: '#64748b' }}>Total Credit Notes</span>
+        <div className="stat-value" style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a' }}>{creditNotes.length}</div>
+      </div>
+      <div className="stat-box" style={{ background: 'white', padding: '16px', borderRadius: '12px', flex: 1, border: '1px solid #e2e8f0' }}>
+        <span className="stat-label" style={{ fontSize: '0.82rem', color: '#64748b' }}>Total Credited Value</span>
+        <div className="stat-value" style={{ fontSize: '1.4rem', fontWeight: 800, color: '#16a34a' }}>{formatAmount(totalCreditAmount)}</div>
+      </div>
+    </div>
+  );
 
-  const totalCreditAmount = useMemo(() => {
-    return filteredCreditNotes.reduce((sum, cn) => sum + cn.amount, 0);
-  }, [filteredCreditNotes]);
+  const renderActions = (cn: CreditNote) => (
+    <ActionMenu
+      items={[
+        { label: 'View', icon: '👁️', onClick: () => onView(cn) },
+        { label: 'Edit', icon: '✏️', onClick: () => onEdit(cn) },
+        { label: 'Delete', icon: '🗑️', onClick: () => onDelete(cn.id), variant: 'danger' }
+      ]}
+    />
+  );
 
   return (
     <div className="page-section">
@@ -67,83 +69,14 @@ export default function CreditNoteListPage({
         </button>
       </div>
 
-      <div className="stats-row">
-        <div className="stat-box">
-          <span className="stat-label">Total Credit Notes</span>
-          <span className="stat-value">{filteredCreditNotes.length}</span>
-        </div>
-        <div className="stat-box">
-          <span className="stat-label">Total Credited Value</span>
-          <span className="stat-value" style={{ color: '#10b981' }}>{formatAmount(totalCreditAmount)}</span>
-        </div>
-      </div>
-
-      <SearchBox
-        placeholder="Search credit notes by number, description, or client..."
-        value={searchTerm}
-        onChange={setSearchTerm}
+      <DataGrid
+        columns={columns}
+        data={creditNotes}
+        renderActions={renderActions}
+        statsSummary={statsSummary}
+        searchPlaceholder="Search credit notes by number, description, or client..."
+        emptyMessage="No credit notes found. Click '+ New Credit Note' to get started."
       />
-
-      <div className="table-card">
-        <table>
-          <thead>
-            <tr>
-              <TableHeader columnKey="creditNoteNumber" label="Credit Note Number" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-              <TableHeader columnKey="client" label="Client" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-              <TableHeader columnKey="description" label="Description" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-              <TableHeader columnKey="amount" label="Amount" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-              <TableHeader columnKey="createdAt" label="Created" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-              <th className="actions-column">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedCreditNotes.length === 0 ? (
-              <tr style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}>
-                <td colSpan={6} className="empty-row" style={{ textAlign: 'center' }}>
-                  {searchTerm ? 'No credit notes match your search.' : 'No credit notes found. Click "+ New Credit Note" to get started.'}
-                </td>
-              </tr>
-            ) : (
-              paginatedCreditNotes.map((cn) => (
-                <tr
-                  key={cn.id}
-                  style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}
-                  className="table-row-dark-hover"
-                >
-                  <td>{cn.creditNoteNumber}</td>
-                  <td>{cn.client?.name || '—'}</td>
-                  <td>{cn.description || '—'}</td>
-                  <td style={{ textAlign: 'right', fontWeight: 'bold' }}>{formatAmount(cn.amount)}</td>
-                  <td>
-                    {cn.createdAt ? new Date(cn.createdAt).toLocaleDateString() : '—'}
-                  </td>
-                  <td className="actions-row">
-                    <button type="button" onClick={() => onView(cn)}>
-                      View
-                    </button>
-                    <button type="button" onClick={() => onEdit(cn)}>
-                      Edit
-                    </button>
-                    <button type="button" className="danger" onClick={() => onDelete(cn.id)}>
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {filteredCreditNotes.length > 0 && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-          itemsPerPage={ITEMS_PER_PAGE}
-          totalItems={filteredCreditNotes.length}
-        />
-      )}
     </div>
   );
 }

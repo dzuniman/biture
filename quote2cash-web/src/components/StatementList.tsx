@@ -1,9 +1,8 @@
-import { useMemo, useState } from 'react';
-import type { Statement, StatementItem, Invoice } from '../types';
+import React, { useMemo } from 'react';
+import type { Statement, Invoice } from '../types';
 import { formatAmount } from '../../formatters';
-import SearchBox from './SearchBox';
-import TableHeader from './TableHeader';
-import useTableSort from '../hooks/useTableSort';
+import DataGrid, { ColumnDef } from './DataGrid';
+import ActionMenu from './ActionMenu';
 
 interface Props {
   statements: Statement[];
@@ -14,33 +13,6 @@ interface Props {
 }
 
 export default function StatementList({ statements, invoices, onEdit, onView, onDelete }: Props) {
-  const [searchTerm, setSearchTerm] = useState('');
-
-  // Filter based on search term
-  const filteredStatements = useMemo(() => {
-    const term = searchTerm.toLowerCase();
-    if (!term) return statements;
-    return statements.filter((stmt) => {
-      const stmtNum = stmt.statementNumber?.toString() || '';
-      const clientName = stmt.client?.name || (stmt as any).Client?.Name || '';
-      return (
-        stmtNum.toLowerCase().includes(term) ||
-        clientName.toLowerCase().includes(term)
-      );
-    });
-  }, [statements, searchTerm]);
-
-  // Enrich data with derived fields needed for sorting (clientName)
-  const enrichedData = useMemo(() =>
-    filteredStatements.map((stmt) => ({
-      ...stmt,
-      clientName: stmt.client?.name || (stmt as any).Client?.Name || '',
-    })),
-    [filteredStatements]
-  );
-
-  const { sortedData, sortKey, sortDirection, setSort } = useTableSort(enrichedData);
-
   const getTotals = (rawItems: any[] = []) => {
     const totalPayments = rawItems.reduce((sum, item) => sum + (item.paymentAmount || item.PaymentAmount || 0), 0);
     const uniqueInvoiceIds = Array.from(new Set(rawItems.map(i => i.invoiceId || i.InvoiceId).filter(id => !!id)));
@@ -55,64 +27,56 @@ export default function StatementList({ statements, invoices, onEdit, onView, on
     };
   };
 
-  return (
-    <div className="table-card">
-      <SearchBox placeholder="Search statements by number or client..." value={searchTerm} onChange={setSearchTerm} />
-      <p /><br />
-      <table>
-        <thead>
-          <tr>
-            <TableHeader columnKey="statementNumber" label="Statement" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-            <TableHeader columnKey="clientName" label="Client" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-            <TableHeader columnKey="totalPayments" label="Total Payments" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-            <TableHeader columnKey="totalOutstanding" label="Total Outstanding" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-            <th className="actions-column">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sortedData.length === 0 ? (
-            <tr style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}>
-              <td colSpan={5} className="empty-row" style={{ textAlign: 'center' }}>
-                No statements found. Click "+ New Statement" to get started.
-              </td>
-            </tr>
-          ) : (
-            sortedData.map((statement: any) => {
-              const items = statement.items || statement.Items || [];
-              const { totalPayments, totalOutstanding } = getTotals(items);
-              const clientName = statement.clientName || '—';
+  const enrichedStatements = useMemo(() => {
+    return statements.map((stmt: any) => {
+      const items = stmt.items || stmt.Items || [];
+      const { totalPayments, totalOutstanding } = getTotals(items);
+      return {
+        ...stmt,
+        clientName: stmt.client?.name || stmt.Client?.Name || '—',
+        totalPayments,
+        totalOutstanding
+      };
+    });
+  }, [statements, invoices]);
 
-              return (
-                <tr
-                  key={statement.id}
-                  style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}
-                  className="table-row-dark-hover"
-                >
-                  <td>{statement.statementNumber || statement.StatementNumber}</td>
-                  <td>{clientName}</td>
-                  <td>{formatAmount(totalPayments)}</td>
-                  <td style={{ color: totalOutstanding > 0 ? '#dc2626' : '#22c55e', fontWeight: 'bold' }}>
-                    {formatAmount(totalOutstanding)}
-                  </td>
-                  <td style={{ padding: '8px 6px', textAlign: 'center' }}>
-                    <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                      <button type="button" onClick={() => onView(statement)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'black' }}>
-                        View
-                      </button>
-                      <button type="button" onClick={() => onEdit(statement)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'green' }}>
-                        Edit
-                      </button>
-                      <button type="button" onClick={() => onDelete(statement.id)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'darkred' }}>
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })
-          )}
-        </tbody>
-      </table>
-    </div>
+  const columns: ColumnDef<any>[] = useMemo(
+    () => [
+      { key: 'statementNumber', label: 'Statement #', type: 'text', getValue: r => r.statementNumber || r.StatementNumber },
+      { key: 'clientName', label: 'Client', type: 'text' },
+      { key: 'totalPayments', label: 'Total Payments', type: 'currency', getValue: r => r.totalPayments, format: v => formatAmount(Number(v) || 0) },
+      {
+        key: 'totalOutstanding',
+        label: 'Total Outstanding',
+        type: 'currency',
+        getValue: r => r.totalOutstanding,
+        render: (_, val) => (
+          <span style={{ color: Number(val) > 0 ? '#dc2626' : '#16a34a', fontWeight: 'bold' }}>
+            {formatAmount(Number(val) || 0)}
+          </span>
+        )
+      }
+    ],
+    []
+  );
+
+  const renderActions = (statement: any) => (
+    <ActionMenu
+      items={[
+        { label: 'View', icon: '👁️', onClick: () => onView(statement) },
+        { label: 'Edit', icon: '✏️', onClick: () => onEdit(statement) },
+        { label: 'Delete', icon: '🗑️', onClick: () => onDelete(statement.id), variant: 'danger' }
+      ]}
+    />
+  );
+
+  return (
+    <DataGrid
+      columns={columns}
+      data={enrichedStatements}
+      renderActions={renderActions}
+      searchPlaceholder="Search statements by number or client..."
+      emptyMessage="No statements found. Click '+ New Statement' to get started."
+    />
   );
 }

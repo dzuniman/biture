@@ -1,9 +1,7 @@
-import { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import type { Client } from '../types';
-import SearchBox from './SearchBox';
-import Pagination from './Pagination';
-import TableHeader from './TableHeader';
-import useTableSort from '../hooks/useTableSort';
+import DataGrid, { ColumnDef } from './DataGrid';
+import ActionMenu from './ActionMenu';
 
 interface Props {
   clients: Client[];
@@ -13,8 +11,6 @@ interface Props {
   onCreateNew: () => void;
 }
 
-const ITEMS_PER_PAGE = 10;
-
 export default function ClientsListPage({
   clients,
   onEdit,
@@ -22,32 +18,26 @@ export default function ClientsListPage({
   onDelete,
   onCreateNew
 }: Props) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-
-  const filteredClients = useMemo(() => {
-    const term = searchTerm.toLowerCase();
-    if (!term) return clients;
-
-    return clients.filter((client) =>
-      (client.name?.toLowerCase() || '').includes(term) ||
-      client.vendorNumber?.toLowerCase().includes(term) ||
-      client.representativeName?.toLowerCase().includes(term) ||
-      (client.representativeNumber || '').includes(term)
-    );
-  }, [clients, searchTerm]);
-
-  const { sortedData, sortKey, sortDirection, setSort } = useTableSort(filteredClients);
-  const totalPages = Math.ceil(sortedData.length / ITEMS_PER_PAGE);
-  const paginatedClients = sortedData.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+  const columns: ColumnDef<Client>[] = useMemo(
+    () => [
+      { key: 'name', label: 'Client Name', type: 'text' },
+      { key: 'vatNumber', label: 'VAT Number', type: 'text', getValue: r => r.vatNumber || '—' },
+      { key: 'vendorNumber', label: 'Vendor #', type: 'text', getValue: r => r.vendorNumber || '—' },
+      { key: 'representativeName', label: 'Representative', type: 'text', getValue: r => r.representativeName || '—' },
+      { key: 'representativeNumber', label: 'Phone', type: 'text', getValue: r => r.representativeNumber || '—' }
+    ],
+    []
   );
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  const renderActions = (client: Client) => (
+    <ActionMenu
+      items={[
+        { label: 'View', icon: '👁️', onClick: () => onView(client) },
+        { label: 'Edit', icon: '✏️', onClick: () => onEdit(client) },
+        { label: 'Delete', icon: '🗑️', onClick: () => onDelete(client.id), variant: 'danger' }
+      ]}
+    />
+  );
 
   return (
     <div className="page-section">
@@ -61,73 +51,13 @@ export default function ClientsListPage({
         </button>
       </div>
 
-      <SearchBox
-        placeholder="Search clients by name, representative, or phone..."
-        value={searchTerm}
-        onChange={setSearchTerm}
+      <DataGrid
+        columns={columns}
+        data={clients}
+        renderActions={renderActions}
+        searchPlaceholder="Search clients by name, representative, or phone..."
+        emptyMessage="No clients found. Click '+ New Client' to add one."
       />
-
-      <div className="table-card">
-        <table>
-          <thead>
-            <tr>
-              <TableHeader columnKey="name" label="Name" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-              <TableHeader columnKey="vatNumber" label="VAT Number" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-              <TableHeader columnKey="vendorNumber" label="Vendor #" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-              <TableHeader columnKey="representativeName" label="Representative" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-              <TableHeader columnKey="representativeNumber" label="Phone" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-              <th className="actions-column">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedClients.length === 0 ? (
-              <tr style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}>
-                <td colSpan={6} className="empty-row" style={{ textAlign: 'center' }}>
-                  {searchTerm ? 'No clients match your search.' : 'No clients found. Click "+ New Client" to add one.'}
-                </td>
-              </tr>
-            ) : (
-              paginatedClients.map((client) => (
-                <tr
-                  key={client.id}
-                  style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}
-                  className="table-row-dark-hover"
-                >
-                  <td>{client.name}</td>
-                  <td>{client.vatNumber || '—'}</td>
-                  <td>{client.vendorNumber || '—'}</td>
-                  <td>{client.representativeName || '—'}</td>
-                  <td>{client.representativeNumber || '—'}</td>
-                  <td style={{ padding: '8px 6px', textAlign: 'center' }}>
-                    <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                      <button type="button" onClick={() => onView(client)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'black' }}>
-                        View
-                      </button>
-                      <button type="button" onClick={() => onEdit(client)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'green' }}>
-                        Edit
-                      </button>
-                      <button
-                        type="button" onClick={() => onDelete(client.id)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'darkred' }}>
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {filteredClients.length > 0 && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-          itemsPerPage={ITEMS_PER_PAGE}
-          totalItems={filteredClients.length}
-        />
-      )}
     </div>
   );
 }

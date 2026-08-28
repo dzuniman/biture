@@ -271,11 +271,23 @@ export const StatementForm: React.FC<Props> = ({ invoices, clients, creditNotes,
           </div>
         </div>
 
-        <div className="form-summary" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
-          <div style={{ width: '300px', borderTop: '2px solid #334155', paddingTop: '12px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.2rem' }}>
-              <strong>Total Outstanding:</strong>
-              <strong style={{ color: totalOutstanding > 0 ? '#dc2626' : '#22c55e' }}>{formatAmount(totalOutstanding)}</strong>
+        <div className="form-summary" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
+          <div
+            style={{
+              width: '340px',
+              background: '#ffffff',
+              border: '1.5px solid #000000',
+              borderRadius: '12px',
+              padding: '16px 20px',
+              boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
+              color: '#0f172a'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontWeight: 800, fontSize: '1.05rem', color: '#0f172a' }}>Total Outstanding:</span>
+              <span style={{ fontWeight: 800, fontSize: '1.3rem', color: totalOutstanding > 0 ? '#dc2626' : '#16a34a', fontFamily: 'monospace' }}>
+                {formatAmount(totalOutstanding)}
+              </span>
             </div>
           </div>
         </div>

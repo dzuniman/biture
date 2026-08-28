@@ -1,10 +1,8 @@
-import { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { formatAmount } from '../../formatters';
 import type { Quote } from '../types';
-import SearchBar from './SearchBar';
-import Pagination from './Pagination';
-import TableHeader from './TableHeader';
-import useTableSort from '../hooks/useTableSort';
+import DataGrid, { ColumnDef } from './DataGrid';
+import ActionMenu from './ActionMenu';
 
 interface Props {
   quotes: Quote[];
@@ -15,8 +13,6 @@ interface Props {
   onCreateNew: () => void;
 }
 
-const ITEMS_PER_PAGE = 10;
-
 export default function QuotesListPage({
   quotes,
   onEdit,
@@ -25,36 +21,45 @@ export default function QuotesListPage({
   onDuplicate,
   onCreateNew
 }: Props) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
+  const totalValue = useMemo(() => {
+    return quotes.reduce((sum, quote) => sum + (quote.total || 0), 0);
+  }, [quotes]);
 
-  const filteredQuotes = useMemo(() => {
-    const term = searchTerm.toLowerCase();
-    if (!term) return quotes;
-
-    return quotes.filter(
-      (quote) =>
-        (quote.reference?.toLowerCase() || '').includes(term) ||
-        (quote.client?.name?.toLowerCase() || '').includes(term) ||
-        (quote.quoteNumber?.toString() || '').includes(term) ||
-        (quote.vendorNumber?.toLowerCase() || '').includes(term)
-    );
-  }, [quotes, searchTerm]);
-
-  const { sortedData, sortKey, sortDirection, setSort } = useTableSort(filteredQuotes);
-
-  const totalPages = Math.ceil(sortedData.length / ITEMS_PER_PAGE);
-  const paginatedQuotes = sortedData.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+  const columns: ColumnDef<Quote>[] = useMemo(
+    () => [
+      { key: 'quoteNumber', label: 'Quote #', type: 'text' },
+      { key: 'reference', label: 'Reference', type: 'text', getValue: r => r.reference || '—' },
+      { key: 'clientName', label: 'Client', type: 'text', getValue: r => r.client?.name || '—' },
+      { key: 'date', label: 'Date', type: 'date', format: v => (v ? new Date(v).toLocaleDateString() : '—') },
+      { key: 'margin', label: 'Margin', type: 'number', getValue: r => r.margin, format: v => (v != null ? `${v}%` : '—') },
+      { key: 'total', label: 'Total', type: 'currency', getValue: r => r.total, format: v => formatAmount(Number(v) || 0) }
+    ],
+    []
   );
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  const statsSummary = (
+    <div className="stats-row" style={{ display: 'flex', gap: '16px', marginBottom: '8px' }}>
+      <div className="stat-box" style={{ background: 'white', padding: '16px', borderRadius: '12px', flex: 1, border: '1px solid #e2e8f0' }}>
+        <span className="stat-label" style={{ fontSize: '0.82rem', color: '#64748b' }}>Total Quotes</span>
+        <div className="stat-value" style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a' }}>{quotes.length}</div>
+      </div>
+      <div className="stat-box" style={{ background: 'white', padding: '16px', borderRadius: '12px', flex: 1, border: '1px solid #e2e8f0' }}>
+        <span className="stat-label" style={{ fontSize: '0.82rem', color: '#64748b' }}>Total Value</span>
+        <div className="stat-value" style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0284c7' }}>{formatAmount(totalValue)}</div>
+      </div>
+    </div>
+  );
 
-  const totalValue = filteredQuotes.reduce((sum, quote) => sum + quote.total, 0);
+  const renderActions = (quote: Quote) => (
+    <ActionMenu
+      items={[
+        { label: 'View', icon: '👁️', onClick: () => onView(quote) },
+        { label: 'Edit', icon: '✏️', onClick: () => onEdit(quote) },
+        { label: 'Duplicate', icon: '📋', onClick: () => onDuplicate(quote), variant: 'primary' },
+        { label: 'Delete', icon: '🗑️', onClick: () => onDelete(quote.id), variant: 'danger' }
+      ]}
+    />
+  );
 
   return (
     <div className="page-section">
@@ -68,90 +73,14 @@ export default function QuotesListPage({
         </button>
       </div>
 
-      <div className="stats-row">
-        <div className="stat-box">
-          <span className="stat-label">Total Quotes</span>
-          <span className="stat-value">{filteredQuotes.length}</span>
-        </div>
-        <div className="stat-box">
-          <span className="stat-label">Total Value</span>
-          <span className="stat-value">{formatAmount(totalValue)}</span>
-        </div>
-      </div>
-
-      <SearchBar
-        placeholder="Search quotes by reference, client, number, or vendor..."
-        value={searchTerm}
-        onChange={setSearchTerm}
+      <DataGrid
+        columns={columns}
+        data={quotes}
+        renderActions={renderActions}
+        statsSummary={statsSummary}
+        searchPlaceholder="Search quotes by reference, client, number, or vendor..."
+        emptyMessage="No quotes found. Click '+ New Quote' to get started."
       />
-
-      {paginatedQuotes.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-state-icon">📄</div>
-          <h3>No quotes found</h3>
-          <p>
-            {filteredQuotes.length === 0 && searchTerm
-              ? 'Try adjusting your search terms'
-              : 'Get started by creating your first quote'}
-          </p>
-          {!searchTerm && <button type="button" onClick={onCreateNew} className="btn-primary">
-            Create Quote
-          </button>}
-        </div>
-      ) : (
-        <>
-          <div className="table-card">
-            <table>
-              <thead>
-                <tr>
-                  <TableHeader columnKey="quoteNumber" label="Quote" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-                  <TableHeader columnKey="reference" label="Reference" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-                  <TableHeader columnKey="clientName" label="Client" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-                  <TableHeader columnKey="date" label="Date" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-                  <TableHeader columnKey="margin" label="Margin" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-                  <TableHeader columnKey="total" label="Total" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedQuotes.map((quote) => (
-                  <tr key={quote.id} style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }} className="table-row-dark-hover">
-                    <td>{quote.quoteNumber}</td>
-                    <td>{quote.reference || '—'}</td>
-                    <td>{quote.client?.name ?? '—'}</td>
-                    <td>{new Date(quote.date).toLocaleDateString()}</td>
-                    <td>{quote.margin != null ? `${quote.margin}%` : '—'}</td>
-                    <td>{formatAmount(quote.total)}</td>
-                    <td style={{ padding: '8px 6px', textAlign: 'center' }}>
-                      <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                        <button type="button" onClick={() => onView(quote)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'black' }}>
-                          View
-                        </button>
-                        <button type="button" onClick={() => onEdit(quote)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'green' }}>
-                          Edit
-                        </button>
-                        <button type="button" onClick={() => onDuplicate(quote)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'blue' }}>
-                          Duplicate
-                        </button>
-                        <button type="button" onClick={() => onDelete(quote.id)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'darkred' }}>
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-            itemsPerPage={ITEMS_PER_PAGE}
-            totalItems={filteredQuotes.length}
-          />
-        </>
-      )}
     </div>
   );
 }

@@ -1,10 +1,8 @@
-import { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { formatAmount } from '../../formatters';
 import type { Invoice } from '../types';
-import SearchBox from './SearchBox';
-import Pagination from './Pagination';
-import TableHeader from './TableHeader';
-import useTableSort from '../hooks/useTableSort';
+import DataGrid, { ColumnDef } from './DataGrid';
+import ActionMenu from './ActionMenu';
 
 interface Props {
   invoices: Invoice[];
@@ -14,8 +12,6 @@ interface Props {
   onCreateNew: () => void;
 }
 
-const ITEMS_PER_PAGE = 10;
-
 export default function InvoiceListPage({
   invoices,
   onEdit,
@@ -23,36 +19,46 @@ export default function InvoiceListPage({
   onDelete,
   onCreateNew
 }: Props) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
+  const totalValue = useMemo(() => {
+    return invoices.reduce((sum, invoice) => sum + (invoice.amount || 0), 0);
+  }, [invoices]);
 
-  const filteredInvoices = useMemo(() => {
-    const term = searchTerm.toLowerCase();
-    if (!term) return invoices;
-
-    return invoices.filter(
-      (invoice) =>
-        (invoice.invoiceNumber?.toLowerCase() || '').includes(term) ||
-        (invoice.client?.name?.toLowerCase() || '').includes(term) ||
-        (invoice.quote?.reference?.toLowerCase() || '').includes(term) ||
-        (invoice.status?.toLowerCase() || '').includes(term)
-    );
-  }, [invoices, searchTerm]);
-
-  const { sortedData, sortKey, sortDirection, setSort } = useTableSort(filteredInvoices);
-
-  const totalPages = Math.ceil(sortedData.length / ITEMS_PER_PAGE);
-  const paginatedInvoices = sortedData.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+  const columns: ColumnDef<Invoice>[] = useMemo(
+    () => [
+      { key: 'invoiceNumber', label: 'Invoice Number', type: 'text' },
+      { key: 'clientName', label: 'Client', type: 'text', getValue: r => r.client?.name || r.quote?.client?.name || '—' },
+      { key: 'reference', label: 'Reference', type: 'text', getValue: r => r.quote?.reference || '—' },
+      { key: 'amount', label: 'Amount', type: 'currency', getValue: r => r.amount, format: v => formatAmount(Number(v) || 0) },
+      { key: 'createdAt', label: 'Created Date', type: 'date', format: v => (v ? new Date(v).toLocaleDateString() : '—') },
+      { key: 'dueDate', label: 'Due Date', type: 'date', format: v => (v ? new Date(v).toLocaleDateString() : '—') },
+      { key: 'status', label: 'Status', type: 'select', selectOptions: ['Paid', 'Pending', 'Overdue', 'Draft', 'Sent'] },
+      { key: 'isOverdue', label: 'Overdue', type: 'select', selectOptions: ['Yes', 'No'], getValue: r => (r.isOverdue ? 'Yes' : 'No') }
+    ],
+    []
   );
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  const statsSummary = (
+    <div className="stats-row" style={{ display: 'flex', gap: '16px', marginBottom: '8px' }}>
+      <div className="stat-box" style={{ background: 'white', padding: '16px', borderRadius: '12px', flex: 1, border: '1px solid #e2e8f0' }}>
+        <span className="stat-label" style={{ fontSize: '0.82rem', color: '#64748b' }}>Total Invoices</span>
+        <div className="stat-value" style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a' }}>{invoices.length}</div>
+      </div>
+      <div className="stat-box" style={{ background: 'white', padding: '16px', borderRadius: '12px', flex: 1, border: '1px solid #e2e8f0' }}>
+        <span className="stat-label" style={{ fontSize: '0.82rem', color: '#64748b' }}>Total Value</span>
+        <div className="stat-value" style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0284c7' }}>{formatAmount(totalValue)}</div>
+      </div>
+    </div>
+  );
 
-  const totalValue = filteredInvoices.reduce((sum, invoice) => sum + invoice.amount, 0);
+  const renderActions = (invoice: Invoice) => (
+    <ActionMenu
+      items={[
+        { label: 'View', icon: '👁️', onClick: () => onView(invoice) },
+        { label: 'Edit', icon: '✏️', onClick: () => onEdit(invoice) },
+        { label: 'Delete', icon: '🗑️', onClick: () => onDelete(invoice.id), variant: 'danger' }
+      ]}
+    />
+  );
 
   return (
     <div className="page-section">
@@ -66,93 +72,14 @@ export default function InvoiceListPage({
         </button>
       </div>
 
-      <div className="stats-row">
-        <div className="stat-box">
-          <span className="stat-label">Total Invoices</span>
-          <span className="stat-value">{filteredInvoices.length}</span>
-        </div>
-        <div className="stat-box">
-          <span className="stat-label">Total Value</span>
-          <span className="stat-value">{formatAmount(totalValue)}</span>
-        </div>
-      </div>
-
-      <SearchBox
-        placeholder="Search invoices by number, client, reference, or status..."
-        value={searchTerm}
-        onChange={setSearchTerm}
+      <DataGrid
+        columns={columns}
+        data={invoices}
+        renderActions={renderActions}
+        statsSummary={statsSummary}
+        searchPlaceholder="Search invoices by number, client, reference, or status..."
+        emptyMessage="No invoices found. Click '+ New Invoice' to get started."
       />
-
-      <div className="table-card">
-        <table>
-          <thead>
-            <tr>
-              <TableHeader columnKey="invoiceNumber" label="Invoice Number" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-              <TableHeader columnKey="clientName" label="Client" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-              <TableHeader columnKey="reference" label="Reference" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-              <TableHeader columnKey="amount" label="Amount" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-              <TableHeader columnKey="createdAt" label="Created" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-              <TableHeader columnKey="dueDate" label="Due" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-              <TableHeader columnKey="status" label="Status" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-              <TableHeader columnKey="overdue" label="Overdue" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-              <th className="actions-column">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedInvoices.length === 0 ? (
-              <tr style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}>
-                <td colSpan={9} className="empty-row" style={{ textAlign: 'center' }}>
-                  {searchTerm ? 'No invoices match your search.' : 'No invoices found. Click "+ New Invoice" to get started.'}
-                </td>
-              </tr>
-            ) : (
-              paginatedInvoices.map((invoice) => (
-                <tr
-                  key={invoice.id}
-                  style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}
-                  className="table-row-dark-hover"
-                >
-                  <td>{invoice.invoiceNumber}</td>
-                  <td>{(invoice.client?.name || invoice.quote?.client?.name) ?? '—'}</td>
-                  <td>{invoice.quote?.reference ?? '—'}</td>
-                  <td>{formatAmount(invoice.amount)}</td>
-                  <td>
-                    {invoice.createdAt ? new Date(invoice.createdAt).toLocaleDateString() : '—'}
-                  </td>
-                  <td>
-                    {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '—'}
-                  </td>
-                  <td>{invoice.status}</td>
-                  <td>{invoice.isOverdue ? 'Yes' : 'No'}</td>
-                  <td style={{ padding: '6px 6px', textAlign: 'center' }}>
-                    <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                      <button type="button" onClick={() => onView(invoice)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'black' }}>
-                        View
-                      </button>
-                      <button type="button" onClick={() => onEdit(invoice)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'green' }}>
-                        Edit
-                      </button>
-                      <button type="button" onClick={() => onDelete(invoice.id)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'darkred' }}>
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {filteredInvoices.length > 0 && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-          itemsPerPage={ITEMS_PER_PAGE}
-          totalItems={filteredInvoices.length}
-        />
-      )}
     </div>
   );
 }

@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { getProductsPage, createProduct, updateProduct, deleteProduct, uploadProductImage, getProductImageUrl, downloadProductsTemplate, uploadProductsExcel } from '../api';
+import { getProducts, createProduct, updateProduct, deleteProduct, uploadProductImage, getProductImageUrl, downloadProductsTemplate, uploadProductsExcel } from '../api';
 import type { Product, ProductCreateRequest } from '../types';
 import { formatAmount } from '../../formatters';
-import Pagination from './Pagination';
-import ProductViewPage from './ProductViewPage'; // Import the new view page
+import DataGrid, { ColumnDef } from './DataGrid';
+import ActionMenu from './ActionMenu';
 
 interface Props {
   onBack: () => void;
@@ -11,7 +11,7 @@ interface Props {
   onView?: (product: any) => void;
 }
 
-type EditableProductRow = {
+export type EditableProductRow = {
   id?: string;
   tempId: string;
   code: string;
@@ -26,31 +26,10 @@ type EditableProductRow = {
   imagePreviewUrl?: string;
 };
 
-async function fetchSecureProductImage(imagePath: string): Promise<string | undefined> {
-  if (!imagePath) return undefined;
-  const token = localStorage.getItem('token');
-  const url = getProductImageUrl(imagePath);
-  try {
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    if (!res.ok) throw new Error('Unauthorized');
-    const blob = await res.blob();
-    return URL.createObjectURL(blob);
-  } catch (err) {
-    console.error('Failed to load product image', err);
-    return undefined;
-  }
-}
-
 export default function ProductManagementPage({ onBack, onRefreshApp, onView }: Props) {
   const [rows, setRows] = useState<EditableProductRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(12);
-  const [totalProducts, setTotalProducts] = useState(0);
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -58,9 +37,8 @@ export default function ProductManagementPage({ onBack, onRefreshApp, onView }: 
     setIsLoading(true);
     setError(null);
     try {
-      const page = await getProductsPage(currentPage, itemsPerPage, search);
-      setTotalProducts(page.total);
-      const loadedRows: EditableProductRow[] = page.data.map((product) => ({
+      const data = await getProducts();
+      const loadedRows: EditableProductRow[] = data.map((product) => ({
         id: product.id,
         tempId: product.id,
         code: product.code || '',
@@ -71,7 +49,11 @@ export default function ProductManagementPage({ onBack, onRefreshApp, onView }: 
         imagePath: product.image || null,
         isDirty: false,
         isNew: false,
-        imagePreviewUrl: product.image ? (product.image.startsWith('blob:') || product.image.startsWith('http') ? product.image : getProductImageUrl(product.image)) : undefined
+        imagePreviewUrl: product.image
+          ? product.image.startsWith('blob:') || product.image.startsWith('http')
+            ? product.image
+            : getProductImageUrl(product.image)
+          : undefined
       }));
       setRows(loadedRows);
     } catch (err: any) {
@@ -81,7 +63,9 @@ export default function ProductManagementPage({ onBack, onRefreshApp, onView }: 
     }
   };
 
-  useEffect(() => { loadData(); }, [currentPage, itemsPerPage, search]);
+  useEffect(() => {
+    loadData();
+  }, []);
 
   const handleAddLine = () => {
     const newTempId = 'new_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
@@ -96,7 +80,7 @@ export default function ProductManagementPage({ onBack, onRefreshApp, onView }: 
       isDirty: true,
       isNew: true
     };
-    setRows((prev) => [...prev, newRow]);
+    setRows((prev) => [newRow, ...prev]);
   };
 
   const handleFieldChange = (tempId: string, field: keyof EditableProductRow, value: any) => {
@@ -149,16 +133,16 @@ export default function ProductManagementPage({ onBack, onRefreshApp, onView }: 
           prev.map((r) =>
             r.tempId === row.tempId
               ? {
-                ...r,
-                code: updated.code,
-                name: updated.name,
-                uom: updated.uom,
-                description: updated.description,
-                price: updated.price,
-                imagePath: updated.image || null,
-                isDirty: false,
-                isSaving: false
-              }
+                  ...r,
+                  code: updated.code,
+                  name: updated.name,
+                  uom: updated.uom,
+                  description: updated.description,
+                  price: updated.price,
+                  imagePath: updated.image || null,
+                  isDirty: false,
+                  isSaving: false
+                }
               : r
           )
         );
@@ -168,19 +152,19 @@ export default function ProductManagementPage({ onBack, onRefreshApp, onView }: 
           prev.map((r) =>
             r.tempId === row.tempId
               ? {
-                ...r,
-                id: created.id,
-                tempId: created.id,
-                code: created.code,
-                name: created.name,
-                uom: created.uom,
-                description: created.description,
-                price: created.price,
-                imagePath: created.image || null,
-                isDirty: false,
-                isNew: false,
-                isSaving: false
-              }
+                  ...r,
+                  id: created.id,
+                  tempId: created.id,
+                  code: created.code,
+                  name: created.name,
+                  uom: created.uom,
+                  description: created.description,
+                  price: created.price,
+                  imagePath: created.image || null,
+                  isDirty: false,
+                  isNew: false,
+                  isSaving: false
+                }
               : r
           )
         );
@@ -193,20 +177,6 @@ export default function ProductManagementPage({ onBack, onRefreshApp, onView }: 
       alert('Error saving product: ' + (err.response?.data?.message || err.message || 'Unknown error'));
       setRows((prev) => prev.map((r) => (r.tempId === row.tempId ? { ...r, isSaving: false } : r)));
     }
-  };
-
-  const handleMoveRow = (tempId: string, direction: 'up' | 'down') => {
-    setRows((prev) => {
-      const idx = prev.findIndex((r) => r.tempId === tempId);
-      if (idx === -1) return prev;
-      const newRows = [...prev];
-      if (direction === 'up' && idx > 0) {
-        [newRows[idx - 1], newRows[idx]] = [newRows[idx], newRows[idx - 1]];
-      } else if (direction === 'down' && idx < newRows.length - 1) {
-        [newRows[idx], newRows[idx + 1]] = [newRows[idx + 1], newRows[idx]];
-      }
-      return newRows;
-    });
   };
 
   const handleDeleteRow = async (row: EditableProductRow) => {
@@ -223,14 +193,6 @@ export default function ProductManagementPage({ onBack, onRefreshApp, onView }: 
       setRows((prev) => prev.filter((r) => r.tempId !== row.tempId));
     }
   };
-
-  const totalValue = useMemo(() => {
-    return rows.reduce((sum, r) => sum + (Number(r.price) || 0), 0);
-  }, [rows]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [search]);
 
   const handleDownloadTemplate = async () => {
     try {
@@ -252,7 +214,6 @@ export default function ProductManagementPage({ onBack, onRefreshApp, onView }: 
       const response = await uploadProductsExcel(file);
       setUploadMessage(response.message || 'Products imported successfully.');
       await loadData();
-      setCurrentPage(1);
     } catch (err: any) {
       alert('Failed to import products: ' + (err.response?.data?.message || err.message || 'Unknown error'));
     } finally {
@@ -262,18 +223,185 @@ export default function ProductManagementPage({ onBack, onRefreshApp, onView }: 
     }
   };
 
+  const totalValue = useMemo(() => {
+    return rows.reduce((sum, r) => sum + (Number(r.price) || 0), 0);
+  }, [rows]);
+
+  const columns: ColumnDef<EditableProductRow>[] = useMemo(
+    () => [
+      {
+        key: 'code',
+        label: 'Code',
+        type: 'text',
+        getValue: r => r.code,
+        render: (row) => (
+          <input
+            type="text"
+            value={row.code}
+            onChange={(e) => handleFieldChange(row.tempId, 'code', e.target.value)}
+            placeholder="Code"
+            style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+          />
+        )
+      },
+      {
+        key: 'name',
+        label: 'Product Name',
+        type: 'text',
+        getValue: r => r.name,
+        render: (row) => (
+          <input
+            type="text"
+            value={row.name}
+            onChange={(e) => handleFieldChange(row.tempId, 'name', e.target.value)}
+            placeholder="Name"
+            style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+          />
+        )
+      },
+      {
+        key: 'uom',
+        label: 'UOM',
+        type: 'text',
+        getValue: r => r.uom,
+        render: (row) => (
+          <input
+            type="text"
+            value={row.uom}
+            onChange={(e) => handleFieldChange(row.tempId, 'uom', e.target.value)}
+            placeholder="UOM"
+            style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+          />
+        )
+      },
+      {
+        key: 'description',
+        label: 'Description',
+        type: 'text',
+        getValue: r => r.description,
+        render: (row) => (
+          <input
+            type="text"
+            value={row.description}
+            onChange={(e) => handleFieldChange(row.tempId, 'description', e.target.value)}
+            placeholder="Description"
+            style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+          />
+        )
+      },
+      {
+        key: 'imagePath',
+        label: 'Image',
+        type: 'custom',
+        align: 'center',
+        render: (row) => (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+            {row.imagePreviewUrl ? (
+              <img
+                src={row.imagePreviewUrl}
+                alt="Product"
+                style={{ width: '38px', height: '38px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+              />
+            ) : (
+              <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>No Image</span>
+            )}
+            <label className="btn-secondary small" style={{ fontSize: '0.65rem', color: '#0f172a', padding: '2px 6px', cursor: 'pointer', margin: 0 }}>
+              Upload
+              <input
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) {
+                    handleImageUpload(row.tempId, e.target.files[0]);
+                  }
+                }}
+              />
+            </label>
+          </div>
+        )
+      },
+      {
+        key: 'price',
+        label: 'Price',
+        type: 'currency',
+        getValue: r => r.price,
+        format: v => formatAmount(Number(v) || 0),
+        render: (row) => (
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            value={row.price}
+            onChange={(e) => handleFieldChange(row.tempId, 'price', parseFloat(e.target.value) || 0)}
+            style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', textAlign: 'right' }}
+          />
+        )
+      }
+    ],
+    []
+  );
+
+  const statsSummary = (
+    <div style={{ display: 'flex', gap: '16px', marginBottom: '8px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+        <button type="button" className="btn-secondary" onClick={handleDownloadTemplate}>
+          ⬇ Download Template
+        </button>
+        <button type="button" className="btn-secondary" onClick={() => fileInputRef.current?.click()}>
+          ⬆ Upload Excel
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".xlsx,.xls"
+          style={{ display: 'none' }}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+              handleFileUpload(file);
+            }
+          }}
+        />
+      </div>
+
+      <div style={{ display: 'flex', gap: '16px', fontSize: '0.9rem', fontWeight: 600 }}>
+        <span style={{ background: '#f3f4f6', padding: '6px 14px', borderRadius: '20px', color: '#374151' }}>
+          Total Products: <strong>{rows.length}</strong>
+        </span>
+        <span style={{ background: '#ecfdf5', padding: '6px 14px', borderRadius: '20px', color: '#065f46' }}>
+          Total Value: <strong>{formatAmount(totalValue)}</strong>
+        </span>
+      </div>
+    </div>
+  );
+
+  const renderActions = (row: EditableProductRow) => (
+    <ActionMenu
+      items={[
+        { label: 'View', icon: '👁️', onClick: () => onView?.(row) },
+        {
+          label: row.isSaving ? 'Saving...' : row.isDirty || row.isNew ? 'Save' : 'Saved',
+          icon: '💾',
+          onClick: () => handleSaveRow(row),
+          variant: row.isDirty || row.isNew ? 'success' : 'normal',
+          disabled: row.isSaving || (!row.isDirty && !row.isNew)
+        },
+        { label: 'Delete', icon: '🗑️', onClick: () => handleDeleteRow(row), variant: 'danger' }
+      ]}
+    />
+  );
+
   return (
     <div className="page-section">
       <div className="section-header">
         <div>
           <h2>Products Management</h2>
-          <p>Manage products</p>
+          <p>Manage product catalog and prices</p>
         </div>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <button onClick={handleAddLine} className="btn-primary">
-            + Add Product
-          </button>
-        </div>
+        <button onClick={handleAddLine} className="btn-primary-lg">
+          + Add Product
+        </button>
       </div>
 
       {error && (
@@ -283,7 +411,7 @@ export default function ProductManagementPage({ onBack, onRefreshApp, onView }: 
             color: '#991b1b',
             padding: '16px',
             borderRadius: '8px',
-            marginBottom: '24px',
+            marginBottom: '16px',
             border: '1px solid #fecaca'
           }}
         >
@@ -304,44 +432,6 @@ export default function ProductManagementPage({ onBack, onRefreshApp, onView }: 
         </div>
       )}
 
-      <div className="table-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by Code, Name, Description, ID..."
-            className="search-input"
-            style={{ width: '320px', padding: '8px 12px', borderRadius: '8px', border: '1px solid #d1d5db' }}
-          />
-          <button type="button" className="btn-secondary" onClick={handleDownloadTemplate}>
-            ⬇ Download Template
-          </button>
-          <button type="button" className="btn-secondary" onClick={() => fileInputRef.current?.click()}>
-            ⬆ Upload Excel
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".xlsx,.xls"
-            style={{ display: 'none' }}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) {
-                handleFileUpload(file);
-              }
-            }}
-          />
-        </div>
-        <div style={{ display: 'flex', gap: '16px', fontSize: '0.9rem', fontWeight: 600 }}>
-          <span style={{ background: '#f3f4f6', padding: '6px 14px', borderRadius: '20px', color: '#374151' }}>
-            Total Products: <strong>{totalProducts}</strong>
-          </span>
-          <span style={{ background: '#ecfdf5', padding: '6px 14px', borderRadius: '20px', color: '#065f46' }}>
-            Total Value: <strong>{formatAmount(totalValue)}</strong>
-          </span>
-        </div>
-      </div>
       {uploadMessage && (
         <div style={{ marginBottom: '16px', padding: '12px 16px', borderRadius: '8px', background: '#f0fdf4', color: '#064e3b' }}>
           {uploadMessage}
@@ -351,201 +441,16 @@ export default function ProductManagementPage({ onBack, onRefreshApp, onView }: 
       {isLoading ? (
         <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>Loading products…</div>
       ) : (
-        <div className="table-card" style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ background: '#1e293b', color: '#f8fafc' }}>
-                <th style={{ padding: '12px 10px', textAlign: 'left', width: '120px' }}>Code</th>
-                <th style={{ padding: '12px 10px', textAlign: 'left', minWidth: '200px' }}>Name</th>
-                <th style={{ padding: '12px 10px', textAlign: 'left', minWidth: '200px' }}>Description</th>
-                <th style={{ padding: '12px 10px', textAlign: 'left', width: '90px' }}>UOM</th>
-                <th style={{ padding: '12px 10px', textAlign: 'center', width: '110px' }}>Image</th>
-                <th style={{ padding: '12px 10px', textAlign: 'right', width: '120px' }}>Price</th>
-                <th style={{ padding: '12px 10px', textAlign: 'center', width: '195px' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.length === 0 ? (
-                <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>
-                    No products found. Click <strong>"+ Add Product"</strong> to add your first product.
-                  </td>
-                </tr>
-              ) : (
-                rows.map((row) => (
-                  <tr
-                    key={row.tempId}
-                    style={{
-                      borderBottom: '1px solid #e2e8f0',
-                      background: row.isDirty ? '#fffbe6' : 'white',
-                      transition: 'background 0.2s'
-                    }}
-                  >
-                    <td style={{ padding: '8px 10px' }}>
-                      <input
-                        type="text"
-                        value={row.code}
-                        onChange={(e) => handleFieldChange(row.tempId, 'code', e.target.value)}
-                        placeholder="Code"
-                        style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-                      />
-                    </td>
-
-                    <td style={{ padding: '8px 10px' }}>
-                      <input
-                        type="text"
-                        value={row.name}
-                        onChange={(e) => handleFieldChange(row.tempId, 'name', e.target.value)}
-                        placeholder="Name"
-                        style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-                      />
-                    </td>
-
-                    <td style={{ padding: '8px 10px' }}>
-                      <input
-                        type="text"
-                        value={row.description}
-                        onChange={(e) => handleFieldChange(row.tempId, 'description', e.target.value)}
-                        placeholder="Description"
-                        style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-                      />
-                    </td>
-
-                    <td style={{ padding: '8px 10px' }}>
-                      <input
-                        type="text"
-                        value={row.uom}
-                        onChange={(e) => handleFieldChange(row.tempId, 'uom', e.target.value)}
-                        placeholder="UOM"
-                        style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-                      />
-                    </td>
-
-                    <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                        {row.imagePreviewUrl ? (
-                          <img
-                            src={row.imagePreviewUrl}
-                            alt="Product"
-                            style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-                          />
-                        ) : (
-                          <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>No Image</span>
-                        )}
-                        <label className="btn-secondary small" style={{ fontSize: '0.65rem', color: 'black', padding: '2px 6px', cursor: 'pointer', margin: 0 }}>
-                          Upload
-                          <input
-                            type="file"
-                            accept="image/*"
-                            style={{ display: 'none' }}
-                            onChange={(e) => {
-                              if (e.target.files && e.target.files[0]) {
-                                handleImageUpload(row.tempId, e.target.files[0]);
-                              }
-                            }}
-                          />
-                        </label>
-                      </div>
-                    </td>
-
-                    <td style={{ padding: '8px 10px' }}>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={row.price}
-                        onChange={(e) => handleFieldChange(row.tempId, 'price', parseFloat(e.target.value) || 0)}
-                        style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', textAlign: 'right' }}
-                      />
-                    </td>
-
-                    <td style={{ padding: '8px 6px', textAlign: 'center' }}>
-                      <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                        {/* Up / Down */}
-                        <button
-                          type="button"
-                          title="Move Up"
-                          onClick={() => handleMoveRow(row.tempId, 'up')}
-                          style={{ padding: '4px 7px', fontSize: '0.75rem', background: '#081d31', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', lineHeight: 1 }}
-                        >
-                          ▲
-                        </button>
-                        <button
-                          type="button"
-                          title="Move Down"
-                          onClick={() => handleMoveRow(row.tempId, 'down')}
-                          style={{ padding: '4px 7px', fontSize: '0.75rem', background: '#081d31', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', lineHeight: 1 }}
-                        >
-                          ▼
-                        </button>
-                        {/* View */}
-                        <button
-                          type="button"
-                          className="btn-secondary small"
-                          onClick={() => onView?.(row)}
-                          style={{ padding: '4px 8px', fontSize: '0.75rem', background: '#081d31' }}
-                        >
-                          View
-                        </button>
-                        {/* Save */}
-                        <button
-                          type="button"
-                          className="btn-primary small"
-                          onClick={() => handleSaveRow(row)}
-                          disabled={row.isSaving || (!row.isDirty && !row.isNew)}
-                          style={{
-                            padding: '4px 8px',
-                            fontSize: '0.75rem',
-                            opacity: !row.isDirty && !row.isNew ? 0.6 : 1
-                          }}
-                        >
-                          {row.isSaving ? '...' : row.isDirty || row.isNew ? 'Save' : 'Saved'}
-                        </button>
-                        {/* Delete */}
-                        <button
-                          type="button"
-                          className="btn-danger small"
-                          onClick={() => handleDeleteRow(row)}
-                          style={{ padding: '4px 8px', fontSize: '0.75rem' }}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-      {totalProducts > 0 && (
-        <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: '#475569' }}>
-            <label style={{ fontWeight: 600 }}>Items per page:</label>
-            <select
-              value={itemsPerPage}
-              onChange={(e) => {
-                setItemsPerPage(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-              style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: 'white', fontWeight: 600, cursor: 'pointer' }}
-            >
-              <option value={10}>10</option>
-              <option value={12}>12</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-            </select>
-          </div>
-          <Pagination
-            currentPage={currentPage}
-            totalPages={Math.max(1, Math.ceil(totalProducts / itemsPerPage))}
-            itemsPerPage={itemsPerPage}
-            totalItems={totalProducts}
-            onPageChange={setCurrentPage}
-          />
-        </div>
+        <DataGrid
+          columns={columns}
+          data={rows}
+          keyField="tempId"
+          renderActions={renderActions}
+          statsSummary={statsSummary}
+          searchPlaceholder="Search products by code, name, UOM, or description..."
+          emptyMessage="No products found. Click '+ Add Product' to create one."
+          defaultPageSize={12}
+        />
       )}
     </div>
   );

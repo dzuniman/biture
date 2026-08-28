@@ -1,9 +1,8 @@
-import { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import type { JobCard } from '../types';
-import SearchBox from './SearchBox';
-import Pagination from './Pagination';
-import TableHeader from './TableHeader';
-import useTableSort from '../hooks/useTableSort';
+import DataGrid, { ColumnDef } from './DataGrid';
+import ActionMenu from './ActionMenu';
+
 interface Props {
   jobCards: JobCard[];
   onView: (jobCard: JobCard) => void;
@@ -12,8 +11,6 @@ interface Props {
   onCreateNew: () => void;
 }
 
-const ITEMS_PER_PAGE = 10;
-
 export default function JobCardListPage({
   jobCards,
   onView,
@@ -21,34 +18,36 @@ export default function JobCardListPage({
   onDelete,
   onCreateNew
 }: Props) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-
-  const filteredJobCards = useMemo(() => {
-    const term = searchTerm.toLowerCase();
-    if (!term) return jobCards;
-
-    return jobCards.filter(
-      (jc) =>
-        (jc.jobCardNumber?.toLowerCase() || '').includes(term) ||
-        (jc.quoteNumber?.toLowerCase() || '').includes(term) ||
-        (jc.reference?.toLowerCase() || '').includes(term) ||
-        (jc.description?.toLowerCase() || '').includes(term) ||
-        (jc.client?.name?.toLowerCase() || '').includes(term)
-    );
-  }, [jobCards, searchTerm]);
-
-  const { sortedData, sortKey, sortDirection, setSort } = useTableSort(filteredJobCards);
-  const totalPages = Math.ceil(sortedData.length / ITEMS_PER_PAGE);
-  const paginatedJobCards = sortedData.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+  const columns: ColumnDef<JobCard>[] = useMemo(
+    () => [
+      { key: 'jobCardNumber', label: 'Job Card Number', type: 'text' },
+      { key: 'quoteNumber', label: 'Quote Number', type: 'text' },
+      { key: 'reference', label: 'Reference', type: 'text', getValue: r => r.reference || '—' },
+      { key: 'description', label: 'Description', type: 'text', getValue: r => r.description || '—' },
+      { key: 'client', label: 'Client', type: 'text', getValue: r => r.client?.name || '—' },
+      { key: 'createdAt', label: 'Created', type: 'date', format: v => (v ? new Date(v).toLocaleDateString() : '—') }
+    ],
+    []
   );
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  const statsSummary = (
+    <div className="stats-row" style={{ display: 'flex', gap: '16px', marginBottom: '8px' }}>
+      <div className="stat-box" style={{ background: 'white', padding: '16px', borderRadius: '12px', flex: 1, border: '1px solid #e2e8f0' }}>
+        <span className="stat-label" style={{ fontSize: '0.82rem', color: '#64748b' }}>Total Job Cards</span>
+        <div className="stat-value" style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a' }}>{jobCards.length}</div>
+      </div>
+    </div>
+  );
+
+  const renderActions = (jc: JobCard) => (
+    <ActionMenu
+      items={[
+        { label: 'View', icon: '👁️', onClick: () => onView(jc) },
+        { label: 'Edit', icon: '✏️', onClick: () => onEdit(jc) },
+        { label: 'Delete', icon: '🗑️', onClick: () => onDelete(jc.id), variant: 'danger' }
+      ]}
+    />
+  );
 
   return (
     <div className="page-section">
@@ -62,83 +61,14 @@ export default function JobCardListPage({
         </button>
       </div>
 
-      <div className="stats-row">
-        <div className="stat-box">
-          <span className="stat-label">Total Job Cards</span>
-          <span className="stat-value">{filteredJobCards.length}</span>
-        </div>
-      </div>
-
-      <SearchBox
-        placeholder="Search job cards by number, quote, reference, description, or client..."
-        value={searchTerm}
-        onChange={setSearchTerm}
+      <DataGrid
+        columns={columns}
+        data={jobCards}
+        renderActions={renderActions}
+        statsSummary={statsSummary}
+        searchPlaceholder="Search job cards by number, quote, reference, description, or client..."
+        emptyMessage="No job cards found. Click '+ New Job Card' to get started."
       />
-
-      <div className="table-card">
-        <table>
-          <thead>
-            <tr>
-              <TableHeader columnKey="jobCardNumber" label="Job Card Number" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-              <TableHeader columnKey="quoteNumber" label="Quote Number" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-              <TableHeader columnKey="reference" label="Reference" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-              <TableHeader columnKey="description" label="Description" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-              <TableHeader columnKey="client" label="Client" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-              <TableHeader columnKey="createdAt" label="Created" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-              <th className="actions-column">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedJobCards.length === 0 ? (
-              <tr style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}>
-                <td colSpan={7} className="empty-row" style={{ textAlign: 'center' }}>
-                  {searchTerm ? 'No job cards match your search.' : 'No job cards found. Click "+ New Job Card" to get started.'}
-                </td>
-              </tr>
-            ) : (
-              paginatedJobCards.map((jc) => (
-                <tr
-                  key={jc.id}
-                  style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}
-                  className="table-row-dark-hover"
-                >
-                  <td>{jc.jobCardNumber}</td>
-                  <td>{jc.quoteNumber}</td>
-                  <td>{jc.reference || '—'}</td>
-                  <td>{jc.description || '—'}</td>
-                  <td>{jc.client?.name || '—'}</td>
-                  <td>
-                    {jc.createdAt ? new Date(jc.createdAt).toLocaleDateString() : '—'}
-                  </td>
-                  <td style={{ padding: '8px 6px', textAlign: 'center' }}>
-                    <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                      <button type="button" onClick={() => onView(jc)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'black' }}>
-                        View
-                      </button>
-                      <button type="button" onClick={() => onEdit(jc)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'green' }}>
-                        Edit
-                      </button>
-                      <button type="button" onClick={() => onDelete(jc.id)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'darkred' }}>
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {filteredJobCards.length > 0 && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-          itemsPerPage={ITEMS_PER_PAGE}
-          totalItems={filteredJobCards.length}
-        />
-      )}
     </div>
   );
 }

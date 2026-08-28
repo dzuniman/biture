@@ -1,9 +1,8 @@
-import { useMemo, useState, type FormEvent } from 'react';
+import React, { useMemo, useState, type FormEvent } from 'react';
 import { createUser, deleteUser, updateUser } from '../api';
 import type { User, UserCreateRequest, UserUpdateRequest } from '../types';
-import SearchBox from './SearchBox';
-import TableHeader from './TableHeader';
-import useTableSort from '../hooks/useTableSort';
+import DataGrid, { ColumnDef } from './DataGrid';
+import ActionMenu from './ActionMenu';
 
 interface Props {
   users: User[];
@@ -17,20 +16,8 @@ export default function UserManagementPage({ users, onBack, onRefresh }: Props) 
   const [username, setUsername] = useState('');
   const [role, setRole] = useState('User');
   const [password, setPassword] = useState('');
-  const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-
-  const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    if (!term) return users;
-    return users.filter((item) =>
-      (item.username?.toLowerCase() || '').includes(term) ||
-      (item.role?.toLowerCase() || '').includes(term)
-    );
-  }, [users, search]);
-
-  const { sortedData, sortKey, sortDirection, setSort } = useTableSort(filtered);
 
   const startCreate = () => {
     setMode('manage');
@@ -106,6 +93,23 @@ export default function UserManagementPage({ users, onBack, onRefresh }: Props) 
     }
   };
 
+  const columns: ColumnDef<User>[] = useMemo(
+    () => [
+      { key: 'username', label: 'Username', type: 'text' },
+      { key: 'role', label: 'Role', type: 'select', selectOptions: ['Admin', 'Manager', 'User'] }
+    ],
+    []
+  );
+
+  const renderActions = (user: User) => (
+    <ActionMenu
+      items={[
+        { label: 'Edit', icon: '✏️', onClick: () => startEdit(user) },
+        { label: 'Delete', icon: '🗑️', onClick: () => handleDelete(user.id), variant: 'danger' }
+      ]}
+    />
+  );
+
   return (
     <div className="page-section">
       <div className="section-header">
@@ -122,89 +126,88 @@ export default function UserManagementPage({ users, onBack, onRefresh }: Props) 
         </div>
       </div>
 
+      {error && (
+        <div
+          style={{
+            background: '#fee2e2',
+            color: '#991b1b',
+            padding: '16px',
+            borderRadius: '8px',
+            marginBottom: '16px',
+            border: '1px solid #fecaca'
+          }}
+        >
+          {error}
+          <button
+            onClick={() => setError(null)}
+            style={{
+              marginLeft: '12px',
+              background: 'none',
+              border: 'none',
+              color: '#991b1b',
+              cursor: 'pointer',
+              fontWeight: 'bold'
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {mode === 'list' ? (
-        <>
-          <div className="table-toolbar">
-            <SearchBox
-              placeholder="Search users..."
-              value={search}
-              onChange={setSearch}
-            />
-          </div>
-          <div className="table-card">
-            <table>
-              <thead>
-                <tr>
-                  <TableHeader columnKey="username" label="Username" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-                  <TableHeader columnKey="role" label="Role" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-                  <th className="actions-column">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedData.length === 0 ? (
-                  <tr style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}>
-                    <td colSpan={3} className="empty-row">
-                      No users found. Click "+ New User" to get started.
-                    </td>
-                  </tr>
-                ) : (
-                  sortedData.map((user) => (
-                    <tr key={user.id} style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }} className="table-row-dark-hover">
-                      <td>{user.username}</td>
-                      <td>{user.role}</td>
-                      <td style={{ padding: '8px 6px', textAlign: 'center' }}>
-                        <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                          <button onClick={() => startEdit(user)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'green' }}>
-                            Edit
-                          </button>
-                          <button onClick={() => handleDelete(user.id)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'darkred' }}>
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </>
+        <DataGrid
+          columns={columns}
+          data={users}
+          renderActions={renderActions}
+          searchPlaceholder="Search users..."
+          emptyMessage="No users found. Click '+ New User' to create one."
+        />
       ) : (
-        <div className="management-container">
-          <form onSubmit={handleSubmit} className="simple-form">
-            <label>
-              Username
+        <div className="form-card" style={{ background: 'white', padding: '24px', borderRadius: '16px', border: '1px solid #e2e8f0', maxWidth: '500px' }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="form-group">
+              <label style={{ display: 'block', fontWeight: 600, marginBottom: '6px' }}>Username</label>
               <input
                 type="text"
                 value={username}
-                onChange={(event) => setUsername(event.target.value)}
-                placeholder="Enter username"
-                autoFocus
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
               />
-            </label>
-            <label>
-              Role
-              <select value={role} onChange={(event) => setRole(event.target.value)}>
+            </div>
+
+            <div className="form-group">
+              <label style={{ display: 'block', fontWeight: 600, marginBottom: '6px' }}>Role</label>
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+              >
                 <option value="Admin">Admin</option>
+                <option value="Manager">Manager</option>
                 <option value="User">User</option>
               </select>
-            </label>
-            <label>
-              Password
+            </div>
+
+            <div className="form-group">
+              <label style={{ display: 'block', fontWeight: 600, marginBottom: '6px' }}>
+                {current ? 'New Password (leave blank to keep current)' : 'Password'}
+              </label>
               <input
                 type="password"
                 value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder={current ? 'Leave blank to keep current password' : 'Enter password'}
+                onChange={(e) => setPassword(e.target.value)}
+                required={!current}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
               />
-            </label>
-            {error && <div className="form-error">{error}</div>}
-            <div className="form-actions">
-              <button type="submit" className="btn-primary" disabled={isSaving}>
-                {isSaving ? 'Saving…' : current ? 'Update User' : 'Create User'}
-              </button>
-              <button type="button" className="btn-secondary" onClick={cancel} disabled={isSaving}>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '12px' }}>
+              <button type="button" onClick={cancel} className="btn-secondary" disabled={isSaving}>
                 Cancel
+              </button>
+              <button type="submit" className="btn-primary" disabled={isSaving}>
+                {isSaving ? 'Saving...' : current ? 'Update User' : 'Create User'}
               </button>
             </div>
           </form>

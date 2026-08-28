@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   color-scheme: dark;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   background: #071625;
@@ -49,10 +49,12 @@ body {
   grid-template-columns: 1fr auto;
   align-items: center;
   gap: 24px;
-  padding: 22px 28px;
-  border-radius: 24px;
-  box-shadow: var(--shadow-xl);
-  margin-bottom: 28px;
+  padding: 16px 24px;
+  border-radius: 16px;
+  background: #081d31;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25);
+  margin-bottom: 24px;
   color: var(--white);
 }
 
@@ -66,58 +68,60 @@ body {
 .brand-block {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 14px;
 }
 
 .brand-logo {
-  width: 150px;
-  height: 100px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  padding: 0px;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  width: 110px;
+  height: 60px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 4px;
   object-fit: contain;
   display: block;
 }
 
 .brand-title {
-  font-size: 1.45rem;
+  font-size: 1.35rem;
   font-weight: 800;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
+  color: #ffffff;
 }
 
 .brand-tagline {
-  font-size: 0.95rem;
-  color: var(--text-muted);
+  font-size: 0.85rem;
+  color: #94a3b8;
 }
 
 .site-toolbar {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 12px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .nav-button,
 .dropdown-toggle {
   background: rgba(255, 255, 255, 0.08);
-  color: var(--white);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  padding: 10px 18px;
-  border-radius: 999px;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  padding: 8px 16px;
+  border-radius: 8px;
   cursor: pointer;
+  font-size: 0.88rem;
   font-weight: 600;
-  transition: all 180ms ease;
+  transition: all 150ms ease;
 }
 
 .nav-button:hover,
 .dropdown-toggle:hover,
 .nav-button.active,
 .dropdown-toggle.active {
-  background: rgba(255, 255, 255, 0.16);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: #0284c7;
+  border-color: #38bdf8;
+  color: #ffffff;
 }
 
 .dropdown {
@@ -1090,108 +1094,124 @@ textarea {
   }
 }
 
+/* Form Styling & Clean Card Alignment */
+.card,
+.table-card,
+.form-card {
+  background: #ffffff;
+  border: 1.5px solid #000000;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  color: #0f172a;
+}
+
 label {
-  display: grid;
-  gap: 10px;
-  font-weight: 700;
-  color: #1f2937;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #1e293b;
 }
 
 input,
 select,
-textarea {
+textarea,
+input[type='text'],
+input[type='email'],
+input[type='number'],
+input[type='date'],
+input[type='password'],
+input[type='search'] {
   width: 100%;
-  padding: 16px 18px;
-  border: 1px solid #dbe1ea;
-  border-radius: 16px;
-  background: #f8fafc;
-  font-size: 1rem;
+  padding: 8px 12px;
+  border: 1.5px solid #000000 !important;
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 0.88rem;
   color: #0f172a;
+  outline: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 
 input:focus,
 select:focus,
 textarea:focus {
-  border-color: #4338ca;
+  border-color: #0284c7 !important;
   outline: none;
-  box-shadow: 0 0 0 4px rgba(67, 56, 202, 0.12);
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2) !important;
 }
 
 textarea {
-  min-height: 120px;
+  min-height: 90px;
+  resize: vertical;
 }
 
-button {
-  width: fit-content;
-  padding: 14px 24px;
-  background: #4338ca;
-  border: none;
-  border-radius: 16px;
-  color: white;
-  font-weight: 700;
+/* Standardized Button Sizes & Styles */
+button,
+.btn-primary,
+.btn-secondary {
+  padding: 8px 16px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  border-radius: 8px;
   cursor: pointer;
-  transition: transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
+  transition: all 150ms ease;
 }
 
-button:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 14px 30px rgba(67, 56, 202, 0.18);
+.btn-primary,
+.btn-primary-lg {
+  background: #16a34a;
+  color: #ffffff;
+  border: none;
+  padding: 9px 18px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  border-radius: 8px;
 }
 
-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.btn-primary:hover,
+.btn-primary-lg:hover {
+  background: #15803d;
 }
 
+.btn-secondary,
 button.secondary {
+  background: #ffffff;
+  color: #0f172a;
+  border: 1.5px solid #000000;
+  padding: 8px 16px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  border-radius: 8px;
+}
+
+.btn-secondary:hover,
+button.secondary:hover {
   background: #f8fafc;
-  color: #0f172a;
-  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.08);
 }
 
-button.danger {
-  background: #ef4444;
+button.danger,
+.btn-danger {
+  background: #dc2626;
+  color: #ffffff;
+  border: none;
 }
 
-button.small {
-  padding: 10px 16px;
+button.danger:hover,
+.btn-danger:hover {
+  background: #b91c1c;
 }
 
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 18px;
-  margin-bottom: 24px;
+button.small,
+.btn-secondary.small {
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 6px;
 }
 
-.summary-card {
-  border: 1px solid rgba(67, 56, 202, 0.12);
-  background: linear-gradient(180deg, #ffffff 0%, #eef2ff 100%);
-  color: #0f172a;
-  border-radius: 24px;
-  padding: 28px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  min-height: 130px;
-}
-
-.summary-card span {
-  color: #475569;
-  font-size: 0.95rem;
-}
-
-.summary-card strong {
-  font-size: 2rem;
-  color: #0f172a;
-}
-
-.summary-card.highlight {
-  background: linear-gradient(180deg, #4338ca 0%, #6366f1 100%);
-  color: white;
-  border-color: transparent;
-}
-
+/* Page Section Headers & Subheadings */
 .section-header {
   display: flex;
   flex-wrap: wrap;
@@ -1203,12 +1223,16 @@ button.small {
 
 .section-header h2 {
   margin: 0;
-  font-size: 1.85rem;
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #ffffff;
 }
 
 .section-header p {
-  margin: 6px 0 0;
-  color: #475569;
+  margin: 4px 0 0;
+  font-size: 0.88rem;
+  color: #94a3b8;
 }
 
 .refresh-button {

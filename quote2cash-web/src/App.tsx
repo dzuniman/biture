@@ -1044,15 +1044,15 @@ function App() {
               type="button"
               className={`nav-item ${section === 'reports' ? 'active' : ''}`}
               onClick={() => setSection('reports')}
-            /*style={{
-              background: section === 'reports' ? '#38bdf8' : 'transparent',
-              color: section === 'reports' ? '#0f172a' : '#f8fafc',
-              fontWeight: 700,
-            border: 'none',
-            padding: '8px 16px',
-            borderRadius: '8px',
-            cursor: 'pointer'
-            }}*/
+              style={{
+                background: section === 'reports' ? '#237735ff' : '#237735ff',
+                color: section === 'reports' ? '#ffffffff' : '#f8fafc',
+                fontWeight: 700,
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                cursor: 'pointer'
+              }}
             >
               📊 Reports
             </button>

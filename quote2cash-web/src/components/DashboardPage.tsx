@@ -106,8 +106,8 @@ export default function DashboardPage({
               borderRadius: '12px',
               border: '2px solid #38bdf8',
               background: '#0f172a',
-              color: '#38bdf8',
-              fontWeight: 800,
+              color: 'white',
+              fontWeight: 300,
               fontSize: '0.95rem',
               cursor: 'pointer',
               boxShadow: '0 4px 12px rgba(56,189,248,0.15)'

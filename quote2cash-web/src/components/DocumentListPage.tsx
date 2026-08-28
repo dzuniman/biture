@@ -1,9 +1,7 @@
-import { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import type { DocumentFolder, DocumentResponse } from '../types';
-import SearchBox from './SearchBox';
-import Pagination from './Pagination';
-import TableHeader from './TableHeader';
-import useTableSort from '../hooks/useTableSort';
+import DataGrid, { ColumnDef } from './DataGrid';
+import ActionMenu from './ActionMenu';
 
 interface Props {
   documents: DocumentResponse[];
@@ -17,10 +15,8 @@ interface Props {
   onDelete: (documentId: string) => void;
   onCreateNew: () => void;
   onDownload: (document: DocumentResponse) => void;
-  onBack: () => void; // Added onBack prop
+  onBack: () => void;
 }
-
-const ITEMS_PER_PAGE = 10;
 
 export default function DocumentListPage({
   documents,
@@ -34,129 +30,227 @@ export default function DocumentListPage({
   onDelete,
   onCreateNew,
   onDownload,
-  onBack // Destructure onBack
+  onBack
 }: Props) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
+  // Build breadcrumb folder trail
+  const folderTrail = useMemo(() => {
+    const trail: DocumentFolder[] = [];
+    let curr = currentFolderId ? folders.find(f => f.id === currentFolderId) : null;
+    while (curr) {
+      trail.unshift(curr);
+      curr = curr.parentId ? folders.find(f => f.id === curr!.parentId) : null;
+    }
+    return trail;
+  }, [currentFolderId, folders]);
 
-  const visibleFolders = folders.filter(folder => (folder.parentId ?? null) === currentFolderId);
-  const filteredDocuments = useMemo(() => {
-    const term = searchTerm.toLowerCase();
-    const inFolder = documents.filter(doc => (doc.folderId ?? null) === currentFolderId);
-    if (!term) return inFolder;
+  // Direct child subfolders of current folder
+  const visibleFolders = useMemo(() => {
+    return folders.filter(f => (f.parentId ?? null) === currentFolderId);
+  }, [folders, currentFolderId]);
 
-    return inFolder.filter(
-      (doc) =>
-        (doc.documentName?.toLowerCase() || '').includes(term) ||
-        (doc.description?.toLowerCase() || '').includes(term)
-    );
-  }, [documents, searchTerm, currentFolderId]);
+  // Documents in current folder
+  const currentDocuments = useMemo(() => {
+    return documents.filter(d => (d.folderId ?? null) === currentFolderId);
+  }, [documents, currentFolderId]);
 
-  const { sortedData, sortKey, sortDirection, setSort } = useTableSort(filteredDocuments);
-  const totalPages = Math.ceil(sortedData.length / ITEMS_PER_PAGE);
-  const paginatedDocuments = sortedData.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+  const columns: ColumnDef<DocumentResponse>[] = useMemo(
+    () => [
+      {
+        key: 'documentName',
+        label: 'Document Name',
+        type: 'text',
+        render: (doc) => (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
+            <span>📄</span>
+            <span>{doc.documentName}</span>
+          </div>
+        )
+      },
+      { key: 'description', label: 'Description', type: 'text', getValue: r => r.description || '—' },
+      {
+        key: 'uploadedAt',
+        label: 'Uploaded At',
+        type: 'date',
+        getValue: r => (r as any).uploadedAt,
+        format: v => (v ? new Date(v).toLocaleDateString() : '—')
+      }
+    ],
+    []
   );
 
-  // pagination handled via sortedData above
+  const renderActions = (doc: DocumentResponse) => (
+    <ActionMenu
+      items={[
+        { label: 'Download', icon: '⬇️', onClick: () => onDownload(doc) },
+        { label: 'Edit', icon: '✏️', onClick: () => onEdit(doc) },
+        { label: 'Delete', icon: '🗑️', onClick: () => onDelete(doc.id), variant: 'danger' }
+      ]}
+    />
+  );
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  const parentFolder = currentFolderId ? folders.find(f => f.id === currentFolderId)?.parentId ?? null : null;
 
   return (
     <div className="page-section">
       <div className="section-header">
         <div>
           <h2>Documents</h2>
-          <p>Manage your business documents and templates.</p>
+          <p>Organize company files.</p>
         </div>
-        <div style={{ display: 'flex', gap: '12px' }}> {/* Added div for buttons */}
-          <button onClick={onCreateNew} className="btn-primary-lg">
-            + New Document
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button type="button" onClick={() => onCreateFolder(currentFolderId)} className="btn-secondary">
+            📁 + New Folder
+          </button>
+          <button type="button" onClick={onCreateNew} className="btn-primary-lg">
+            📄 + New Document
           </button>
         </div>
       </div>
 
-      <SearchBox
-        placeholder="Search documents by name or description..."
-        value={searchTerm}
-        onChange={setSearchTerm}
-      />
+      {/* Google Drive Breadcrumb Navigation Bar */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          background: '#ffffff',
+          padding: '10px 16px',
+          borderRadius: '12px',
+          border: '1px solid #e2e8f0',
+          marginBottom: '16px',
+          fontSize: '0.9rem',
+          flexWrap: 'wrap',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+        }}
+      >
+        {currentFolderId && (
+          <button
+            type="button"
+            className="btn-secondary small"
+            onClick={() => onFolderChange(parentFolder)}
+            style={{ padding: '4px 8px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+          >
+            ← Back
+          </button>
+        )}
 
-      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', margin: '16px 0' }}>
-        <button type="button" className="btn-secondary small" onClick={() => onFolderChange(null)}>Root</button>
-        {currentFolderId && <button type="button" className="btn-secondary small" onClick={() => onFolderChange(folders.find(f => f.id === currentFolderId)?.parentId ?? null)}>Up</button>}
-        {visibleFolders.map(folder => (
-          <span key={folder.id} style={{ display: 'inline-flex', gap: '4px', alignItems: 'center' }}>
-            <button type="button" className="btn-secondary small" onClick={() => onFolderChange(folder.id)}>Folder: {folder.name}</button>
-            <button type="button" className="btn-secondary small" title="Rename folder" onClick={() => onEditFolder(folder)}>Edit</button>
-            <button type="button" className="btn-secondary small" title="Delete empty folder" onClick={() => onDeleteFolder(folder)}>Delete</button>
-          </span>
+        <span
+          onClick={() => onFolderChange(null)}
+          style={{
+            cursor: 'pointer',
+            fontWeight: currentFolderId === null ? 700 : 500,
+            color: currentFolderId === null ? '#0284c7' : '#475569',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px'
+          }}
+        >
+          📁 Drive Root
+        </span>
+
+        {folderTrail.map((folder, index) => (
+          <React.Fragment key={folder.id}>
+            <span style={{ color: '#cbd5e1' }}>/</span>
+            <span
+              onClick={() => onFolderChange(folder.id)}
+              style={{
+                cursor: 'pointer',
+                fontWeight: index === folderTrail.length - 1 ? 700 : 500,
+                color: index === folderTrail.length - 1 ? '#0284c7' : '#475569'
+              }}
+            >
+              📁 {folder.name}
+            </span>
+          </React.Fragment>
         ))}
-        <button type="button" className="btn-secondary small" onClick={() => onCreateFolder(currentFolderId)}>+ Folder</button>
       </div>
 
-      <div className="table-card">
-        <table>
-          <thead>
-            <tr>
-              <TableHeader columnKey="documentName" label="Document Name" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-              <TableHeader columnKey="description" label="Description" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-              <TableHeader columnKey="uploadedAt" label="Uploaded At" sortKey={sortKey} sortDirection={sortDirection} onSort={setSort} />
-              <th className="actions-column">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedDocuments.length === 0 ? (
-              <tr style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}>
-                <td colSpan={4} className="empty-row" style={{ textAlign: 'center' }}>
-                  {searchTerm ? 'No documents match your search.' : 'No documents found. Click "+ New Document" to add one.'}
-                </td>
-              </tr>
-            ) : (
-              paginatedDocuments.map((document) => (
-                <tr
-                  key={document.id}
-                  style={{ backgroundColor: 'hsl(240, 21%, 18%)', color: '#FFFFFF' }}
-                  className="table-row-dark-hover"
+      {/* Google Drive Subfolder Cards Section */}
+      {visibleFolders.length > 0 && (
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#64748b', marginBottom: '10px' }}>
+            FOLDERS ({visibleFolders.length})
+          </div>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+              gap: '12px'
+            }}
+          >
+            {visibleFolders.map((folder) => {
+              const fileCount = documents.filter(d => d.folderId === folder.id).length;
+              return (
+                <div
+                  key={folder.id}
+                  onClick={() => onFolderChange(folder.id)}
+                  style={{
+                    background: '#ffffff',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '12px',
+                    padding: '14px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    gap: '10px',
+                    transition: 'all 0.15s ease-in-out',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#0284c7')}
+                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}
                 >
-                  <td>{document.documentName}</td>
-                  <td>{document.description}</td>
-                  <td>
-                    {(document as any).uploadedAt ? new Date((document as any).uploadedAt).toLocaleDateString() : '—'}
-                  </td>
-                  <td style={{ padding: '8px 6px', textAlign: 'center' }}>
-                    <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                      <button type="button" onClick={() => onDownload(document)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'black' }}>
-                        Download
-                      </button>
-                      <button type="button" onClick={() => onEdit(document)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'green' }}>
-                        Edit
-                      </button>
-                      <button type="button" onClick={() => onDelete(document.id)} className="btn-secondary small" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'darkred' }}>
-                        Delete
-                      </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '1.6rem' }}>📁</span>
+                    <div style={{ overflow: 'hidden' }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.92rem', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {folder.name}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                        {fileCount} {fileCount === 1 ? 'file' : 'files'}
+                      </div>
                     </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+                  </div>
 
-      {filteredDocuments.length > 0 && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-          itemsPerPage={ITEMS_PER_PAGE}
-          totalItems={filteredDocuments.length}
-        />
+                  <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', borderTop: '1px solid #f1f5f9', paddingTop: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditFolder(folder);
+                      }}
+                      className="btn-secondary small"
+                      style={{ fontSize: '0.7rem', padding: '2px 6px' }}
+                    >
+                      ✏️ Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteFolder(folder);
+                      }}
+                      className="btn-secondary small"
+                      style={{ fontSize: '0.7rem', padding: '2px 6px', color: '#dc2626' }}
+                    >
+                      🗑️ Delete
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       )}
+
+      {/* Main Documents DataGrid */}
+      <DataGrid
+        columns={columns}
+        data={currentDocuments}
+        renderActions={renderActions}
+        searchPlaceholder="Search documents in this folder..."
+        emptyMessage="No documents found in this folder. Click '+ New Document' to add one."
+      />
     </div>
   );
 }

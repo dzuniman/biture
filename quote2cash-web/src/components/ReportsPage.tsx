@@ -531,11 +531,11 @@ export default function ReportsPage({
             {/* Excel-style Column Filters Row */}
             <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
               {visibleColumns.map(col => (
-                <td key={col.key} style={{ padding: '6px 8px' }}>
+                <td key={col.key} style={{ padding: '6px 8px', verticalAlign: 'top' }}>
                   {col.type === 'text' && (
-                    <div style={{ display: 'flex', gap: '4px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <select
-                        style={{ padding: '2px 4px', fontSize: '0.7rem', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                        style={{ width: '100%', padding: '2px 4px', fontSize: '0.7rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#ffffff' }}
                         value={filters[col.key]?.matchType || 'contains'}
                         onChange={(e) => setFilters(prev => ({
                           ...prev,
@@ -554,7 +554,7 @@ export default function ReportsPage({
                           ...prev,
                           [col.key]: { ...prev[col.key], value: e.target.value }
                         }))}
-                        style={{ width: '100%', padding: '4px 6px', fontSize: '0.75rem', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                        style={{ width: '100%', padding: '4px 6px', fontSize: '0.75rem', borderRadius: '4px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }}
                       />
                     </div>
                   )}
@@ -566,7 +566,7 @@ export default function ReportsPage({
                         ...prev,
                         [col.key]: { ...prev[col.key], value: e.target.value }
                       }))}
-                      style={{ width: '100%', padding: '4px 6px', fontSize: '0.75rem', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                      style={{ width: '100%', padding: '4px 6px', fontSize: '0.75rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#ffffff' }}
                     >
                       <option value="">All</option>
                       {(col.selectOptions || []).map(opt => (
@@ -576,7 +576,7 @@ export default function ReportsPage({
                   )}
 
                   {(col.type === 'number' || col.type === 'currency') && (
-                    <div style={{ display: 'flex', gap: '4px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <input
                         type="number"
                         placeholder="Min"
@@ -585,7 +585,7 @@ export default function ReportsPage({
                           ...prev,
                           [col.key]: { ...prev[col.key], value: e.target.value }
                         }))}
-                        style={{ width: '50%', padding: '4px 6px', fontSize: '0.75rem', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                        style={{ width: '100%', padding: '4px 6px', fontSize: '0.75rem', borderRadius: '4px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }}
                       />
                       <input
                         type="number"
@@ -595,13 +595,13 @@ export default function ReportsPage({
                           ...prev,
                           [col.key]: { ...prev[col.key], valueTo: e.target.value }
                         }))}
-                        style={{ width: '50%', padding: '4px 6px', fontSize: '0.75rem', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                        style={{ width: '100%', padding: '4px 6px', fontSize: '0.75rem', borderRadius: '4px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }}
                       />
                     </div>
                   )}
 
                   {col.type === 'date' && (
-                    <div style={{ display: 'flex', gap: '4px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <input
                         type="date"
                         title="From Date"
@@ -610,7 +610,7 @@ export default function ReportsPage({
                           ...prev,
                           [col.key]: { ...prev[col.key], value: e.target.value }
                         }))}
-                        style={{ width: '50%', padding: '4px 2px', fontSize: '0.7rem', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                        style={{ width: '100%', padding: '4px 2px', fontSize: '0.7rem', borderRadius: '4px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }}
                       />
                       <input
                         type="date"
@@ -620,7 +620,7 @@ export default function ReportsPage({
                           ...prev,
                           [col.key]: { ...prev[col.key], valueTo: e.target.value }
                         }))}
-                        style={{ width: '50%', padding: '4px 2px', fontSize: '0.7rem', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                        style={{ width: '100%', padding: '4px 2px', fontSize: '0.7rem', borderRadius: '4px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }}
                       />
                     </div>
                   )}
