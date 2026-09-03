@@ -16,30 +16,89 @@ interface ActionMenuProps {
 
 export default function ActionMenu({ items, children, label = 'Actions ▾' }: ActionMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({});
+
+  const calculatePosition = () => {
+    if (!buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    const itemCount = items?.length || 3;
+    const estimatedHeight = itemCount * 36 + 16;
+
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const opensUpward = spaceBelow < estimatedHeight && rect.top > estimatedHeight;
+
+    const rightOffset = Math.max(8, window.innerWidth - rect.right);
+
+    if (opensUpward) {
+      setMenuStyle({
+        position: 'fixed',
+        bottom: `${window.innerHeight - rect.top + 4}px`,
+        right: `${rightOffset}px`,
+        zIndex: 99999,
+        maxHeight: '300px',
+        overflowY: 'auto'
+      });
+    } else {
+      setMenuStyle({
+        position: 'fixed',
+        top: `${rect.bottom + 4}px`,
+        right: `${rightOffset}px`,
+        zIndex: 99999,
+        maxHeight: '300px',
+        overflowY: 'auto'
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      calculatePosition();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
+
+    const handleScrollOrResize = () => {
+      if (isOpen) {
+        calculatePosition();
+      }
+    };
+
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+      window.addEventListener('scroll', handleScrollOrResize, true);
+      window.addEventListener('resize', handleScrollOrResize);
     }
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('scroll', handleScrollOrResize, true);
+      window.removeEventListener('resize', handleScrollOrResize);
     };
   }, [isOpen]);
 
   return (
-    <div ref={menuRef} style={{ position: 'relative', display: 'inline-block' }}>
+    <div style={{ position: 'relative', display: 'inline-block' }}>
       <button
+        ref={buttonRef}
         type="button"
         className="btn-secondary small"
         onClick={(e) => {
           e.stopPropagation();
-          setIsOpen(prev => !prev);
+          setIsOpen((prev) => !prev);
         }}
         style={{
           padding: '5px 10px',
@@ -61,22 +120,19 @@ export default function ActionMenu({ items, children, label = 'Actions ▾' }: A
 
       {isOpen && (
         <div
+          ref={menuRef}
           onClick={(e) => e.stopPropagation()}
           style={{
-            position: 'absolute',
-            top: '100%',
-            right: 0,
-            marginTop: '4px',
             background: '#ffffff',
-            border: '1px solid #e2e8f0',
+            border: '1.5px solid #000000',
             borderRadius: '10px',
-            boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15), 0 8px 10px -6px rgba(0,0,0,0.1)',
+            boxShadow: '0 10px 25px -5px rgba(0,0,0,0.2), 0 8px 10px -6px rgba(0,0,0,0.1)',
             padding: '6px',
-            zIndex: 9999,
             minWidth: '130px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '2px'
+            gap: '2px',
+            ...menuStyle
           }}
         >
           {items && items.length > 0 ? (
@@ -103,13 +159,14 @@ export default function ActionMenu({ items, children, label = 'Actions ▾' }: A
                   background: 'transparent',
                   cursor: item.disabled ? 'not-allowed' : 'pointer',
                   textAlign: 'left',
-                  color: item.variant === 'danger'
-                    ? '#dc2626'
-                    : item.variant === 'success'
-                    ? '#16a34a'
-                    : item.variant === 'primary'
-                    ? '#2563eb'
-                    : '#334155',
+                  color:
+                    item.variant === 'danger'
+                      ? '#dc2626'
+                      : item.variant === 'success'
+                      ? '#16a34a'
+                      : item.variant === 'primary'
+                      ? '#2563eb'
+                      : '#334155',
                   transition: 'background 0.15s'
                 }}
                 onMouseEnter={(e) => {

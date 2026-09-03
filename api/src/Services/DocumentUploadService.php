@@ -22,11 +22,32 @@ final class DocumentUploadService
         $path = $directory . DIRECTORY_SEPARATOR . $name;
         if (!move_uploaded_file($file['tmp_name'], $path)) fail('Unable to store document.', 500);
 
-        $row = [uuid(), $documentName, $_POST['description'] ?? null, $name, $path, $file['type'] ?: 'application/octet-stream', now(), $_POST['folderId'] ?? null];
-        $this->pdo->prepare('INSERT INTO documents (id,DocumentName,Description,FileName,FilePath,ContentType,UploadedAt,FolderId) VALUES (?,?,?,?,?,?,?,?)')->execute($row);
+        $description = !empty($_POST['description']) ? trim((string)$_POST['description']) : null;
+        $folderId = (!empty($_POST['folderId']) && $_POST['folderId'] !== 'null') ? trim((string)$_POST['folderId']) : null;
+
+        // ✅ Use MySQL-friendly timestamp
+        $uploadedAt = date('Y-m-d H:i:s');
+
+        $row = [uuid(), $documentName, $description, $name, $path, $file['type'] ?: 'application/octet-stream', $uploadedAt, $folderId];
+
+        try {
+            $this->pdo->prepare(
+                'INSERT INTO documents (id, DocumentName, Description, FileName, FilePath, ContentType, UploadedAt, FolderId)
+                 VALUES (?,?,?,?,?,?,?,?)'
+            )->execute($row);
+        } catch (Throwable $e) {
+            fail('Failed to save document metadata: ' . $e->getMessage(), 500);
+        }
+
         jsonResponse(serializeRow($this->pdo, 'documents', [
-            'id' => $row[0], 'document_name' => $row[1], 'description' => $row[2], 'file_name' => $row[3],
-            'file_path' => $row[4], 'content_type' => $row[5], 'uploaded_at' => $row[6], 'folder_id' => $row[7],
+            'id' => $row[0],
+            'document_name' => $row[1],
+            'description' => $row[2],
+            'file_name' => $row[3],
+            'file_path' => $row[4],
+            'content_type' => $row[5],
+            'uploaded_at' => $row[6],
+            'folder_id' => $row[7],
         ], true), 201);
     }
 }

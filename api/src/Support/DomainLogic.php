@@ -4,33 +4,201 @@ declare(strict_types=1);
 
 function createRow(string $resource, array $body, bool $new = true): array
 {
-    $map = ['folders' => ['parentId' => 'parent_id'], 'quoteuoms' => [], 'clients' => ['vendorNumber' => 'vendor_number', 'addressLine1' => 'address_line1', 'addressLine2' => 'address_line2', 'addressLine3' => 'address_line3', 'addressLine4' => 'address_line4', 'representativeName' => 'representative_name', 'representativeNumber' => 'representative_number', 'vatNumber' => 'vat_number', 'createdAt' => 'created_at', 'updatedAt' => 'updated_at'], 'users' => ['password' => 'password_hash', 'createdAt' => 'created_at'], 'quotes' => ['quoteNumber' => 'quote_number', 'validityDays' => 'validity_days', 'clientId' => 'client_id', 'poNumber' => 'po_number', 'createdAt' => 'created_at', 'dueDate' => 'due_date'], 'invoices' => ['invoiceNumber' => 'invoice_number', 'clientId' => 'client_id', 'quoteId' => 'quote_id', 'createdAt' => 'created_at', 'dueDate' => 'due_date'], 'jobcards' => ['jobCardNumber' => 'job_card_number', 'quoteNumber' => 'quote_number', 'createdAt' => 'created_at'], 'deliverynotes' => ['deliveryNoteNumber' => 'delivery_note_number', 'quoteNumber' => 'quote_number', 'createdAt' => 'created_at'], 'creditnotes' => ['creditNoteNumber' => 'credit_note_number', 'clientId' => 'client_id', 'createdAt' => 'created_at'], 'costs' => [], 'statements' => ['statementNumber' => 'statement_number', 'dueDays' => 'due_days', 'clientId' => 'client_id', 'createdAt' => 'created_at'], 'tools' => ['imagePath' => 'image_path', 'inspectionDate' => 'inspection_date'], 'products' => [], 'documents' => ['documentName' => 'document_name', 'fileName' => 'file_name', 'filePath' => 'file_path', 'contentType' => 'content_type', 'uploadedAt' => 'uploaded_at', 'folderId' => 'folder_id']];
+    $map = [
+        'folders' => ['parentId' => 'parent_id'],
+        'quoteuoms' => [],
+        'clients' => [
+            'vendorNumber' => 'vendor_number',
+            'addressLine1' => 'address_line1',
+            'addressLine2' => 'address_line2',
+            'addressLine3' => 'address_line3',
+            'addressLine4' => 'address_line4',
+            'representativeName' => 'representative_name',
+            'representativeNumber' => 'representative_number',
+            'vatNumber' => 'vat_number',
+            'createdAt' => 'created_at',
+            'updatedAt' => 'updated_at'
+        ],
+        'users' => ['password' => 'password_hash', 'createdAt' => 'created_at'],
+        'quotes' => [
+            'quoteNumber' => 'quote_number',
+            'validityDays' => 'validity_days',
+            'clientId' => 'client_id',
+            'poNumber' => 'po_number',
+            'createdAt' => 'created_at',
+            'dueDate' => 'DueDate' 
+        ],
+        'invoices' => [
+            'invoiceNumber' => 'invoice_number',
+            'clientId' => 'client_id',
+            'quoteId' => 'quote_id',
+            'createdAt' => 'created_at',
+            'dueDate' => 'DueDate' 
+        ],
+        'jobcards' => ['jobCardNumber' => 'job_card_number', 'quoteNumber' => 'quote_number', 'createdAt' => 'created_at'],
+        'deliverynotes' => ['deliveryNoteNumber' => 'delivery_note_number', 'quoteNumber' => 'quote_number', 'createdAt' => 'created_at'],
+        'creditnotes' => ['creditNoteNumber' => 'credit_note_number', 'clientId' => 'client_id', 'createdAt' => 'created_at'],
+        'costs' => [],
+        'statements' => ['statementNumber' => 'statement_number', 'dueDays' => 'due_days', 'clientId' => 'client_id', 'createdAt' => 'created_at'],
+        'tools' => ['imagePath' => 'image_path', 'inspectionDate' => 'inspection_date'],
+        'products' => [],
+        'documents' => [
+            'documentName' => 'DocumentName',
+            'fileName' => 'FileName',
+            'filePath' => 'FilePath',
+            'contentType' => 'ContentType',
+            'folderId' => 'FolderId'
+        ],
+        'quote_items' => [
+            'productId' => 'ProductId' 
+        ]
+    ];
+    
+    // 🚫 Block uploadedAt completely
+    if ($resource === 'documents') {
+        unset($body['uploadedAt'], $body['UploadedAt']);
+    }
+
     $aliases = $map[$resource] ?? [];
     $row = $new ? ['id' => uuid()] : [];
     $computed = ['items', 'client', 'quote', 'product', 'id', 'subTotal', 'vat', 'total', 'itemCount', 'totalQuoteAmount', 'isOverdue'];
-    foreach ($body as $key => $val) { if ($key === 'password') $val = password_hash((string)$val, PASSWORD_DEFAULT); $column = $aliases[$key] ?? lcfirstToSnake($key); if (!in_array($column, $computed, true)) $row[$column] = $val; }
-    if ($new && in_array($resource, ['folders', 'clients', 'users', 'quotes', 'invoices', 'jobcards', 'deliverynotes', 'creditnotes', 'statements', 'documents'], true)) $row['created_at'] ??= now();
+
+    foreach ($body as $key => $val) {
+        if ($key === 'password') {
+            $val = password_hash((string)$val, PASSWORD_DEFAULT);
+        }
+        $column = $aliases[$key] ?? lcfirstToSnake($key);
+        if (!in_array($column, $computed, true)) {
+            $row[$column] = $val;
+        }
+    }
+
+    // Normalize ISO 8601 date strings into MySQL format
+    foreach ($row as $key => $val) {
+        if (is_string($val) && preg_match('/\d{4}-\d{2}-\d{2}T/', $val)) {
+            try {
+                $row[$key] = (new DateTime($val))->format('Y-m-d H:i:s');
+            } catch (Exception $e) {
+                $row[$key] = date('Y-m-d H:i:s');
+            }
+        }
+    }
+
+    if ($new && in_array($resource, ['folders','clients','users','quotes','invoices','jobcards','deliverynotes','creditnotes','statements','documents'], true)) {
+        $row['created_at'] ??= date('Y-m-d H:i:s');
+    }
     if ($new && $resource === 'users') $row['role'] ??= 'User';
     if ($new && $resource === 'quotes') { $row['status'] ??= ''; $row['description'] ??= ''; }
     if ($new && $resource === 'invoices') { $row['amount'] ??= 0; $row['description'] ??= ''; }
     if ($new && $resource === 'costs') $row['margin'] ??= 0;
     if ($new && $resource === 'tools') { $row['quantity'] ??= 0; $row['value'] ??= 0; }
+
+    // ✅ Always set UploadedAt server-side
+    if ($new && $resource === 'documents') {
+        $row['UploadedAt'] = date('Y-m-d H:i:s');
+    }
+
     return $row;
 }
-function lcfirstToSnake(string $key): string { return strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $key)); }
+
+function lcfirstToSnake(string $key): string {
+    return strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $key));
+}
+
 function serializeRow(PDO $pdo, string $resource, array $row, bool $detail): array
 {
-    foreach ($row as $key => $val) { $camel = preg_replace_callback('/_([a-z])/', fn($m) => strtoupper($m[1]), $key); unset($row[$key]); $row[$camel] = is_numeric($val) && in_array($key, ['amount','price','margin','quantity','unit_price','total_price','value','supplier_cost','other_cost','payment_amount'], true) ? (float)$val : $val; }
+    foreach ($row as $key => $val) {
+        $camel = preg_replace_callback('/_([a-z])/', fn($m) => strtoupper($m[1]), $key);
+        unset($row[$key]);
+
+        // Normalize datetime values to MySQL-friendly format
+        if (in_array($key, ['uploaded_at','created_at','updated_at','due_date','payment_date'], true) && is_string($val)) {
+            try {
+                $val = (new DateTime($val))->format('Y-m-d H:i:s');
+            } catch (Exception $e) {
+                $val = date('Y-m-d H:i:s');
+            }
+        }
+
+        $row[$camel] = is_numeric($val) && in_array($key, [
+            'amount','price','margin','quantity','unit_price','total_price',
+            'value','supplier_cost','other_cost','payment_amount'
+        ], true) ? (float)$val : $val;
+    }
+
     unset($row['passwordHash'], $row['password_hash'], $row['filePath']);
-    if ($resource === 'quoteuoms') $row['value'] = $row['description'] ?? '';
-    if ($resource === 'quotes') { $q = $pdo->prepare('SELECT * FROM quoteitems WHERE ' . dbColumn('quote_id') . ' = ? ORDER BY ' . dbColumn('item_number')); $q->execute([$row['id']]); $row['items'] = array_map(fn($item) => serializeRow($pdo, 'quote_items', databaseRow($item), true), $q->fetchAll(PDO::FETCH_ASSOC)); $row['subTotal'] = array_sum(array_column($row['items'], 'totalPrice')); $row['vat'] = round($row['subTotal'] * .15, 2); $row['total'] = $row['subTotal'] + $row['vat']; }
-    if (in_array($resource, ['quotes', 'invoices', 'creditnotes', 'statements'], true) && !empty($row['clientId'])) { $q = $pdo->prepare('SELECT * FROM clients WHERE ' . dbColumn('id') . ' = ?'); $q->execute([$row['clientId']]); $client = $q->fetch(PDO::FETCH_ASSOC); if ($client) $row['client'] = serializeRow($pdo, 'clients', databaseRow($client), true); }
-    if ($resource === 'invoices') { if (!empty($row['quoteId'])) { $q = $pdo->prepare('SELECT * FROM quotes WHERE ' . dbColumn('id') . ' = ?'); $q->execute([$row['quoteId']]); $quote = $q->fetch(PDO::FETCH_ASSOC); if ($quote) { $quote = serializeRow($pdo, 'quotes', databaseRow($quote), true); $row['quote'] = $quote; $row['amount'] = $quote['total']; } } $row['isOverdue'] = ($row['status'] ?? '') !== 'Paid' && !empty($row['dueDate']) && strtotime((string)$row['dueDate']) < time(); }
-    if (in_array($resource, ['jobcards', 'deliverynotes'], true) && !empty($row['quoteNumber'])) { $q = $pdo->prepare('SELECT * FROM quotes WHERE ' . dbColumn('quote_number') . ' = ? LIMIT 1'); $q->execute([$row['quoteNumber']]); $quote = $q->fetch(PDO::FETCH_ASSOC); if ($quote) $row['quote'] = serializeRow($pdo, 'quotes', databaseRow($quote), true); }
-    if ($resource === 'costs') { $q = $pdo->prepare('SELECT * FROM costquoteitems WHERE ' . dbColumn('cost_id') . ' = ? ORDER BY ' . dbColumn('item_number')); $q->execute([$row['id']]); $row['items'] = array_map(fn($item) => serializeRow($pdo, 'cost_items', databaseRow($item), true), $q->fetchAll(PDO::FETCH_ASSOC)); $row['itemCount'] = count($row['items']); $row['totalQuoteAmount'] = array_sum(array_map(fn($item) => (float)$item['unitPrice'] * (float)$item['quantity'], $row['items'])); }
-    if ($resource === 'statements') { $q = $pdo->prepare('SELECT * FROM statementitems WHERE ' . dbColumn('statement_id') . ' = ? ORDER BY ' . dbColumn('payment_date')); $q->execute([$row['id']]); $row['items'] = array_map(fn($item) => serializeRow($pdo, 'statement_items', databaseRow($item), true), $q->fetchAll(PDO::FETCH_ASSOC)); foreach ($row['items'] as &$item) { if (!empty($item['invoiceId'])) { $q = $pdo->prepare('SELECT ' . dbColumn('amount') . ' FROM invoices WHERE ' . dbColumn('id') . ' = ?'); $q->execute([$item['invoiceId']]); $item['invoiceAmount'] = (float)$q->fetchColumn(); } elseif (!empty($item['creditNoteId'])) { $q = $pdo->prepare('SELECT ' . dbColumn('amount') . ' FROM creditnotes WHERE ' . dbColumn('id') . ' = ?'); $q->execute([$item['creditNoteId']]); $item['invoiceAmount'] = (float)$q->fetchColumn(); } } }
+
+    if ($resource === 'quoteuoms') {
+        $row['value'] = $row['description'] ?? '';
+    }
+
+    if ($resource === 'quotes') {
+        $q = $pdo->prepare('SELECT * FROM quoteitems WHERE ' . dbColumn('quote_id') . ' = ? ORDER BY ' . dbColumn('item_number'));
+        $q->execute([$row['id']]);
+        $row['items'] = array_map(fn($item) => serializeRow($pdo, 'quote_items', databaseRow($item), true), $q->fetchAll(PDO::FETCH_ASSOC));
+        $row['subTotal'] = array_sum(array_column($row['items'], 'totalPrice'));
+        $row['vat'] = round($row['subTotal'] * .15, 2);
+        $row['total'] = $row['subTotal'] + $row['vat'];
+    }
+
+    if (in_array($resource, ['quotes', 'invoices', 'creditnotes', 'statements'], true) && !empty($row['clientId'])) {
+        $q = $pdo->prepare('SELECT * FROM clients WHERE ' . dbColumn('id') . ' = ?');
+        $q->execute([$row['clientId']]);
+        $client = $q->fetch(PDO::FETCH_ASSOC);
+        if ($client) $row['client'] = serializeRow($pdo, 'clients', databaseRow($client), true);
+    }
+
+    if ($resource === 'invoices') {
+        if (!empty($row['quoteId'])) {
+            $q = $pdo->prepare('SELECT * FROM quotes WHERE ' . dbColumn('id') . ' = ?');
+            $q->execute([$row['quoteId']]);
+            $quote = $q->fetch(PDO::FETCH_ASSOC);
+            if ($quote) {
+                $quote = serializeRow($pdo, 'quotes', databaseRow($quote), true);
+                $row['quote'] = $quote;
+                $row['amount'] = $quote['total'];
+            }
+        }
+        $row['isOverdue'] = ($row['status'] ?? '') !== 'Paid'
+            && !empty($row['dueDate'])
+            && strtotime((string)$row['dueDate']) < time();
+    }
+
+    if (in_array($resource, ['jobcards', 'deliverynotes'], true) && !empty($row['quoteNumber'])) {
+        $q = $pdo->prepare('SELECT * FROM quotes WHERE ' . dbColumn('quote_number') . ' = ? LIMIT 1');
+        $q->execute([$row['quoteNumber']]);
+        $quote = $q->fetch(PDO::FETCH_ASSOC);
+        if ($quote) $row['quote'] = serializeRow($pdo, 'quotes', databaseRow($quote), true);
+    }
+
+    if ($resource === 'costs') {
+        $q = $pdo->prepare('SELECT * FROM costquoteitems WHERE ' . dbColumn('cost_id') . ' = ? ORDER BY ' . dbColumn('item_number'));
+        $q->execute([$row['id']]);
+        $row['items'] = array_map(fn($item) => serializeRow($pdo, 'cost_items', databaseRow($item), true), $q->fetchAll(PDO::FETCH_ASSOC));
+        $row['itemCount'] = count($row['items']);
+        $row['totalQuoteAmount'] = array_sum(array_map(fn($item) => (float)$item['unitPrice'] * (float)$item['quantity'], $row['items']));
+    }
+
+    if ($resource === 'statements') {
+        $q = $pdo->prepare('SELECT * FROM statementitems WHERE ' . dbColumn('statement_id') . ' = ? ORDER BY ' . dbColumn('payment_date'));
+        $q->execute([$row['id']]);
+        $row['items'] = array_map(fn($item) => serializeRow($pdo, 'statement_items', databaseRow($item), true), $q->fetchAll(PDO::FETCH_ASSOC));
+        foreach ($row['items'] as &$item) {
+            if (!empty($item['invoiceId'])) {
+                $q = $pdo->prepare('SELECT ' . dbColumn('amount') . ' FROM invoices WHERE ' . dbColumn('id') . ' = ?');
+                $q->execute([$item['invoiceId']]);
+                $item['invoiceAmount'] = (float)$q->fetchColumn();
+            } elseif (!empty($item['creditNoteId'])) {
+                $q = $pdo->prepare('SELECT ' . dbColumn('amount') . ' FROM creditnotes WHERE ' . dbColumn('id') . ' = ?');
+                $q->execute([$item['creditNoteId']]);
+                $item['invoiceAmount'] = (float)$q->fetchColumn();
+            }
+        }
+    }
+
     return $row;
 }
+
 function saveNestedItems(PDO $pdo, string $table, string $foreignKey, string $foreignId, array $items): void
 {
     foreach ($items as $item) {
@@ -38,5 +206,64 @@ function saveNestedItems(PDO $pdo, string $table, string $foreignKey, string $fo
         $resource = str_replace(['quoteitems', 'costquoteitems', 'statementitems'], ['quote_items', 'cost_items', 'statement_items'], $table); $row = createRow($resource, $item); unset($row['created_at'], $row['date'], $row['status'], $row['reference'], $row['quote_number'], $row['validity_days'], $row['client_id'], $row['po_number'], $row['margin'], $row['due_date']); $row[$foreignKey] = $foreignId; $columns = array_map('dbColumn', array_keys($row)); $marks = implode(',', array_fill(0, count($columns), '?')); $pdo->prepare("INSERT INTO $table (" . implode(',', $columns) . ") VALUES ($marks)")->execute(array_values($row));
     }
 }
-function handleUpload(PDO $pdo, string $dataDir, string $kind): never { $file = $_FILES['file'] ?? null; if (!$file || $file['error'] !== UPLOAD_ERR_OK) fail('File is required.', 400); $extension = pathinfo($file['name'], PATHINFO_EXTENSION); $name = uuid() . ($extension ? '.' . $extension : ''); $path = $dataDir . DIRECTORY_SEPARATOR . $kind . DIRECTORY_SEPARATOR . $name; move_uploaded_file($file['tmp_name'], $path); if ($kind === 'documents') { $documentName = trim((string)($_POST['documentName'] ?? '')); if ($documentName === '') fail('Document Name is required.', 400); $row = ['id'=>uuid(),'document_name'=>$documentName,'description'=>$_POST['description'] ?? null,'file_name'=>$name,'file_path'=>$path,'con An anti row into orders I saytent_type'=>$_FILES['file']['type'] ?: 'application/octet-stream','uploaded_at'=>now()]; $pdo->prepare('INSERT INTO documents (id,document_name,description,file_name,file_path,content_type,uploaded_at) VALUES (?,?,?,?,?,?,?)')->execute(array_values($row)); jsonResponse(serializeRow($pdo, 'documents', $row, true), 201); } jsonResponse(['imagePath' => $name]); }
+function handleUpload(PDO $pdo, string $dataDir, string $kind): never
+{
+
+    $file = $_FILES['file'] ?? null;
+    if (!$file || $file['error'] !== UPLOAD_ERR_OK) fail('File is required.', 400);
+
+    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $name = uuid() . ($extension ? '.' . $extension : '');
+    $directory = $dataDir . DIRECTORY_SEPARATOR . $kind;
+    if (!is_dir($directory)) mkdir($directory, 0775, true);
+    $path = $directory . DIRECTORY_SEPARATOR . $name;
+    if (!move_uploaded_file($file['tmp_name'], $path)) fail('Unable to store image/file.', 500);
+
+    error_log("Something happened at " . date('Y-m-d H:i:s'));
+
+    if ($kind === 'documents') {
+        unset($_POST['UploadedAt'], $_POST['uploadedAt']); // block client override
+
+        $documentName = trim((string)($_POST['documentName'] ?? ''));
+        if ($documentName === '') fail('Document Name is required.', 400);
+
+        $folderId = (!empty($_POST['folderId']) && $_POST['folderId'] !== 'null')
+            ? trim((string)$_POST['folderId'])
+            : null;
+
+        $row = [
+            'Id'          => uuid(),
+            'DocumentName'=> $documentName,
+            'Description' => $_POST['description'] ?? null,
+            'FileName'    => $name,
+            'FilePath'    => $path,
+            'ContentType' => $_FILES['file']['type'] ?: 'application/octet-stream',
+            'FolderId'    => $folderId
+        ];
+
+        try {
+            // ✅ exclude UploadedAt, let MySQL set it
+            $stmt = $pdo->prepare(
+                'INSERT INTO documents (Id, DocumentName, Description, FileName, FilePath, ContentType, FolderId)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)'
+            );
+            $stmt->execute([
+                $row['Id'],
+                $row['DocumentName'],
+                $row['Description'],
+                $row['FileName'],
+                $row['FilePath'],
+                $row['ContentType'],
+                $row['FolderId']
+            ]);
+        } catch (PDOException $e) {
+            error_log("Document insert failed: " . $e->getMessage());
+            fail('Database error: ' . $e->getMessage(), 500);
+        }
+
+        jsonResponse($row, 201);
+    }
+
+    jsonResponse(['imagePath' => $name]);
+}
 function handleProductWorkbook(PDO $pdo): never { $file = $_FILES['file'] ?? null; if (!$file || $file['error'] !== UPLOAD_ERR_OK) fail('File is required.', 400); if (!class_exists(PhpOffice\PhpSpreadsheet\IOFactory::class)) fail('Spreadsheet support is not installed.', 500); try { $sheet = PhpOffice\PhpSpreadsheet\IOFactory::load($file['tmp_name'])->getActiveSheet(); } catch (Throwable $e) { fail('Unable to read workbook: ' . $e->getMessage(), 400); } $rows = $sheet->toArray(null, true, true, true); if (count($rows) < 2) jsonResponse(['message' => 'No products found.']); $headers = array_map(fn($header) => strtolower(preg_replace('/[^a-z0-9]/i', '', (string)$header)), array_shift($rows)); $aliases = ['code'=>['code','productcode'],'name'=>['name','productname'],'uom'=>['uom','unitofmeasure'],'description'=>['description'],'price'=>['price','unitprice'],'image'=>['image','imagepath']]; $positions=[]; foreach($aliases as $field=>$names) foreach($names as $name){$position=array_search($name,$headers,true);if($position!==false){$positions[$field]=$position;break;}} if(!isset($positions['code'],$positions['name'],$positions['uom'])) fail('Workbook must contain Code, Name, and Uom columns.',400); $pdo->beginTransaction();$imported=0;try{foreach($rows as $row){$code=trim((string)($row[$positions['code']]??''));if($code==='')continue;$data=['name'=>trim((string)($row[$positions['name']]??'')),'uom'=>trim((string)($row[$positions['uom']]??'')),'description'=>isset($positions['description'])?(string)$row[$positions['description']]:null,'price'=>isset($positions['price'])?(float)$row[$positions['price']]:0,'image'=>isset($positions['image'])?(string)$row[$positions['image']]:null];$update=$pdo->prepare('UPDATE products SET name=?,uom=?,description=?,price=?,image=? WHERE code=?');$update->execute([...array_values($data),$code]);if($update->rowCount()===0)$pdo->prepare('INSERT INTO products (id,code,name,uom,description,price,image) VALUES (?,?,?,?,?,?,?)')->execute([uuid(),$code,...array_values($data)]);$imported++;}$pdo->commit();}catch(Throwable $e){$pdo->rollBack();fail('Product import failed: '.$e->getMessage(),400);}jsonResponse(['message'=>"$imported products imported.",'count'=>$imported]); }

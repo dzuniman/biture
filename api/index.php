@@ -4,6 +4,10 @@ declare(strict_types=1);
 require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/src/Support/Bootstrap.php';
 require_once __DIR__ . '/src/Support/DomainLogic.php';
+error_reporting(E_ALL);
+ini_set('display_errors', '1');
+ini_set('log_errors', '1');
+ini_set('error_log', __DIR__ . '/php-error.log');
 
 $envName = getenv('APP_ENV') ?: 'development';
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__, ".env.$envName");
@@ -109,7 +113,7 @@ if ($resource === 'documents' && $method === 'GET' && $action === 'download') {
     header('Content-Type: ' . ($document['contentType'] ?? 'application/octet-stream')); readfile($path); exit;
 }
 if ($resource === 'documents' && $method === 'POST' && $segment === null) {
-    requireAuth(true);
+    requireAuth();
     (new DocumentUploadService($pdo, $dataDir))->upload();
 }
 if ($resource === 'folders' && $method === 'POST' && $segment === null) {
@@ -166,10 +170,10 @@ if ($resource === 'quotes' && $method === 'GET' && $segment === 'items' && $acti
     header('Content-Length: ' . filesize($filePath));
     readfile($filePath); exit;
 }
-if ($resource === 'products' && $method === 'POST' && in_array($segment, ['upload-image', 'upload-manual'], true)) { requireAuth(true); handleUpload($pdo, $dataDir, 'products'); }
-if ($resource === 'tools' && $method === 'POST' && in_array($segment, ['upload-image', 'upload-manual'], true)) { requireAuth(true); handleUpload($pdo, $dataDir, 'tools'); }
-if ($resource === 'quotes' && $method === 'POST' && $segment === 'items' && $action === 'images') handleUpload($pdo, $dataDir, 'quote_items');
-if ($resource === 'products' && $method === 'POST' && $segment === 'upload-excel') { requireAuth(true); handleProductWorkbook($pdo); }
+if ($resource === 'products' && $method === 'POST' && in_array($segment, ['upload-image', 'upload-manual'], true)) { requireAuth(); handleUpload($pdo, $dataDir, 'products'); }
+if ($resource === 'tools' && $method === 'POST' && in_array($segment, ['upload-image', 'upload-manual'], true)) { requireAuth(); handleUpload($pdo, $dataDir, 'tools'); }
+if ($resource === 'quotes' && $method === 'POST' && $segment === 'items' && $action === 'images') { requireAuth(); handleUpload($pdo, $dataDir, 'quote_items'); }
+if ($resource === 'products' && $method === 'POST' && $segment === 'upload-excel') { requireAuth(); handleProductWorkbook($pdo); }
 if ($method === 'GET' && in_array(strtolower((string)$segment), ['next-number', 'nextnumber'], true)) {
     $prefixes = ['quotes' => 'Q', 'invoices' => 'INV', 'statements' => 'ST', 'jobcards' => 'JC', 'deliverynotes' => 'DN', 'creditnotes' => 'CN'];
     if (!isset($prefixes[$resource])) fail('Route not found', 404);

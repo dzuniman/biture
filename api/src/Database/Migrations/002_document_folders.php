@@ -10,4 +10,4 @@ return new class implements Migration
         $columns = $pdo->query('SHOW COLUMNS FROM documents LIKE "FolderId"');
         if (!$columns->fetch()) $pdo->exec('ALTER TABLE documents ADD COLUMN FolderId CHAR(36) NULL');
     }
-}
+};

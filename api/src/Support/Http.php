@@ -10,7 +10,12 @@ function jsonResponse(mixed $value, int $status = 200): never
     exit;
 }
 
-function fail(string $message, int $status): never { jsonResponse(['message' => $message], $status); }
+function fail(string $message, int $status = 500): never {
+    error_log("Fail called: $message");
+    http_response_code($status);
+    echo json_encode(['error' => $message]);
+    exit;
+}
 function input(): array { $raw = file_get_contents('php://input'); return $raw ? (json_decode($raw, true) ?: []) : []; }
 function uuid(): string { return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', random_int(0, 65535), random_int(0, 65535), random_int(0, 65535), random_int(16384, 20479), random_int(32768, 49151), random_int(0, 65535), random_int(0, 65535), random_int(0, 65535)); }
 function now(): string { return gmdate('Y-m-d\TH:i:s\Z'); }

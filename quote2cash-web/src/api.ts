@@ -122,8 +122,9 @@ export const deleteQuote = async (id: string): Promise<void> => {
 export const uploadQuoteItemImage = async (file: File): Promise<string> => {
   const formData = new FormData();
   formData.append('file', file);
-  const response = await api.post('/quotes/items/images/upload', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
+  const token = localStorage.getItem('token');
+const response = await axios.post(`${API_BASE_URL}/quotes/items/images`, formData, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {}
   });
   return response.data.imagePath;
 };
@@ -203,8 +204,9 @@ export const deleteProduct = async (id: string): Promise<void> => {
 export const uploadProductImage = async (file: File): Promise<string> => {
   const formData = new FormData();
   formData.append('file', file);
-  const response = await api.post('/products/upload-image', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
+  const token = localStorage.getItem('token');
+  const response = await axios.post(`${API_BASE_URL}/products/upload-image`, formData, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {}
   });
   return response.data.imagePath;
 };
@@ -219,8 +221,9 @@ export const downloadProductsTemplate = async (): Promise<Blob> => {
 export const uploadProductsExcel = async (file: File): Promise<{ message: string }> => {
   const formData = new FormData();
   formData.append('file', file);
-  const response = await api.post('/products/upload-excel', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
+  const token = localStorage.getItem('token');
+  const response = await axios.post(`${API_BASE_URL}/products/upload-excel`, formData, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {}
   });
   return response.data;
 };
@@ -307,8 +310,9 @@ export const downloadDocument = async (id: string) => {
   return response.data;
 };
 export const createDocument = async (formData: FormData) => {
-  const response = await api.post<DocumentResponse>('/documents', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
+  const token = localStorage.getItem('token');
+  const response = await axios.post<DocumentResponse>(`${API_BASE_URL}/documents`, formData, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {}
   });
   return response.data;
 };
@@ -494,8 +498,9 @@ export const deleteTool = async (id: string): Promise<void> => {
 export const uploadToolImage = async (file: File): Promise<string> => {
   const formData = new FormData();
   formData.append('file', file);
-  const response = await api.post('/tools/upload-image', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
+  const token = localStorage.getItem('token');
+  const response = await axios.post(`${API_BASE_URL}/tools/upload-image`, formData, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {}
   });
   return response.data.imagePath;
 };
