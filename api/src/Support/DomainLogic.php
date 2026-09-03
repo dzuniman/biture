@@ -44,24 +44,20 @@ function createRow(string $resource, array $body, bool $new = true): array
         'products' => [],
         'documents' => [
             'documentName' => 'DocumentName',
-            'fileName' => 'FileName',
-            'filePath' => 'FilePath',
-            'contentType' => 'ContentType',
-            'folderId' => 'FolderId'
+            'fileName'     => 'FileName',
+            'filePath'     => 'FilePath',
+            'contentType'  => 'ContentType',
+            'uploadedAt'   => 'UploadedAt',
+            'folderId'     => 'FolderId'
         ],
         'quote_items' => [
             'productId' => 'ProductId' 
         ]
     ];
-    
-    // 🚫 Block uploadedAt completely
-    if ($resource === 'documents') {
-        unset($body['uploadedAt'], $body['UploadedAt']);
-    }
 
     $aliases = $map[$resource] ?? [];
     $row = $new ? ['id' => uuid()] : [];
-    $computed = ['items', 'client', 'quote', 'product', 'id', 'subTotal', 'vat', 'total', 'itemCount', 'totalQuoteAmount', 'isOverdue'];
+    $computed = ['items','client','quote','product','id','subTotal','vat','total','itemCount','totalQuoteAmount','isOverdue'];
 
     foreach ($body as $key => $val) {
         if ($key === 'password') {
@@ -93,7 +89,7 @@ function createRow(string $resource, array $body, bool $new = true): array
     if ($new && $resource === 'costs') $row['margin'] ??= 0;
     if ($new && $resource === 'tools') { $row['quantity'] ??= 0; $row['value'] ??= 0; }
 
-    // ✅ Always set UploadedAt server-side
+    // ✅ Always set UploadedAt server-side if new document
     if ($new && $resource === 'documents') {
         $row['UploadedAt'] = date('Y-m-d H:i:s');
     }
@@ -208,7 +204,6 @@ function saveNestedItems(PDO $pdo, string $table, string $foreignKey, string $fo
 }
 function handleUpload(PDO $pdo, string $dataDir, string $kind): never
 {
-
     $file = $_FILES['file'] ?? null;
     if (!$file || $file['error'] !== UPLOAD_ERR_OK) fail('File is required.', 400);
 
@@ -219,17 +214,16 @@ function handleUpload(PDO $pdo, string $dataDir, string $kind): never
     $path = $directory . DIRECTORY_SEPARATOR . $name;
     if (!move_uploaded_file($file['tmp_name'], $path)) fail('Unable to store image/file.', 500);
 
-    error_log("Something happened at " . date('Y-m-d H:i:s'));
-
     if ($kind === 'documents') {
-        unset($_POST['UploadedAt'], $_POST['uploadedAt']); // block client override
-
         $documentName = trim((string)($_POST['documentName'] ?? ''));
         if ($documentName === '') fail('Document Name is required.', 400);
 
         $folderId = (!empty($_POST['folderId']) && $_POST['folderId'] !== 'null')
             ? trim((string)$_POST['folderId'])
             : null;
+
+        // ✅ Correct timestamp
+        $uploadedAt = date('Y-m-d H:i:s');
 
         $row = [
             'Id'          => uuid(),
@@ -238,14 +232,14 @@ function handleUpload(PDO $pdo, string $dataDir, string $kind): never
             'FileName'    => $name,
             'FilePath'    => $path,
             'ContentType' => $_FILES['file']['type'] ?: 'application/octet-stream',
+            'UploadedAt'  => $uploadedAt,
             'FolderId'    => $folderId
         ];
 
         try {
-            // ✅ exclude UploadedAt, let MySQL set it
             $stmt = $pdo->prepare(
-                'INSERT INTO documents (Id, DocumentName, Description, FileName, FilePath, ContentType, FolderId)
-                 VALUES (?, ?, ?, ?, ?, ?, ?)'
+                'INSERT INTO documents (Id, DocumentName, Description, FileName, FilePath, ContentType, UploadedAt, FolderId)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
             );
             $stmt->execute([
                 $row['Id'],
@@ -254,10 +248,10 @@ function handleUpload(PDO $pdo, string $dataDir, string $kind): never
                 $row['FileName'],
                 $row['FilePath'],
                 $row['ContentType'],
+                $row['UploadedAt'],
                 $row['FolderId']
             ]);
         } catch (PDOException $e) {
-            error_log("Document insert failed: " . $e->getMessage());
             fail('Database error: ' . $e->getMessage(), 500);
         }
 
@@ -266,4 +260,5 @@ function handleUpload(PDO $pdo, string $dataDir, string $kind): never
 
     jsonResponse(['imagePath' => $name]);
 }
+
 function handleProductWorkbook(PDO $pdo): never { $file = $_FILES['file'] ?? null; if (!$file || $file['error'] !== UPLOAD_ERR_OK) fail('File is required.', 400); if (!class_exists(PhpOffice\PhpSpreadsheet\IOFactory::class)) fail('Spreadsheet support is not installed.', 500); try { $sheet = PhpOffice\PhpSpreadsheet\IOFactory::load($file['tmp_name'])->getActiveSheet(); } catch (Throwable $e) { fail('Unable to read workbook: ' . $e->getMessage(), 400); } $rows = $sheet->toArray(null, true, true, true); if (count($rows) < 2) jsonResponse(['message' => 'No products found.']); $headers = array_map(fn($header) => strtolower(preg_replace('/[^a-z0-9]/i', '', (string)$header)), array_shift($rows)); $aliases = ['code'=>['code','productcode'],'name'=>['name','productname'],'uom'=>['uom','unitofmeasure'],'description'=>['description'],'price'=>['price','unitprice'],'image'=>['image','imagepath']]; $positions=[]; foreach($aliases as $field=>$names) foreach($names as $name){$position=array_search($name,$headers,true);if($position!==false){$positions[$field]=$position;break;}} if(!isset($positions['code'],$positions['name'],$positions['uom'])) fail('Workbook must contain Code, Name, and Uom columns.',400); $pdo->beginTransaction();$imported=0;try{foreach($rows as $row){$code=trim((string)($row[$positions['code']]??''));if($code==='')continue;$data=['name'=>trim((string)($row[$positions['name']]??'')),'uom'=>trim((string)($row[$positions['uom']]??'')),'description'=>isset($positions['description'])?(string)$row[$positions['description']]:null,'price'=>isset($positions['price'])?(float)$row[$positions['price']]:0,'image'=>isset($positions['image'])?(string)$row[$positions['image']]:null];$update=$pdo->prepare('UPDATE products SET name=?,uom=?,description=?,price=?,image=? WHERE code=?');$update->execute([...array_values($data),$code]);if($update->rowCount()===0)$pdo->prepare('INSERT INTO products (id,code,name,uom,description,price,image) VALUES (?,?,?,?,?,?,?)')->execute([uuid(),$code,...array_values($data)]);$imported++;}$pdo->commit();}catch(Throwable $e){$pdo->rollBack();fail('Product import failed: '.$e->getMessage(),400);}jsonResponse(['message'=>"$imported products imported.",'count'=>$imported]); }

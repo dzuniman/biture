@@ -25,10 +25,19 @@ final class DocumentUploadService
         $description = !empty($_POST['description']) ? trim((string)$_POST['description']) : null;
         $folderId = (!empty($_POST['folderId']) && $_POST['folderId'] !== 'null') ? trim((string)$_POST['folderId']) : null;
 
-        // ✅ Use MySQL-friendly timestamp
+        // ✅ Only change: use MySQL-friendly timestamp
         $uploadedAt = date('Y-m-d H:i:s');
 
-        $row = [uuid(), $documentName, $description, $name, $path, $file['type'] ?: 'application/octet-stream', $uploadedAt, $folderId];
+        $row = [
+            uuid(),
+            $documentName,
+            $description,
+            $name,
+            $path,
+            $file['type'] ?: 'application/octet-stream',
+            $uploadedAt,
+            $folderId
+        ];
 
         try {
             $this->pdo->prepare(
@@ -39,15 +48,18 @@ final class DocumentUploadService
             fail('Failed to save document metadata: ' . $e->getMessage(), 500);
         }
 
-        jsonResponse(serializeRow($this->pdo, 'documents', [
-            'id' => $row[0],
-            'document_name' => $row[1],
-            'description' => $row[2],
-            'file_name' => $row[3],
-            'file_path' => $row[4],
-            'content_type' => $row[5],
-            'uploaded_at' => $row[6],
-            'folder_id' => $row[7],
-        ], true), 201);
+        jsonResponse(
+            serializeRow($this->pdo, 'documents', [
+                'id'           => $row[0],
+                'document_name'=> $row[1],
+                'description'  => $row[2],
+                'file_name'    => $row[3],
+                'file_path'    => $row[4],
+                'content_type' => $row[5],
+                'uploaded_at'  => $row[6],
+                'folder_id'    => $row[7],
+            ], true),
+            201
+        );
     }
 }
