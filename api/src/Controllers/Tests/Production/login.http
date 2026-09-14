@@ -8,7 +8,6 @@ Content-Type: application/json
 }
 
 ### Ping
-
 GET https://api.erp.biture.co.za/api/ping
 Content-Type: application/json
 
