@@ -684,7 +684,6 @@ export default function QuoteForm({
                   value={item.name ?? ''}
                   onChange={(value) => handleUpdateItem(index, 'name', value)}
                   placeholder="Select or type name"
-                  required
                 />
                 <SuggestionInput
                   options={uomSuggestionOptions}
@@ -698,7 +697,6 @@ export default function QuoteForm({
                   value={item.description ?? ''}
                   onChange={(value) => handleUpdateItem(index, 'description', value)}
                   placeholder="Select or type description"
-                  required
                 />
                 <input
                   type="number"
