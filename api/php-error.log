@@ -23,3 +23,12 @@
 [03-Sep-2026 13:48:58 UTC] Fail called: Failed to save document metadata: SQLSTATE[22007]: Invalid datetime format: 1292 Incorrect datetime value: '2026-09-03T13:48:58Z' for column 'UploadedAt' at row 1
 [03-Sep-2026 13:53:35 UTC] Fail called: Failed to save document metadata: SQLSTATE[22007]: Invalid datetime format: 1292 Incorrect datetime value: '2026-09-03T13:53:35Z' for column 'UploadedAt' at row 1
 [03-Sep-2026 13:53:44 UTC] Fail called: Failed to save document metadata: SQLSTATE[22007]: Invalid datetime format: 1292 Incorrect datetime value: '2026-09-03T13:53:44Z' for column 'UploadedAt' at row 1
+[15-Sep-2026 09:43:32 UTC] Fail called: File not found
+[15-Sep-2026 09:43:32 UTC] Fail called: File not found
+[15-Sep-2026 09:43:32 UTC] Fail called: File not found
+[15-Sep-2026 09:43:32 UTC] Fail called: File not found
+[15-Sep-2026 09:43:33 UTC] Fail called: File not found
+[15-Sep-2026 09:43:33 UTC] Fail called: File not found
+[15-Sep-2026 09:44:22 UTC] Fail called: File not found
+[15-Sep-2026 09:44:22 UTC] Fail called: File not found
+[15-Sep-2026 09:44:22 UTC] Fail called: File not found

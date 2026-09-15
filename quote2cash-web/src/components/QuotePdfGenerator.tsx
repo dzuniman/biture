@@ -203,7 +203,7 @@ export const generateQuotePDF = async (quote: Quote, save: boolean = false, retu
     addQuoteDetailRow('REFERENCE:', quote.reference);
     addQuoteDetailRow('DATE:', new Date(quote.date).toLocaleDateString('en-ZA', { year: 'numeric', month: 'long', day: 'numeric' }));
     addQuoteDetailRow('VALIDITY:', `${quote.validityDays} Days`);
-    addQuoteDetailRow('VENDOR NUMBER:', quote.vendorNumber || '—');
+    addQuoteDetailRow('VENDOR NUMBER:', quote.client?.vendorNumber || '—');
     addQuoteDetailRow('PAGE:', `${currentPage} of ${totalPages}` || '—');
 
     // --- Table Start ---
