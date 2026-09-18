@@ -19,7 +19,7 @@
     "build:epec:production": "vite build --mode epec-production",
     "deploy:epec:production:frontend": "npm run build:epec:production && node deploy-production.cjs",
     "build:epec:staging": "vite build --mode epec-staging",
-    "deploy:epec:staging:frontend": "npm run build:epec:staging && node deploy-staging.cjs"
+    "deploy:epec:staging:frontend": "npm run build:epec:staging && node deploy-epec-staging.cjs"
   },
   "dependencies": {
     "add": "^2.0.6",

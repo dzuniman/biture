@@ -6,14 +6,21 @@ const config = {
     password: "2X66ei72gGwzE",
     host: "ftp.erp.biture.co.za",
     port: 21,
-    localRoot: __dirname + "/dist",
-    remoteRoot: "/public_html/staging_erp_biture",
-    include: ["*", "**/*"],
+    localRoot: __dirname + "/api",
+    remoteRoot: "/public_html/staging_api_erp_biture",
+    include: [
+        "*", "**/*",
+        ".env.epec-staging",
+        ".htaccess"
+    ],
     deleteRemote: false,
     overwrite: true,
-    forcePasv: true
+    forcePasv: true,
+    dotFiles: true
 };
 
 ftpDeploy.deploy(config)
-    .then(res => console.log("EPEC Staging deploy finished:", res))
+    .then(res => {
+        console.log("EPEC backend deploy finished:", res);
+    })
     .catch(err => console.error(err));
