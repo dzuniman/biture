@@ -2,12 +2,22 @@ import React, { useEffect, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { formatAmount } from '../../formatters';
 import type { DeliveryNote, Client } from '../types';
-import logo from '../assets/logo.png';
-import { generateDeliveryNotePDF } from './DeliveryNotePdfGenerator';
 import { getDeliveryNote } from '../api';
-import { generateQuotePDF } from "./QuotePdfGenerator";
 
-pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
+pdfjs.GlobalWorkerOptions.workerSrc = import.meta.env.VITE_PDF_WORKER;
+
+const pdfGenerators = import.meta.env.VITE_PDFGENERATORS;
+const project = import.meta.env.VITE_PROJECT;
+const logo = new URL(`../assets/logo-${project}.png`, import.meta.url).href;
+
+export async function generateDeliveryNotePDF(deliveryNote: DeliveryNote, save: boolean = false, returnBlob = false) {
+  try {
+    const module = await import(`../pdf-generators/${pdfGenerators}/DeliveryNotePdfGenerator`);
+    return module.generateDeliveryNotePDF(deliveryNote, save, returnBlob);
+  } catch (err) {
+    throw new Error(`No Delivery Note PdfGenerator found for project: ${project}`);
+  }
+}
 
 interface Props {
   deliveryNote: DeliveryNote;
@@ -17,7 +27,7 @@ interface Props {
 
 export default function DeliveryNoteViewPage({ deliveryNote, onEdit, onBack }: Props) {
   // Override any other module-level worker settings to use the correct local worker
-  pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+  pdfjs.GlobalWorkerOptions.workerSrc = import.meta.env.VITE_PDF_WORKER;
 
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [numPages, setNumPages] = useState<number>(0);
@@ -32,7 +42,7 @@ export default function DeliveryNoteViewPage({ deliveryNote, onEdit, onBack }: P
   }, []);
 
   useEffect(() => {
-    pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+    pdfjs.GlobalWorkerOptions.workerSrc = import.meta.env.VITE_PDF_WORKER;
     let url: string | null = null;
     const updatePdf = async () => {
       try {

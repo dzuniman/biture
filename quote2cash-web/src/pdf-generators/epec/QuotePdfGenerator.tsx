@@ -1,9 +1,12 @@
 import { jsPDF } from 'jspdf';
 import { autoTable } from 'jspdf-autotable';
-import type { Quote } from '../types';
-import { formatAmount } from '../../formatters';
-import logo from '../assets/logo.png';
-import { getQuoteItemImageUrl } from '../api';
+import type { Quote } from '../../types';
+import { formatAmount } from '../../../formatters';
+import { getQuoteItemImageUrl } from '../../api';
+
+const project = import.meta.env.VITE_PROJECT;
+
+const logo = new URL(`../../assets/logo-${project}.png`, import.meta.url).href;
 
 export const generateQuotePDF = async (quote: Quote, save: boolean = false, returnBlob = false) => {
   const doc = new jsPDF({
@@ -104,11 +107,11 @@ export const generateQuotePDF = async (quote: Quote, save: boolean = false, retu
 
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    doc.text('BITURE (PTY) LTD   Reg: K2013/194395/07   VAT No: 4480272220', companyInfoX, companyInfoY + 12);
+    doc.text('EPEC SOLUTIONS (PTY) LTD   Reg: 2012/118990/07   VAT No: 4470275886', companyInfoX, companyInfoY + 12);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
-    doc.text('Cnr Fred Versepute and Asparagus Road Midrand 1685', companyInfoX, companyInfoY + 16);
-    doc.text('Email: BetrothM@biture.co.za   Tel: +27 65 835 4371 | +27 83 249 8510', companyInfoX, companyInfoY + 20);
+    doc.text('259 Kent Avenue, Randburg, Johannesburg, Gauteng, 2194', companyInfoX, companyInfoY + 16);
+    doc.text('Email: sales@epec.co.za   Tel: +27 65 835 4371 | +27 83 249 8510', companyInfoX, companyInfoY + 20);
 
     // --- Logo (Top Right) ---
     const logoHeight = 15;

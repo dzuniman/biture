@@ -1,11 +1,22 @@
-// quote2cash-web/src/components/InvoicePdfGenerator.tsx
 import { jsPDF } from 'jspdf';
-import { autoTable } from 'jspdf-autotable'; // Ensure you have jspdf-autotable installed
-import type { Invoice, QuoteItem, Client } from '../types'; // Import necessary types
-import { formatAmount } from '../../formatters'; // Assuming formatAmount is available at this path
-import logo from '../assets/logo.png'; // Assuming logo path is correct
+import { autoTable } from 'jspdf-autotable';
+import type { DeliveryNote, QuoteItem } from '../../types';
+import { formatAmount } from '../../../formatters';
 
-export const generateInvoicePDF = async (invoice: Invoice, save: boolean = false, returnBlob = false) => {
+const project = import.meta.env.VITE_PROJECT;
+
+const logo = new URL(`../../assets/logo-${project}.png`, import.meta.url).href;
+
+async function getProjectInfo() {
+  const module = await import(`../../project-info/${project}`);
+  return {
+    paymentDetails: module.bankingDetails,
+    company: module.company,
+  };
+}
+const { company, paymentDetails } = await getProjectInfo();
+
+export const generateDeliveryNotePDF = async (deliveryNote: DeliveryNote, save: boolean = false, returnBlob = false) => {
   const doc = new jsPDF({
     orientation: 'p',
     unit: 'mm',
@@ -13,7 +24,6 @@ export const generateInvoicePDF = async (invoice: Invoice, save: boolean = false
   });
 
   const formatDate = (date?: Date) => {
-    // Handle null, undefined, invalid dates, or the "0001-01-01" default from the backend
     if (!date || isNaN(date.getTime()) || date.getFullYear() <= 1) return '—';
     return date.toLocaleDateString('en-ZA', {
       year: 'numeric',
@@ -33,21 +43,15 @@ export const generateInvoicePDF = async (invoice: Invoice, save: boolean = false
     };
   });
 
-  // Get all item rows
-  const allRows = (invoice.quote?.items ?? []).slice().sort((a: QuoteItem, b: QuoteItem) => {
-    const aNum = Number(a.itemNumber);
-    const bNum = Number(b.itemNumber);
-    if (!Number.isNaN(aNum) && !Number.isNaN(bNum)) return aNum - bNum;
-    return a.itemNumber.toString().localeCompare(b.itemNumber.toString(), undefined, { numeric: true });
-  }).map((item: QuoteItem) => [
-    item.itemNumber,
-    item.quantity,
-    item.code || '—',
-    item.uom,
-    item.description,
-    formatAmount(item.unitPrice),
-    formatAmount(item.totalPrice),
-  ]);
+  const allRows = (deliveryNote.quote?.items ?? [])
+    .slice()
+    .sort((a: QuoteItem, b: QuoteItem) => {
+      const aNum = Number(a.itemNumber);
+      const bNum = Number(b.itemNumber);
+      if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
+      return String(a.itemNumber).localeCompare(String(b.itemNumber), undefined, { numeric: true });
+    })
+    .map((item: QuoteItem) => [item.itemNumber, item.quantity, item.description]);
 
   const MAX_ROWS_PER_PAGE = 24;
   const totalPages = Math.ceil(allRows.length / MAX_ROWS_PER_PAGE);
@@ -74,11 +78,11 @@ export const generateInvoicePDF = async (invoice: Invoice, save: boolean = false
 
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    doc.text('BITURE (PTY) LTD   Reg: K2013/194395/07   VAT No: 4480272220', companyInfoX, companyInfoY + 12);
+    doc.text(company[0], companyInfoX, companyInfoY + 12);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
-    doc.text('Cnr Fred Versepute and Asparagus Road Midrand 1685', companyInfoX, companyInfoY + 16);
-    doc.text('Email: BetrothM@biture.co.za   Tel: +27 65 835 4371 | +27 83 249 8510', companyInfoX, companyInfoY + 20);
+    doc.text(company[1], companyInfoX, companyInfoY + 16);
+    doc.text(company[2], companyInfoX, companyInfoY + 20);
 
     // --- Logo (Top Right) ---
     const logoHeight = 15;
@@ -100,22 +104,22 @@ export const generateInvoicePDF = async (invoice: Invoice, save: boolean = false
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7.5);
-    doc.text('BILL TO:', boxX + 2, customerBoxY + 4);
+    doc.text('SITE DETAILS:', boxX + 2, customerBoxY + 4);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
     let custTextY = customerBoxY + 7;
 
-    if (invoice.client) {
+    if (deliveryNote.quote?.client) {
       // Build client lines WITHOUT representative
       const clientLines = [
-        invoice.client.name,
-        invoice.client.addressLine1,
-        invoice.client.addressLine2,
-        invoice.client.addressLine3,
-        invoice.client.addressLine4,
-        invoice.client.vatNumber ? `VAT No: ${invoice.client.vatNumber}` : null,
-        invoice.client.email ? `Email: ${invoice.client.email}` : null
+        deliveryNote.quote.client.name,
+        deliveryNote.quote.client.addressLine1,
+        deliveryNote.quote.client.addressLine2,
+        deliveryNote.quote.client.addressLine3,
+        deliveryNote.quote.client.addressLine4,
+        deliveryNote.quote.client.vatNumber ? `VAT No: ${deliveryNote.quote.client.vatNumber}` : null,
+        deliveryNote.quote.client.email ? `Email: ${deliveryNote.quote.client.email}` : null
       ].filter(Boolean);
 
       // Draw normal client lines
@@ -125,16 +129,16 @@ export const generateInvoicePDF = async (invoice: Invoice, save: boolean = false
       });
 
       // Draw representative line separately (name left, number right, separator in middle)
-      if (invoice.client.representativeName || invoice.client.representativeNumber) {
+      if (deliveryNote.quote.client.representativeName || deliveryNote.quote.client.representativeNumber) {
         const repLineY = custTextY;
         const separatorX = boxX + (boxWidth / 2);
 
-        if (invoice.client.representativeName) {
-          doc.text(invoice.client.representativeName, boxX + 2, repLineY);
+        if (deliveryNote.quote.client.representativeName) {
+          doc.text(deliveryNote.quote.client.representativeName, boxX + 2, repLineY);
         }
 
-        if (invoice.client.representativeNumber) {
-          doc.text(invoice.client.representativeNumber, boxX + boxWidth - 2, repLineY, { align: 'right' });
+        if (deliveryNote.quote.client.representativeNumber) {
+          doc.text(deliveryNote.quote.client.representativeNumber, boxX + boxWidth - 2, repLineY, { align: 'right' });
         }
 
         custTextY += 3;
@@ -142,48 +146,48 @@ export const generateInvoicePDF = async (invoice: Invoice, save: boolean = false
 
     }
 
-    // --- Tax Invoice Block (below logo, same height as Bill To) ---
-    const invoiceDetailsBlockWidth = 70;
-    const invoiceDetailsBlockX = pageWidth - margin - invoiceDetailsBlockWidth;
-    const invoiceDetailsY = companyInfoY + logoHeight + 8;
+    // --- Job Card Block (below logo, same height as Bill To) ---
+    const deliveryNoteDetailsBlockWidth = 70;
+    const deliveryNoteDetailsBlockX = pageWidth - margin - deliveryNoteDetailsBlockWidth;
+    const deliveryNoteDetailsY = companyInfoY + logoHeight + 8;
 
     doc.setLineWidth(0.2);
-    doc.rect(invoiceDetailsBlockX, invoiceDetailsY, invoiceDetailsBlockWidth, boxHeight);
+    doc.rect(deliveryNoteDetailsBlockX, deliveryNoteDetailsY, deliveryNoteDetailsBlockWidth, boxHeight);
 
     doc.setFontSize(7.5);
     doc.setFont('helvetica', 'bold');
-    doc.text('TAX INVOICE', pageWidth - margin - 2, invoiceDetailsY + 4, { align: 'right' });
+    doc.text('DELIVERY NOTE', pageWidth - margin - 2, deliveryNoteDetailsY + 4, { align: 'right' });
 
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
-    let detailY = invoiceDetailsY + 7;
+    let detailY = deliveryNoteDetailsY + 7;
 
-    const addInvoiceDetailRow = (label: string, value: string) => {
+    const adddeliveryNoteDetailRow = (label: string, value: string) => {
       doc.setFont('helvetica', 'bold');
-      doc.text(label, invoiceDetailsBlockX + 2, detailY);
+      doc.text(label, deliveryNoteDetailsBlockX + 2, detailY);
 
       doc.setFont('helvetica', 'normal');
-      doc.text(value, invoiceDetailsBlockX + invoiceDetailsBlockWidth - 2, detailY, { align: 'right' });
+      doc.text(value, deliveryNoteDetailsBlockX + deliveryNoteDetailsBlockWidth - 2, detailY, { align: 'right' });
 
       detailY += 4;
     };
 
-    addInvoiceDetailRow('INVOICE NUMBER:', invoice.invoiceNumber);
-    addInvoiceDetailRow('INVOICE DATE:', formatDate(invoice.createdAt ? new Date(invoice.createdAt) : undefined));
-    addInvoiceDetailRow('DUE DATE:', formatDate(invoice.dueDate ? new Date(invoice.dueDate) : undefined));
-    addInvoiceDetailRow('VENDOR NUMBER:', invoice.client?.vendorNumber || '—');
-    if (invoice.quote?.poNumber) {
-      addInvoiceDetailRow('PO NUMBER:', invoice.quote.poNumber);
+    adddeliveryNoteDetailRow('DELIVERY NOTE NUMBER:', deliveryNote.deliveryNoteNumber);
+    adddeliveryNoteDetailRow('DATE:', formatDate(deliveryNote.createdAt ? new Date(deliveryNote.createdAt) : undefined));
+    adddeliveryNoteDetailRow('REFERENCE:', deliveryNote.reference || '—');
+    adddeliveryNoteDetailRow('VENDOR NUMBER:', deliveryNote.quote?.client?.vendorNumber || '—');
+    if (deliveryNote.quote?.poNumber) {
+      adddeliveryNoteDetailRow('PO NUMBER:', deliveryNote.quote.poNumber);
     }
-    addInvoiceDetailRow('PAGE:', `${currentPage} of ${totalPages}` || '—');
+    adddeliveryNoteDetailRow('PAGE:', `${currentPage} of ${totalPages}` || '—');
 
     // --- Table Start ---
-    currentY = Math.max(customerBoxY + boxHeight, invoiceDetailsY + boxHeight) + 5;
+    currentY = Math.max(customerBoxY + boxHeight, deliveryNoteDetailsY + boxHeight) + 5;
 
-    // Render this chunk as a table
+
     autoTable(doc, {
       startY: currentY,
-      head: [['ITEM', 'QTY', 'CODE', 'UOM', 'DESCRIPTION', 'UNIT PRICE', 'TOTAL']],
+      head: [['ITEM', 'QTY', 'DESCRIPTION']],
       body: chunk,
       theme: 'plain',
       styles: {
@@ -205,13 +209,8 @@ export const generateInvoicePDF = async (invoice: Invoice, save: boolean = false
       columnStyles: {
         0: { cellWidth: 12, halign: 'center' },
         1: { cellWidth: 12, halign: 'center' },
-        2: { cellWidth: 18, halign: 'center' },
-        3: { cellWidth: 15, halign: 'center' },
-        4: { cellWidth: 'auto' },
-        5: { cellWidth: 25, halign: 'right' },
-        6: { cellWidth: 25, halign: 'right' },
-      },
-      didDrawCell: (data) => {
+        2: { cellWidth: 'auto' },
+      }, didDrawCell: (data) => {
         if (
           data.section === 'body' &&
           data.row.index === chunk.length - 1 &&
@@ -231,29 +230,12 @@ export const generateInvoicePDF = async (invoice: Invoice, save: boolean = false
     currentY = Math.max(table.finalY + 8, pageHeight - margin - totalFooterHeight);
     currentY += 10;
 
-    // Summary
-    const summaryX = pageWidth - margin;
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Sub Total', summaryX - 45, currentY);
-    doc.text(formatAmount(invoice.quote?.subTotal), summaryX, currentY, { align: 'right' });
-    currentY += 4;
-    doc.text('VAT (15%)', summaryX - 45, currentY);
-    doc.text(formatAmount(invoice.quote?.vat), summaryX, currentY, { align: 'right' });
-    currentY += 2;
-    doc.setLineWidth(0.5);
-    doc.setDrawColor(51, 51, 51);
-    doc.line(summaryX - 45, currentY, summaryX, currentY);
-    currentY += 5;
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Total', summaryX - 45, currentY);
-    doc.text(formatAmount(invoice.quote?.total), summaryX, currentY, { align: 'right' });
+
     doc.setFont('helvetica', 'normal');
 
     // Approval + Terms
     currentY = Math.max(currentY + 5, pageHeight - margin - footerBlockHeight);
-    currentY += -14;
+    currentY += -0;
     doc.setFontSize(8);
     doc.text('Received and Approved by: __________________________________________________________', margin, currentY);
     currentY += 8;
@@ -278,14 +260,6 @@ export const generateInvoicePDF = async (invoice: Invoice, save: boolean = false
     doc.setFontSize(7);
 
     let paymentTextY = paymentBoxY + 8;
-    const paymentDetails = [
-      'Bank: STANDARD BANK',
-      'Branch: MIDRAND',
-      'Branch Code: 001155',
-      'Account Name: BITURE (PTY) LTD',
-      'Account Number: 10 14 267 853 6',
-      'SWIFT Code: SBZAZAJJ'
-    ];
     paymentDetails.forEach(line => {
       doc.text(line, paymentBoxX + 4, paymentTextY);
       paymentTextY += 3;
@@ -300,8 +274,9 @@ export const generateInvoicePDF = async (invoice: Invoice, save: boolean = false
   }
 
   if (save) {
-    doc.save(`Invoice_${invoice.invoiceNumber}.pdf`);
-    return "";
+    // Trigger a download
+    doc.save(`DeliveryNote_${deliveryNote.deliveryNoteNumber}.pdf`);
+    return ""; // nothing needed for preview in this case
   }
 
   if (returnBlob) {

@@ -1,10 +1,10 @@
 import { jsPDF } from 'jspdf';
 import { autoTable } from 'jspdf-autotable';
-import type { DeliveryNote, QuoteItem } from '../types';
-import { formatAmount } from '../../formatters';
+import type { JobCard, QuoteItem } from '../../types';
+import { formatAmount } from '../../../formatters';
 import logo from '../assets/logo.png';
 
-export const generateDeliveryNotePDF = async (deliveryNote: DeliveryNote, save: boolean = false, returnBlob = false) => {
+export const generateJobCardPDF = async (jobCard: JobCard, save: boolean = false, returnBlob = false) => {
   const doc = new jsPDF({
     orientation: 'p',
     unit: 'mm',
@@ -31,7 +31,7 @@ export const generateDeliveryNotePDF = async (deliveryNote: DeliveryNote, save: 
     };
   });
 
-  const allRows = (deliveryNote.quote?.items ?? [])
+  const allRows = (jobCard.quote?.items ?? [])
     .slice()
     .sort((a: QuoteItem, b: QuoteItem) => {
       const aNum = Number(a.itemNumber);
@@ -98,16 +98,16 @@ export const generateDeliveryNotePDF = async (deliveryNote: DeliveryNote, save: 
     doc.setFontSize(7);
     let custTextY = customerBoxY + 7;
 
-    if (deliveryNote.quote?.client) {
+    if (jobCard.quote?.client) {
       // Build client lines WITHOUT representative
       const clientLines = [
-        deliveryNote.quote.client.name,
-        deliveryNote.quote.client.addressLine1,
-        deliveryNote.quote.client.addressLine2,
-        deliveryNote.quote.client.addressLine3,
-        deliveryNote.quote.client.addressLine4,
-        deliveryNote.quote.client.vatNumber ? `VAT No: ${deliveryNote.quote.client.vatNumber}` : null,
-        deliveryNote.quote.client.email ? `Email: ${deliveryNote.quote.client.email}` : null
+        jobCard.quote.client.name,
+        jobCard.quote.client.addressLine1,
+        jobCard.quote.client.addressLine2,
+        jobCard.quote.client.addressLine3,
+        jobCard.quote.client.addressLine4,
+        jobCard.quote.client.vatNumber ? `VAT No: ${jobCard.quote.client.vatNumber}` : null,
+        jobCard.quote.client.email ? `Email: ${jobCard.quote.client.email}` : null
       ].filter(Boolean);
 
       // Draw normal client lines
@@ -117,16 +117,16 @@ export const generateDeliveryNotePDF = async (deliveryNote: DeliveryNote, save: 
       });
 
       // Draw representative line separately (name left, number right, separator in middle)
-      if (deliveryNote.quote.client.representativeName || deliveryNote.quote.client.representativeNumber) {
+      if (jobCard.quote.client.representativeName || jobCard.quote.client.representativeNumber) {
         const repLineY = custTextY;
         const separatorX = boxX + (boxWidth / 2);
 
-        if (deliveryNote.quote.client.representativeName) {
-          doc.text(deliveryNote.quote.client.representativeName, boxX + 2, repLineY);
+        if (jobCard.quote.client.representativeName) {
+          doc.text(jobCard.quote.client.representativeName, boxX + 2, repLineY);
         }
 
-        if (deliveryNote.quote.client.representativeNumber) {
-          doc.text(deliveryNote.quote.client.representativeNumber, boxX + boxWidth - 2, repLineY, { align: 'right' });
+        if (jobCard.quote.client.representativeNumber) {
+          doc.text(jobCard.quote.client.representativeNumber, boxX + boxWidth - 2, repLineY, { align: 'right' });
         }
 
         custTextY += 3;
@@ -135,42 +135,42 @@ export const generateDeliveryNotePDF = async (deliveryNote: DeliveryNote, save: 
     }
 
     // --- Job Card Block (below logo, same height as Bill To) ---
-    const deliveryNoteDetailsBlockWidth = 70;
-    const deliveryNoteDetailsBlockX = pageWidth - margin - deliveryNoteDetailsBlockWidth;
-    const deliveryNoteDetailsY = companyInfoY + logoHeight + 8;
+    const jobCardDetailsBlockWidth = 70;
+    const jobCardDetailsBlockX = pageWidth - margin - jobCardDetailsBlockWidth;
+    const jobCardDetailsY = companyInfoY + logoHeight + 8;
 
     doc.setLineWidth(0.2);
-    doc.rect(deliveryNoteDetailsBlockX, deliveryNoteDetailsY, deliveryNoteDetailsBlockWidth, boxHeight);
+    doc.rect(jobCardDetailsBlockX, jobCardDetailsY, jobCardDetailsBlockWidth, boxHeight);
 
     doc.setFontSize(7.5);
     doc.setFont('helvetica', 'bold');
-    doc.text('DELIVERY NOTE', pageWidth - margin - 2, deliveryNoteDetailsY + 4, { align: 'right' });
+    doc.text('JOB CARD', pageWidth - margin - 2, jobCardDetailsY + 4, { align: 'right' });
 
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
-    let detailY = deliveryNoteDetailsY + 7;
+    let detailY = jobCardDetailsY + 7;
 
-    const adddeliveryNoteDetailRow = (label: string, value: string) => {
+    const addJobCardDetailRow = (label: string, value: string) => {
       doc.setFont('helvetica', 'bold');
-      doc.text(label, deliveryNoteDetailsBlockX + 2, detailY);
+      doc.text(label, jobCardDetailsBlockX + 2, detailY);
 
       doc.setFont('helvetica', 'normal');
-      doc.text(value, deliveryNoteDetailsBlockX + deliveryNoteDetailsBlockWidth - 2, detailY, { align: 'right' });
+      doc.text(value, jobCardDetailsBlockX + jobCardDetailsBlockWidth - 2, detailY, { align: 'right' });
 
       detailY += 4;
     };
 
-    adddeliveryNoteDetailRow('DELIVERY NOTE NUMBER:', deliveryNote.deliveryNoteNumber);
-    adddeliveryNoteDetailRow('DATE:', formatDate(deliveryNote.createdAt ? new Date(deliveryNote.createdAt) : undefined));
-    adddeliveryNoteDetailRow('REFERENCE:', deliveryNote.reference || '—');
-    adddeliveryNoteDetailRow('VENDOR NUMBER:', deliveryNote.quote?.client?.vendorNumber || '—');
-    if (deliveryNote.quote?.poNumber) {
-      adddeliveryNoteDetailRow('PO NUMBER:', deliveryNote.quote.poNumber);
+    addJobCardDetailRow('JOB CARD NUMBER:', jobCard.jobCardNumber);
+    addJobCardDetailRow('DATE:', formatDate(jobCard.createdAt ? new Date(jobCard.createdAt) : undefined));
+    addJobCardDetailRow('REFERENCE:', jobCard.reference || '—');
+    addJobCardDetailRow('VENDOR NUMBER:', jobCard.quote?.client?.vendorNumber || '—');
+    if (jobCard.quote?.poNumber) {
+      addJobCardDetailRow('PO NUMBER:', jobCard.quote.poNumber);
     }
-    adddeliveryNoteDetailRow('PAGE:', `${currentPage} of ${totalPages}` || '—');
+    addJobCardDetailRow('PAGE:', `${currentPage} of ${totalPages}`);
 
     // --- Table Start ---
-    currentY = Math.max(customerBoxY + boxHeight, deliveryNoteDetailsY + boxHeight) + 5;
+    currentY = Math.max(customerBoxY + boxHeight, jobCardDetailsY + boxHeight) + 5;
 
 
     autoTable(doc, {
@@ -217,8 +217,6 @@ export const generateDeliveryNotePDF = async (deliveryNote: DeliveryNote, save: 
     const table = (doc as any).lastAutoTable;
     currentY = Math.max(table.finalY + 8, pageHeight - margin - totalFooterHeight);
     currentY += 10;
-
-
     doc.setFont('helvetica', 'normal');
 
     // Approval + Terms
@@ -271,7 +269,7 @@ export const generateDeliveryNotePDF = async (deliveryNote: DeliveryNote, save: 
 
   if (save) {
     // Trigger a download
-    doc.save(`DeliveryNote_${deliveryNote.deliveryNoteNumber}.pdf`);
+    doc.save(`JobCard_${jobCard.jobCardNumber || 'N-A'}.pdf`);
     return ""; // nothing needed for preview in this case
   }
 

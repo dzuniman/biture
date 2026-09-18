@@ -1,19 +1,21 @@
 import { jsPDF } from 'jspdf';
 import { autoTable } from 'jspdf-autotable';
-import type { JobCard, QuoteItem } from '../types';
-import { formatAmount } from '../../formatters';
+import type { CreditNote } from '../../types';
+import { formatAmount } from '../../../formatters';
 import logo from '../assets/logo.png';
 
-export const generateJobCardPDF = async (jobCard: JobCard, save: boolean = false, returnBlob = false) => {
+export const generateCreditNotePDF = async (creditNote: CreditNote, save: boolean = false, returnBlob = false) => {
   const doc = new jsPDF({
     orientation: 'p',
     unit: 'mm',
     format: 'a4'
   });
 
-  const formatDate = (date?: Date) => {
-    if (!date || isNaN(date.getTime()) || date.getFullYear() <= 1) return '—';
-    return date.toLocaleDateString('en-ZA', {
+  const formatDate = (dateValue?: string | null) => {
+    if (!dateValue) return '—';
+    const d = new Date(dateValue);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString('en-ZA', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -31,15 +33,7 @@ export const generateJobCardPDF = async (jobCard: JobCard, save: boolean = false
     };
   });
 
-  const allRows = (jobCard.quote?.items ?? [])
-    .slice()
-    .sort((a: QuoteItem, b: QuoteItem) => {
-      const aNum = Number(a.itemNumber);
-      const bNum = Number(b.itemNumber);
-      if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
-      return String(a.itemNumber).localeCompare(String(b.itemNumber), undefined, { numeric: true });
-    })
-    .map((item: QuoteItem) => [item.itemNumber, item.quantity, item.description]);
+  const allRows = [[creditNote.description, formatAmount(creditNote.amount)]];
 
   const MAX_ROWS_PER_PAGE = 24;
   const totalPages = Math.ceil(allRows.length / MAX_ROWS_PER_PAGE);
@@ -53,7 +47,7 @@ export const generateJobCardPDF = async (jobCard: JobCard, save: boolean = false
     let chunk = allRows.slice(i, i + MAX_ROWS_PER_PAGE);
 
     while (chunk.length < MAX_ROWS_PER_PAGE) {
-      chunk.push(['', '', '', '', '', '', '']);
+      chunk.push(['', '']);
     }
 
     const margin = 5;
@@ -92,22 +86,22 @@ export const generateJobCardPDF = async (jobCard: JobCard, save: boolean = false
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7.5);
-    doc.text('SITE DETAILS:', boxX + 2, customerBoxY + 4);
+    doc.text('BILL TO:', boxX + 2, customerBoxY + 4);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
     let custTextY = customerBoxY + 7;
 
-    if (jobCard.quote?.client) {
+    if (creditNote.client) {
       // Build client lines WITHOUT representative
       const clientLines = [
-        jobCard.quote.client.name,
-        jobCard.quote.client.addressLine1,
-        jobCard.quote.client.addressLine2,
-        jobCard.quote.client.addressLine3,
-        jobCard.quote.client.addressLine4,
-        jobCard.quote.client.vatNumber ? `VAT No: ${jobCard.quote.client.vatNumber}` : null,
-        jobCard.quote.client.email ? `Email: ${jobCard.quote.client.email}` : null
+        creditNote.client.name,
+        creditNote.client.addressLine1,
+        creditNote.client.addressLine2,
+        creditNote.client.addressLine3,
+        creditNote.client.addressLine4,
+        creditNote.client.vatNumber ? `VAT No: ${creditNote.client.vatNumber}` : null,
+        creditNote.client.email ? `Email: ${creditNote.client.email}` : null
       ].filter(Boolean);
 
       // Draw normal client lines
@@ -117,65 +111,58 @@ export const generateJobCardPDF = async (jobCard: JobCard, save: boolean = false
       });
 
       // Draw representative line separately (name left, number right, separator in middle)
-      if (jobCard.quote.client.representativeName || jobCard.quote.client.representativeNumber) {
+      if (creditNote.client.representativeName || creditNote.client.representativeNumber) {
         const repLineY = custTextY;
         const separatorX = boxX + (boxWidth / 2);
 
-        if (jobCard.quote.client.representativeName) {
-          doc.text(jobCard.quote.client.representativeName, boxX + 2, repLineY);
+        if (creditNote.client.representativeName) {
+          doc.text(creditNote.client.representativeName, boxX + 2, repLineY);
         }
 
-        if (jobCard.quote.client.representativeNumber) {
-          doc.text(jobCard.quote.client.representativeNumber, boxX + boxWidth - 2, repLineY, { align: 'right' });
+        if (creditNote.client.representativeNumber) {
+          doc.text(creditNote.client.representativeNumber, boxX + boxWidth - 2, repLineY, { align: 'right' });
         }
 
         custTextY += 3;
       }
-
     }
 
-    // --- Job Card Block (below logo, same height as Bill To) ---
-    const jobCardDetailsBlockWidth = 70;
-    const jobCardDetailsBlockX = pageWidth - margin - jobCardDetailsBlockWidth;
-    const jobCardDetailsY = companyInfoY + logoHeight + 8;
+    // --- Credit Note Block (below logo, same height as Bill To) ---
+    const creditNoteDetailsBlockWidth = 70;
+    const creditNoteDetailsBlockX = pageWidth - margin - creditNoteDetailsBlockWidth;
+    const creditNoteDetailsY = companyInfoY + logoHeight + 8;
 
     doc.setLineWidth(0.2);
-    doc.rect(jobCardDetailsBlockX, jobCardDetailsY, jobCardDetailsBlockWidth, boxHeight);
+    doc.rect(creditNoteDetailsBlockX, creditNoteDetailsY, creditNoteDetailsBlockWidth, boxHeight);
 
     doc.setFontSize(7.5);
     doc.setFont('helvetica', 'bold');
-    doc.text('JOB CARD', pageWidth - margin - 2, jobCardDetailsY + 4, { align: 'right' });
+    doc.text('CREDIT NOTE', pageWidth - margin - 2, creditNoteDetailsY + 4, { align: 'right' });
 
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
-    let detailY = jobCardDetailsY + 7;
+    let detailY = creditNoteDetailsY + 7;
 
-    const addJobCardDetailRow = (label: string, value: string) => {
+    const addCreditNoteDetailRow = (label: string, value: string) => {
       doc.setFont('helvetica', 'bold');
-      doc.text(label, jobCardDetailsBlockX + 2, detailY);
+      doc.text(label, creditNoteDetailsBlockX + 2, detailY);
 
       doc.setFont('helvetica', 'normal');
-      doc.text(value, jobCardDetailsBlockX + jobCardDetailsBlockWidth - 2, detailY, { align: 'right' });
+      doc.text(value, creditNoteDetailsBlockX + creditNoteDetailsBlockWidth - 2, detailY, { align: 'right' });
 
       detailY += 4;
     };
 
-    addJobCardDetailRow('JOB CARD NUMBER:', jobCard.jobCardNumber);
-    addJobCardDetailRow('DATE:', formatDate(jobCard.createdAt ? new Date(jobCard.createdAt) : undefined));
-    addJobCardDetailRow('REFERENCE:', jobCard.reference || '—');
-    addJobCardDetailRow('VENDOR NUMBER:', jobCard.quote?.client?.vendorNumber || '—');
-    if (jobCard.quote?.poNumber) {
-      addJobCardDetailRow('PO NUMBER:', jobCard.quote.poNumber);
-    }
-    addJobCardDetailRow('PAGE:', `${currentPage} of ${totalPages}`);
+    addCreditNoteDetailRow('CREDIT NOTE NUMBER:', creditNote.creditNoteNumber);
+    addCreditNoteDetailRow('DATE:', formatDate(creditNote.createdAt));
+    addCreditNoteDetailRow('PAGE:', `${currentPage} of ${totalPages}`);
 
     // --- Table Start ---
-    currentY = Math.max(customerBoxY + boxHeight, jobCardDetailsY + boxHeight) + 5;
-
+    currentY = Math.max(customerBoxY + boxHeight, creditNoteDetailsY + boxHeight) + 5;
 
     autoTable(doc, {
       startY: currentY,
-      head: [['ITEM', 'QTY', 'DESCRIPTION']],
+      head: [['DESCRIPTION', 'AMOUNT']],
       body: chunk,
       theme: 'plain',
       styles: {
@@ -195,9 +182,8 @@ export const generateJobCardPDF = async (jobCard: JobCard, save: boolean = false
         valign: 'middle',
       },
       columnStyles: {
-        0: { cellWidth: 12, halign: 'center' },
-        1: { cellWidth: 12, halign: 'center' },
-        2: { cellWidth: 'auto' },
+        0: { cellWidth: 'auto' },
+        1: { cellWidth: 30, halign: 'right' },
       }, didDrawCell: (data) => {
         if (
           data.section === 'body' &&
@@ -213,8 +199,18 @@ export const generateJobCardPDF = async (jobCard: JobCard, save: boolean = false
       margin: margin,
     });
 
-    // --- Summary + Footer + Payment Box (runs on every page) ---
     const table = (doc as any).lastAutoTable;
+    currentY = Math.max(table.finalY + 8, pageHeight - margin - totalFooterHeight);
+
+    // Total Credited Box
+    const summaryX = pageWidth - margin;
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Total Credited:', summaryX - 45, currentY + 20);
+    doc.text(formatAmount(creditNote.amount), summaryX, currentY + 20, { align: 'right' });
+    currentY += 20;
+
+    // --- Summary + Footer + Payment Box (runs on every page) ---
     currentY = Math.max(table.finalY + 8, pageHeight - margin - totalFooterHeight);
     currentY += 10;
     doc.setFont('helvetica', 'normal');
@@ -269,7 +265,7 @@ export const generateJobCardPDF = async (jobCard: JobCard, save: boolean = false
 
   if (save) {
     // Trigger a download
-    doc.save(`JobCard_${jobCard.jobCardNumber || 'N-A'}.pdf`);
+    doc.save(`CreditNote_${creditNote.creditNoteNumber || 'N-A'}.pdf`);
     return ""; // nothing needed for preview in this case
   }
 
