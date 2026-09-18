@@ -3,5 +3,5 @@
 </FilesMatch>
 
 # Tell PHP to use the custom php.ini in this folder
-suPHP_ConfigPath /home/biturvnu/public_html/api_erp_biture
+suPHP_ConfigPath /home/biturvnu/public_html/staging_api_erp_biture
 SetEnv APP_ENV epec-staging

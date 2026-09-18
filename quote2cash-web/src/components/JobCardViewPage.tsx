@@ -12,7 +12,7 @@ const logo = new URL(`../assets/logo-${project}.png`, import.meta.url).href;
 
 export async function generateJobCardPDF(jobCard: JobCard, save: boolean = false, returnBlob = false) {
   try {
-    const module = await import(`../pdf-generators/${pdfGenerators}/JobCardPdfGenerator`);
+    const module = await import(`../pdf-generators/${pdfGenerators}/JobCardPdfGenerator.tsx`);
     return module.generateJobCardPDF(jobCard, save, returnBlob);
   } catch (err) {
     throw new Error(`No JobCard PdfGenerator found for project: ${project}`);

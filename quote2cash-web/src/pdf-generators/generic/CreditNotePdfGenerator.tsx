@@ -7,15 +7,15 @@ const project = import.meta.env.VITE_PROJECT;
 const logo = new URL(`../../assets/logo-${project}.png`, import.meta.url).href;
 
 async function getProjectInfo() {
-  const module = await import(`../../project-info/${project}`);
+  const module = await import(`../../project-info/${project}.ts`);
   return {
     paymentDetails: module.bankingDetails,
     company: module.company,
   };
 }
-const { company, paymentDetails } = await getProjectInfo();
 
 export const generateCreditNotePDF = async (creditNote: CreditNote, save: boolean = false, returnBlob = false) => {
+  const { company, paymentDetails } = await getProjectInfo();
   const doc = new jsPDF({
     orientation: 'p',
     unit: 'mm',

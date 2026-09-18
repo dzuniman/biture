@@ -12,7 +12,7 @@ const logo = new URL(`../assets/logo-${project}.png`, import.meta.url).href;
 
 export async function generateCreditNotePDF(creditNote: CreditNote, save: boolean = false, returnBlob = false) {
   try {
-    const module = await import(`../pdf-generators/${pdfGenerators}/CreditNotePdfGenerator`);
+    const module = await import(`../pdf-generators/${pdfGenerators}/CreditNotePdfGenerator.tsx`);
     return module.generateCreditNotePDF(creditNote, save, returnBlob);
   } catch (err) {
     throw new Error(`No Credit Note PdfGenerator found for project: ${project}`);

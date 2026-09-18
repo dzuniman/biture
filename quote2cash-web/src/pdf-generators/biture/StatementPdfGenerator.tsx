@@ -3,7 +3,9 @@ import { jsPDF } from 'jspdf';
 import { autoTable } from 'jspdf-autotable';
 import type { Statement, Invoice, Client, CreditNote } from '../../types';
 import { formatAmount } from '../../../formatters';
-import logo from '../assets/logo.png';
+const project = import.meta.env.VITE_PROJECT;
+
+const logo = new URL(`../../assets/logo-${project}.png`, import.meta.url).href;
 
 export const generateStatementPDF = async (statement: Statement,
   invoices: Invoice[],

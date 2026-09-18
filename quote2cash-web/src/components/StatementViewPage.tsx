@@ -15,7 +15,7 @@ export async function generateStatementPDF(statement: Statement,
   save: boolean = false,
   returnBlob = false) {
   try {
-    const module = await import(`../pdf-generators/${pdfGenerators}/StatementPdfGenerator`);
+    const module = await import(`../pdf-generators/${pdfGenerators}/StatementPdfGenerator.tsx`);
     return module.generateStatementPDF(statement, invoices, creditNotes, save, returnBlob);
   } catch (err) {
     throw new Error(`No Statement PdfGenerator found for project: ${project}`);

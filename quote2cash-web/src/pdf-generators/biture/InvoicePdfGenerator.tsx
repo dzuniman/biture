@@ -3,8 +3,9 @@ import { jsPDF } from 'jspdf';
 import { autoTable } from 'jspdf-autotable'; // Ensure you have jspdf-autotable installed
 import type { Invoice, QuoteItem, Client } from '../../types'; // Import necessary types
 import { formatAmount } from '../../../formatters'; // Assuming formatAmount is available at this path
-import logo from '../assets/logo.png'; // Assuming logo path is correct
+const project = import.meta.env.VITE_PROJECT;
 
+const logo = new URL(`../../assets/logo-${project}.png`, import.meta.url).href;
 export const generateInvoicePDF = async (invoice: Invoice, save: boolean = false, returnBlob = false) => {
   const doc = new jsPDF({
     orientation: 'p',

@@ -8,13 +8,13 @@ const project = import.meta.env.VITE_PROJECT;
 const logo = new URL(`../../assets/logo-${project}.png`, import.meta.url).href;
 
 async function getProjectInfo() {
-  const module = await import(`../../project-info/${project}`);
+  const module = await import(`../../project-info/${project}.ts`);
   return {
     paymentDetails: module.bankingDetails,
     company: module.company,
   };
 }
-const { company, paymentDetails } = await getProjectInfo();
+
 
 export const generateStatementPDF = async (statement: Statement,
   invoices: Invoice[],
@@ -26,6 +26,7 @@ export const generateStatementPDF = async (statement: Statement,
     unit: 'mm',
     format: 'a4'
   });
+  const { company, paymentDetails } = await getProjectInfo();
 
   const formatDate = (dateValue?: string | null) => {
     if (!dateValue) return '—';

@@ -14,10 +14,10 @@ export async function generateQuotePDF(
   returnBlob: boolean = false
 ) {
   try {
-    const module = await import(`../pdf-generators/${pdfGenerators}/QuotePdfGenerator`);
+    const module = await import(`../pdf-generators/${pdfGenerators}/QuotePdfGenerator.tsx`);
     return module.generateQuotePDF(quote, save, returnBlob);
   } catch (err) {
-    throw new Error(`No Quote PdfGenerator found for project: ${project}`);
+    throw new Error(`No QuotePdfGenerator found for project: ${project}`);
   }
 }
 

@@ -15,7 +15,7 @@ export async function generateInvoicePDF(
   returnBlob: boolean = false
 ) {
   try {
-    const module = await import(`../pdf-generators/${pdfGenerators}/InvoicePdfGenerator`);
+    const module = await import(`../pdf-generators/${pdfGenerators}/InvoicePdfGenerator.tsx`);
     return module.generateInvoicePDF(invoice, save, returnBlob);
   } catch (err) {
     throw new Error(`No Invoice PdfGenerator found for project: ${project}`);

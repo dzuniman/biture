@@ -12,7 +12,7 @@ const logo = new URL(`../assets/logo-${project}.png`, import.meta.url).href;
 
 export async function generateDeliveryNotePDF(deliveryNote: DeliveryNote, save: boolean = false, returnBlob = false) {
   try {
-    const module = await import(`../pdf-generators/${pdfGenerators}/DeliveryNotePdfGenerator`);
+    const module = await import(`../pdf-generators/${pdfGenerators}/DeliveryNotePdfGenerator.tsx`);
     return module.generateDeliveryNotePDF(deliveryNote, save, returnBlob);
   } catch (err) {
     throw new Error(`No Delivery Note PdfGenerator found for project: ${project}`);
