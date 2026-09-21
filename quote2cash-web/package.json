@@ -7,8 +7,7 @@
     "dev": "vite",
     "staging": "vite --mode staging",
     "production": "vite --mode production",
-    "ditau:dev": "vite --mode ditau-development",
-    "epec:dev": "vite --mode epec-development",
+    "ditau:production": "vite --mode ditau-production",
     "epec:production": "vite --mode epec-production",
     "build": "tsc && vite build",
     "preview": "vite preview",
@@ -19,9 +18,7 @@
     "build:ditau:production": "vite build --mode ditau-production",
     "deploy:ditau:production:frontend": "npm run build:ditau:production && node deploy-epec-production.cjs",
     "build:epec:production": "vite build --mode epec-production",
-    "deploy:epec:production:frontend": "npm run build:epec:production && node deploy-epec-production.cjs",
-    "build:epec:staging": "vite build --mode epec-staging",
-    "deploy:epec:staging:frontend": "npm run build:epec:staging && node deploy-epec-staging.cjs"
+    "deploy:epec:production:frontend": "npm run build:epec:production && node deploy-epec-production.cjs"
   },
   "dependencies": {
     "add": "^2.0.6",

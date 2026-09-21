@@ -18,9 +18,8 @@
     "deploy:epec:production:backend": "node deploy-epec-production-backend.cjs",
     "build:epec:production": "vite build --mode epec-production",
     "deploy:epec:production:frontend": "npm run build:epec:production && node deploy-production.cjs",
-    "build:epec:staging": "vite build --mode epec-staging",
-    "deploy:epec:staging:frontend": "npm run build:epec:staging && node deploy-epec-staging.cjs",
-    "deploy:epec:staging:backend": "node deploy-epec-staging-backend.cjs"
+    "build:ditau:production": "vite build --mode ditau-production",
+    "deploy:ditau:production:frontend": "npm run build:ditau:production && node deploy-ditau-production.cjs"
   },
   "dependencies": {
     "add": "^2.0.6",
