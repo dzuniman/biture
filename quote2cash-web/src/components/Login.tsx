@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { login as apiLogin } from '../api';
 import { useAuth } from '../AuthContext';
-import logo from '../assets/logo.png';
+import logoBiture from '../assets/logo-biture.png';
+import logoEpec from '../assets/logo-epec.png';
+
+const logos: Record<string, string> = {
+  biture: logoBiture,
+  epec: logoEpec,
+};
+
+const project = import.meta.env.VITE_PROJECT;
+const logo = logos[project];
 
 export const Login: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -42,7 +51,7 @@ export const Login: React.FC = () => {
     <div className="login-container" style={{ color: '#000000', background: `${import.meta.env.VITE_ENV_COLOR}` }}>
       <form onSubmit={handleSubmit} className="login-form" >
         <img src={logo} alt="Logo" style={{ display: 'block', margin: '0 auto 20px', height: '60px', width: 'auto' }} />
-        <h2>Login to BITURE ERP {import.meta.env.VITE_ENV_NAME}</h2>
+        <h2>Login to {import.meta.env.VITE_PROJECT.toUpperCase()} ERP {import.meta.env.VITE_ENV_NAME}</h2>
         {error && <p className="login-error">{error}</p>}
         <div className="login-field">
           <label htmlFor="username">Username</label>

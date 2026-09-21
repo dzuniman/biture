@@ -2,9 +2,24 @@ import React, { useEffect, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import type { Quote, Client } from '../types'; // Ensure Client type is imported
 import { formatAmount } from '../../formatters';
-import logo from '../assets/logo.png';
-import { generateQuotePDF } from './QuotePdfGenerator'; // Import the Quote generator
 pdfjs.GlobalWorkerOptions.workerSrc = import.meta.env.VITE_PDF_WORKER;
+
+const pdfGenerators = import.meta.env.VITE_PDFGENERATORS;
+const project = import.meta.env.VITE_PROJECT;
+const logo = new URL(`../assets/logo-${project}.png`, import.meta.url).href;
+
+export async function generateQuotePDF(
+  quote: Quote,
+  save: boolean = false,
+  returnBlob: boolean = false
+) {
+  try {
+    const module = await import(`../pdf-generators/${pdfGenerators}/QuotePdfGenerator.tsx`);
+    return module.generateQuotePDF(quote, save, returnBlob);
+  } catch (err) {
+    throw new Error(`No QuotePdfGenerator found for project: ${project}`);
+  }
+}
 
 interface Props {
   quote: Quote;

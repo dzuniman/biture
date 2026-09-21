@@ -3,11 +3,24 @@ import { Document, Page, pdfjs } from "react-pdf";
 import { getInvoice } from '../api';
 import type { Invoice, Client, Quote, InvoiceQuote } from '../types';
 import { formatAmount } from '../../formatters';
-import logo from '../assets/logo.png';
-import { generateInvoicePDF } from './InvoicePdfGenerator'; // Import the new generator
-import { generateQuotePDF } from "../pdfUtils";
+pdfjs.GlobalWorkerOptions.workerSrc = import.meta.env.VITE_PDF_WORKER;
 
-pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
+const pdfGenerators = import.meta.env.VITE_PDFGENERATORS;
+const project = import.meta.env.VITE_PROJECT;
+const logo = new URL(`../assets/logo-${project}.png`, import.meta.url).href;
+
+export async function generateInvoicePDF(
+  invoice: Invoice,
+  save: boolean = false,
+  returnBlob: boolean = false
+) {
+  try {
+    const module = await import(`../pdf-generators/${pdfGenerators}/InvoicePdfGenerator.tsx`);
+    return module.generateInvoicePDF(invoice, save, returnBlob);
+  } catch (err) {
+    throw new Error(`No Invoice PdfGenerator found for project: ${project}`);
+  }
+}
 
 interface Props {
   invoice: Invoice;
@@ -17,7 +30,7 @@ interface Props {
 
 export default function InvoiceViewPage({ invoice, onEdit, onBack }: Props) {
   // Override any other module-level worker settings to use the correct local worker
-  pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+  pdfjs.GlobalWorkerOptions.workerSrc = import.meta.env.VITE_PDF_WORKER;
 
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [numPages, setNumPages] = useState<number>(0);

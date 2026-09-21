@@ -7,7 +7,11 @@ Content-Type: application/json
   "password": "adminpass"
 }
 
-### Ping
-GET https://api.erp.biture.co.za/api/ping
+### EPEC Test Login Endpoint
+POST https://api.erp.epec.biture.co.za/api/auth/login
 Content-Type: application/json
 
+{
+  "username": "admin",
+  "password": "adminpass"
+}

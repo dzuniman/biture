@@ -1,10 +1,26 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { Document, Page, pdfjs } from "react-pdf";
+import { jsPDF } from 'jspdf';
 import type { Statement, Invoice, Client, CreditNote } from '../types';
 import { formatAmount } from '../../formatters';
-import logo from '../assets/logo.png';
-import { generateStatementPDF } from './StatementPdfGenerator';
 pdfjs.GlobalWorkerOptions.workerSrc = import.meta.env.VITE_PDF_WORKER;
+
+const pdfGenerators = import.meta.env.VITE_PDFGENERATORS;
+const project = import.meta.env.VITE_PROJECT;
+const logo = new URL(`../assets/logo-${project}.png`, import.meta.url).href;
+
+export async function generateStatementPDF(statement: Statement,
+  invoices: Invoice[],
+  creditNotes: CreditNote[] = [],
+  save: boolean = false,
+  returnBlob = false) {
+  try {
+    const module = await import(`../pdf-generators/${pdfGenerators}/StatementPdfGenerator.tsx`);
+    return module.generateStatementPDF(statement, invoices, creditNotes, save, returnBlob);
+  } catch (err) {
+    throw new Error(`No Statement PdfGenerator found for project: ${project}`);
+  }
+}
 
 interface Props {
   statement: Statement;

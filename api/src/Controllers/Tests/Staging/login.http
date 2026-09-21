@@ -1,5 +1,5 @@
 ### Test Login Endpoint
-POST https://api.erp.biture.co.za/api/auth/login
+POST https://staging.api.erp.biture.co.za/api/auth/login
 Content-Type: application/json
 
 {
@@ -8,6 +8,6 @@ Content-Type: application/json
 }
 
 ### Ping
-GET https://api.erp.biture.co.za/api/ping
+GET https://stagingapi.erp.biture.co.za/api/ping
 Content-Type: application/json
 

@@ -98,7 +98,16 @@ import CostsListPage from './components/CostsListPage';
 import CostForm from './components/CostForm';
 import ReportsPage from './components/ReportsPage';
 import DashboardPage from './components/DashboardPage';
-import logo from './assets/logo.png';
+import logoBiture from './assets/logo-biture.png';
+import logoEpec from './assets/logo-epec.png';
+
+const logos: Record<string, string> = {
+  biture: logoBiture,
+  epec: logoEpec,
+};
+
+const project = import.meta.env.VITE_PROJECT;
+const logo = logos[project];
 
 
 type Section = 'dashboard' | 'clients' | 'quotes' | 'invoices' | 'admin' | 'statements' | 'jobcards' | 'deliverynotes' | 'creditnotes' | 'costs' | 'reports';

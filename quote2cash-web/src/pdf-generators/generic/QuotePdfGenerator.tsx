@@ -1,11 +1,23 @@
 import { jsPDF } from 'jspdf';
 import { autoTable } from 'jspdf-autotable';
-import type { Quote } from '../types';
-import { formatAmount } from '../../formatters';
-import logo from '../assets/logo.png';
-import { getQuoteItemImageUrl } from '../api';
+import type { Quote } from '../../types';
+import { formatAmount } from '../../../formatters';
+import { getQuoteItemImageUrl } from '../../api';
+
+const project = import.meta.env.VITE_PROJECT;
+
+const logo = new URL(`../../assets/logo-${project}.png`, import.meta.url).href;
+
+async function getProjectInfo() {
+  const module = await import(`../../project-info/${project}.ts`);
+  return {
+    paymentDetails: module.bankingDetails,
+    company: module.company,
+  };
+}
 
 export const generateQuotePDF = async (quote: Quote, save: boolean = false, returnBlob = false) => {
+  const { company, paymentDetails } = await getProjectInfo();
   const doc = new jsPDF({
     orientation: 'p',
     unit: 'mm',
@@ -104,11 +116,11 @@ export const generateQuotePDF = async (quote: Quote, save: boolean = false, retu
 
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    doc.text('BITURE (PTY) LTD   Reg: K2013/194395/07   VAT No: 4480272220', companyInfoX, companyInfoY + 12);
+    doc.text(company[0], companyInfoX, companyInfoY + 12);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
-    doc.text('Cnr Fred Versepute and Asparagus Road Midrand 1685', companyInfoX, companyInfoY + 16);
-    doc.text('Email: BetrothM@biture.co.za   Tel: +27 65 835 4371 | +27 83 249 8510', companyInfoX, companyInfoY + 20);
+    doc.text(company[1], companyInfoX, companyInfoY + 16);
+    doc.text(company[2], companyInfoX, companyInfoY + 20);
 
     // --- Logo (Top Right) ---
     const logoHeight = 15;
@@ -353,14 +365,6 @@ export const generateQuotePDF = async (quote: Quote, save: boolean = false, retu
     doc.setFontSize(7);
 
     let paymentTextY = paymentBoxY + 8;
-    const paymentDetails = [
-      'Bank: STANDARD BANK',
-      'Branch: MIDRAND',
-      'Branch Code: 001155',
-      'Account Name: BITURE (PTY) LTD',
-      'Account Number: 10 14 267 853 6',
-      'SWIFT Code: SBZAZAJJ'
-    ];
     paymentDetails.forEach(line => {
       doc.text(line, paymentBoxX + 4, paymentTextY);
       paymentTextY += 3;
