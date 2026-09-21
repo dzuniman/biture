@@ -2,15 +2,15 @@ const FtpDeploy = require("ftp-deploy");
 const ftpDeploy = new FtpDeploy();
 
 const config = {
-    user: "epeccynx",
-    password: "EPe@98750!",
-    host: "ftp.erp.epec.co.za",
+    user: "biturvnu",
+    password: "2X66ei72gGwzE",
+    host: "ftp.erp.biture.co.za",
     port: 21,
-    localRoot: __dirname + "/api",
-    remoteRoot: "/public_html/api_erp_epec",
+    localRoot: __dirname,
+    remoteRoot: "/public_html/staging_api_erp_biture",
     include: [
         "*", "**/*",
-        ".env.epec-production",
+        ".env.biture-staging",
         ".htaccess"
     ],
     deleteRemote: false,
@@ -21,6 +21,6 @@ const config = {
 
 ftpDeploy.deploy(config)
     .then(res => {
-        console.log("EPEC Production backend deploy finished:", res);
+        console.log("Staging backend deploy finished:", res);
     })
     .catch(err => console.error(err));

@@ -6,11 +6,11 @@ const config = {
     password: "2X66ei72gGwzE",
     host: "ftp.erp.biture.co.za",
     port: 21,
-    localRoot: __dirname + "/api",
+    localRoot: __dirname,
     remoteRoot: "/public_html/api_erp_biture",
     include: [
         "*", "**/*",
-        ".env.production",
+        ".env.biture-production",
         ".htaccess"
     ],
     deleteRemote: false,

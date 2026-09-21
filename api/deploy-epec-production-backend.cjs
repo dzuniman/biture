@@ -2,15 +2,15 @@ const FtpDeploy = require("ftp-deploy");
 const ftpDeploy = new FtpDeploy();
 
 const config = {
-    user: "ditaudynastyco",
-    password: "DitauEntle01",
-    host: "ftp.erp.ditaudynasty.co.za",
+    user: "epeccynx",
+    password: "EPe@98750!",
+    host: "ftp.erp.epec.co.za",
     port: 21,
-    localRoot: __dirname + "/api",
-    remoteRoot: "/public_html/api_erp_ditaudynasty",
+    localRoot: __dirname,
+    remoteRoot: "/public_html/api_erp_epec",
     include: [
         "*", "**/*",
-        ".env.ditau-production",
+        ".env.epec-production",
         ".htaccess"
     ],
     deleteRemote: false,
@@ -21,6 +21,6 @@ const config = {
 
 ftpDeploy.deploy(config)
     .then(res => {
-        console.log("DITAU Production backend deploy finished:", res);
+        console.log("EPEC Production backend deploy finished:", res);
     })
     .catch(err => console.error(err));

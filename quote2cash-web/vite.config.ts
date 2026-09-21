@@ -8,7 +8,9 @@ export default defineConfig(({ mode }) => {
   } else if (mode === 'production') {
     base = '/';
   }
+
   return {
+    root: __dirname,   // 👈 this tells Vite to use quote2cash-web as the root
     plugins: [react()],
     base,
     server: {
@@ -43,5 +45,8 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
+    build: {
+      outDir: 'dist'
+    }
   };
 });
