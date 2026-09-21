@@ -100,10 +100,12 @@ import ReportsPage from './components/ReportsPage';
 import DashboardPage from './components/DashboardPage';
 import logoBiture from './assets/logo-biture.png';
 import logoEpec from './assets/logo-epec.png';
+import logoDitau from './assets/logo-ditau.png';
 
 const logos: Record<string, string> = {
   biture: logoBiture,
   epec: logoEpec,
+  ditau: logoDitau,
 };
 
 const project = import.meta.env.VITE_PROJECT;

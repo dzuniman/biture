@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+error_log("Bootstrap starting…");
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/Http.php'; // <-- this brings in loadEnvFile() and your other helpers
@@ -14,7 +15,7 @@ $envFile = "$baseDir/.env.$project-$envName";
 if (!file_exists($envFile)) {
     $envFile = "$baseDir/.env.$envName";
 }
-
+error_log("Loading env file: $envFile");
 // Load environment file using your custom loader
 loadEnvFile($envFile);
 
