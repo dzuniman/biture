@@ -16,7 +16,7 @@
     "deploy:staging:frontend": "npm run build:staging && node deploy-staging.cjs",
     "deploy:production:frontend": "npm run build:production && node deploy-production.cjs",
     "build:ditau:production": "vite build --mode ditau-production",
-    "deploy:ditau:production:frontend": "npm run build:ditau:production && node deploy-epec-production.cjs",
+    "deploy:ditau:production:frontend": "npm run build:ditau:production && node deploy-ditau-production.cjs",
     "build:epec:production": "vite build --mode epec-production",
     "deploy:epec:production:frontend": "npm run build:epec:production && node deploy-epec-production.cjs"
   },
