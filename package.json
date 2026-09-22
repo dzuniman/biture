@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --mode biture-development",
     "staging": "vite --mode biture-staging",
     "production": "vite --mode biture-production",
     "build": "tsc && vite build",
