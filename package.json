@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --mode biture-development",
-    "staging": "vite --mode biture-staging",
-    "production": "vite --mode biture-production",
+    "biture:dev": "vite --mode biture-development --port 4173 --config ./quote2cash-web/vite.config.js",
+    "biture:staging": "vite --mode biture-staging --port 4173 --config ./quote2cash-web/vite.config.js",
+    "biture:production": "vite --mode biture-production --port 4173 --config ./quote2cash-web/vite.config.js",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "build:biture:staging": "vite build --mode biture-staging --config ./quote2cash-web/vite.config.js",

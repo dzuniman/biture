@@ -1,12 +1,11 @@
 Start Frontend
 npm run {env}
 
-e.g. npm run dev
-e.g. npm run epec:dev
+e.g. npm run {project}:{environemnt}
+e.g. npm run biture:dev
 
 Start Backend:
-$env:APP_ENV = "epec-development"
-php -c api/php.ini -S localhost:5227
+$env:APP_ENV="biture-development"; php -c api/php.ini -S localhost:5227 -t api
 
 Deployment:
 

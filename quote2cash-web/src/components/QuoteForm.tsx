@@ -642,11 +642,11 @@ export default function QuoteForm({
             />
           </div>
           <div className="items-grid">
-            <div className="item-row header" style={{ gridTemplateColumns: '50px 60px 100px 1fr 100px 1fr 100px 100px 100px 80px 80px' }}>
+            <div className="item-row header" style={{ gridTemplateColumns: '50px 60px 100px 100px 1fr 100px 100px 100px 80px 80px' }}>
               <span>Item</span>
               <span>Qty</span>
               <span>Code</span>
-              <span>Name</span>
+              {/*<span>Name</span>*/}
               <span>UOM</span>
               <span>Description</span>
               <span>Unit Price</span>
@@ -656,7 +656,7 @@ export default function QuoteForm({
               <span style={{ textAlign: 'center' }}>Actions</span>
             </div>
             {items.map((item, index) => (
-              <div key={index} className="item-row" style={{ gridTemplateColumns: '50px 60px 100px 1fr 100px 1fr 100px 100px 100px 80px 80px' }}>
+              <div key={index} className="item-row" style={{ gridTemplateColumns: '50px 60px 100px 100px 1fr 100px 100px 100px 80px 80px' }}>
                 <input
                   type="number"
                   min="1"
@@ -679,12 +679,12 @@ export default function QuoteForm({
                   onChange={(value) => handleUpdateItem(index, 'code', value)}
                   placeholder="Select or type code"
                 />
-                <SuggestionInput
+                {/*<SuggestionInput
                   options={productOptions.map((option) => ({ id: option.id, value: option.name }))}
                   value={item.name ?? ''}
                   onChange={(value) => handleUpdateItem(index, 'name', value)}
                   placeholder="Select or type name"
-                />
+                />*/}
                 <SuggestionInput
                   options={uomSuggestionOptions}
                   value={item.uom}

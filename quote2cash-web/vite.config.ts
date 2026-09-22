@@ -3,11 +3,6 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
   let base = '/';
-  if (mode === 'staging') {
-    base = '/';
-  } else if (mode === 'production') {
-    base = '/';
-  }
 
   return {
     root: __dirname,   // 👈 this tells Vite to use quote2cash-web as the root
