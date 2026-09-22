@@ -693,10 +693,11 @@ export default function QuoteForm({
                   required
                 />
                 <SuggestionInput
-                  options={productOptions.map((option) => ({ id: option.id, value: option.description }))}
-                  value={item.description ?? ''}
-                  onChange={(value) => handleUpdateItem(index, 'description', value)}
+                  options={productOptions.map((option) => ({ id: option.id, value: option.name }))} // This should be description and not name
+                  value={item.name ?? ''} // This should be description and not name
+                  onChange={(value) => handleUpdateItem(index, 'name', value)}
                   placeholder="Select or type description"
+                  required
                 />
                 <input
                   type="number"
