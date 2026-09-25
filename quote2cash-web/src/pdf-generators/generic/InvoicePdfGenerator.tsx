@@ -61,7 +61,7 @@ export const generateInvoicePDF = async (invoice: Invoice, save: boolean = false
     formatAmount(item.totalPrice),
   ]);
 
-  const MAX_ROWS_PER_PAGE = 24;
+  const MAX_ROWS_PER_PAGE = 20;
   const totalPages = Math.ceil(allRows.length / MAX_ROWS_PER_PAGE);
   const pageHeight = doc.internal.pageSize.getHeight();
   const footerBlockHeight = 55;

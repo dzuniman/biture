@@ -46,7 +46,7 @@ export const generateCreditNotePDF = async (creditNote: CreditNote, save: boolea
 
   const allRows = [[creditNote.description, formatAmount(creditNote.amount)]];
 
-  const MAX_ROWS_PER_PAGE = 24;
+  const MAX_ROWS_PER_PAGE = 20;
   const totalPages = Math.ceil(allRows.length / MAX_ROWS_PER_PAGE);
   const pageHeight = doc.internal.pageSize.getHeight();
   const footerBlockHeight = 55;

@@ -53,7 +53,7 @@ export const generateJobCardPDF = async (jobCard: JobCard, save: boolean = false
     })
     .map((item: QuoteItem) => [item.itemNumber, item.quantity, item.description]);
 
-  const MAX_ROWS_PER_PAGE = 24;
+  const MAX_ROWS_PER_PAGE = 20;
   const totalPages = Math.ceil(allRows.length / MAX_ROWS_PER_PAGE);
   const pageHeight = doc.internal.pageSize.getHeight();
   const footerBlockHeight = 55;
