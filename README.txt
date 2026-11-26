@@ -12,15 +12,15 @@ Deployment:
 Backend (Inside root /biture):
 Staging:
 1. Copy contents of .htaccess-staging into .htaccess
-2. npm run deploy:staging:backend
+2. npm run deploy:biture:staging:backend
 Production:
 1. Copy contents of .hetaccess-production into .htaccess
-2. npm run deploy:production:backend
+2. npm run deploy:biture:production:backend
 
 Fonrend (Inside /biture/quote2cash-web):
-1. npm run deploy:staging:frontend
+1. npm run deploy:biture:staging:frontend
 Production:
-2. npm run deploy:production:frontend
+2. npm run deploy:biture:production:frontend
 
 Migrations
 Migration names matter because files are applied alphabetically. Use: timestamp_descriptive_name.php.
