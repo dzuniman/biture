@@ -694,8 +694,8 @@ export default function QuoteForm({
                 />
                 <SuggestionInput
                   options={productOptions.map((option) => ({ id: option.id, value: option.name }))} // This should be description and not name
-                  value={item.name ?? ''} // This should be description and not name
-                  onChange={(value) => handleUpdateItem(index, 'name', value)}
+                  value={item.description ?? ''} // This should be description and not name
+                  onChange={(value) => handleUpdateItem(index, 'description', value)}
                   placeholder="Select or type description"
                   required
                 />
