@@ -5,7 +5,7 @@ export default defineConfig(({ mode }) => {
   let base = '/';
 
   return {
-    root: __dirname,   // 👈 this tells Vite to use quote2cash-web as the root
+    root: __dirname,
     plugins: [react()],
     base,
     server: {
