@@ -3,10 +3,21 @@ import { autoTable } from 'jspdf-autotable';
 import type { Quote } from '../../types';
 import { formatAmount } from '../../../formatters';
 import { getQuoteItemImageUrl } from '../../api';
+
 const project = import.meta.env.VITE_PROJECT;
 
 const logo = new URL(`../../assets/logo-${project}.png`, import.meta.url).href;
+
+async function getProjectInfo() {
+  const module = await import(`../../project-info/${project}.ts`);
+  return {
+    paymentDetails: module.bankingDetails,
+    company: module.company,
+  };
+}
+
 export const generateQuotePDF = async (quote: Quote, save: boolean = false, returnBlob = false) => {
+  const { company, paymentDetails } = await getProjectInfo();
   const doc = new jsPDF({
     orientation: 'p',
     unit: 'mm',
@@ -62,11 +73,9 @@ export const generateQuotePDF = async (quote: Quote, save: boolean = false, retu
 
   // Determine whether ANY item has an image — used to conditionally show the IMG column
   const hasAnyImage = rowImages.some(img => img !== null);
-  const imageCount = rowImages.reduce((count, img) => img !== null ? count + 1 : count, 0);
 
   // Get all row items (uses same sort as sortedItemsForImages so indices match rowImages)
-  // IMG placeholder is only included when at least one item has an image
-  let allRows = sortedItemsForImages.map(item => [
+  const allRows = sortedItemsForImages.map(item => [
     item.itemNumber,
     ...(hasAnyImage ? [''] : []), // IMG column placeholder — only when column is shown
     item.quantity,
@@ -77,54 +86,50 @@ export const generateQuotePDF = async (quote: Quote, save: boolean = false, retu
     formatAmount(item.totalPrice),
   ]);
 
-  const MAX_ROWS_PER_PAGE = 24 - imageCount;
-  const totalPages = Math.ceil(allRows.length / MAX_ROWS_PER_PAGE);
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const footerBlockHeight = 55;
-  const summaryHeight = 20;
-  const totalFooterHeight = summaryHeight + footerBlockHeight;
+  const margin = 5;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight(); // 297mm on A4
 
-  // Split into chunks of 24 rows
-  for (let i = 0; i < allRows.length; i += MAX_ROWS_PER_PAGE) {
-    const currentPage = Math.floor(i / MAX_ROWS_PER_PAGE) + 1;
-    let chunk = allRows.slice(i, i + MAX_ROWS_PER_PAGE);
+  // Fixed vertical boundaries (in mm) locked on every page
+  const tableStartY = 56;
+  const paymentBoxHeight = 25;
+  const paymentBoxY = pageHeight - 29;       // 268mm (locked at bottom)
+  const signatureY = paymentBoxY - 4;        // 264mm
+  const receivedByY = signatureY - 8;        // 256mm
+  const summaryStartY = receivedByY - 18;    // 238mm
+  const tableMaxBottomY = summaryStartY - 4; // 234mm (items past this Y move to next page)
+  const bottomMargin = pageHeight - tableMaxBottomY;
 
-    // Pad with empty rows — column count matches allRows (7 without IMG, 8 with IMG)
-    const colCount = hasAnyImage ? 8 : 7;
-    while (chunk.length < MAX_ROWS_PER_PAGE) {
-      chunk.push(Array(colCount).fill(''));
-    }
-
-    const margin = 5;
-    const pageWidth = doc.internal.pageSize.getWidth();
-    let currentY = margin;
+  // Draws the top Company, Logo, Bill To, and Quotation Details block on every page
+  const drawPageHeader = (pageNumber: number) => {
+    const companyInfoX = margin;
+    const companyInfoY = margin - 10;
 
     // --- Company Info (Top Left) ---
-    const companyInfoX = margin;
-    let companyInfoY = currentY - 10;
-
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    doc.text('BITURE (PTY) LTD   Reg: K2013/194395/07   VAT No: 4480272220', companyInfoX, companyInfoY + 12);
+    doc.setTextColor(0, 0, 0);
+    doc.text(company[0], companyInfoX, companyInfoY + 12);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
-    doc.text('Cnr Fred Versepute and Asparagus Road Midrand 1685', companyInfoX, companyInfoY + 16);
-    doc.text('Email: BetrothM@biture.co.za   Tel: +27 65 835 4371 | +27 83 249 8510', companyInfoX, companyInfoY + 20);
+    doc.text(company[1], companyInfoX, companyInfoY + 16);
+    doc.text(company[2], companyInfoX, companyInfoY + 20);
 
     // --- Logo (Top Right) ---
     const logoHeight = 15;
-    let logoWidth = 0;
     if (logoImg.complete && logoImg.naturalWidth > 0) {
       const aspectRatio = logoImg.naturalWidth / logoImg.naturalHeight;
-      logoWidth = logoHeight * aspectRatio;
-      doc.addImage(logoImg, 'PNG', pageWidth - margin - logoWidth, currentY - 2, logoWidth, logoHeight);
+      const logoWidth = logoHeight * aspectRatio;
+      doc.addImage(logoImg, 'PNG', pageWidth - margin - logoWidth, margin - 2, logoWidth, logoHeight);
     }
 
-    let customerBoxY = companyInfoY + 23;
+    // --- Bill To Box (Left) ---
+    const customerBoxY = companyInfoY + 23;
     const boxWidth = 70;
-    const boxHeight = 33; // fixed height to match Tax Invoice block
+    const boxHeight = 33;
     const boxX = companyInfoX;
 
+    doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(0.2);
     doc.rect(boxX, customerBoxY, boxWidth, boxHeight);
 
@@ -137,7 +142,6 @@ export const generateQuotePDF = async (quote: Quote, save: boolean = false, retu
     let custTextY = customerBoxY + 7;
 
     if (quote.client) {
-      // Build client lines WITHOUT representative
       const clientLines = [
         quote.client.name,
         quote.client.addressLine1,
@@ -148,56 +152,42 @@ export const generateQuotePDF = async (quote: Quote, save: boolean = false, retu
         quote.client.email ? `Email: ${quote.client.email}` : null
       ].filter(Boolean);
 
-      // Draw normal client lines
       clientLines.forEach(line => {
         doc.text(line!, boxX + 2, custTextY);
         custTextY += 3;
       });
 
-      // Draw representative line separately (name left, number right, separator in middle)
       if (quote.client.representativeName || quote.client.representativeNumber) {
-        const repLineY = custTextY;
-        const separatorX = boxX + (boxWidth / 2);
-
         if (quote.client.representativeName) {
-          doc.text(quote.client.representativeName, boxX + 2, repLineY);
+          doc.text(quote.client.representativeName, boxX + 2, custTextY);
         }
-
         if (quote.client.representativeNumber) {
-          doc.text(quote.client.representativeNumber, boxX + boxWidth - 2, repLineY, { align: 'right' });
+          doc.text(quote.client.representativeNumber, boxX + boxWidth - 2, custTextY, { align: 'right' });
         }
-
-        custTextY += 3;
       }
-
     }
 
-    // Quote Details Block (Right)
+    // --- Quote Details Block (Right) ---
     const quoteDetailsBlockWidth = 70;
     const quoteDetailsBlockX = pageWidth - margin - quoteDetailsBlockWidth;
-    let quoteDetailsY = companyInfoY + logoHeight + 8;
+    const quoteDetailsY = companyInfoY + logoHeight + 8;
 
     doc.setLineWidth(0.2);
-    doc.rect(quoteDetailsBlockX, quoteDetailsY, quoteDetailsBlockWidth, boxHeight); // box around sales quotation
+    doc.rect(quoteDetailsBlockX, quoteDetailsY, quoteDetailsBlockWidth, boxHeight);
 
     doc.setFontSize(7.5);
     doc.setFont('helvetica', 'bold');
     doc.text('QUOTATION', pageWidth - margin - 2, quoteDetailsY + 4, { align: 'right' });
 
     doc.setFontSize(7);
-    doc.setFont('helvetica', 'bold');
     let detailY = quoteDetailsY + 7;
 
     const addQuoteDetailRow = (label: string, value: string) => {
-      // Label left-aligned
       doc.setFont('helvetica', 'bold');
       doc.text(label, quoteDetailsBlockX + 2, detailY);
-
-      // Value right-aligned
       doc.setFont('helvetica', 'normal');
       doc.text(value, quoteDetailsBlockX + quoteDetailsBlockWidth - 2, detailY, { align: 'right' });
-
-      detailY += 4; // move down for next row
+      detailY += 4;
     };
 
     addQuoteDetailRow('QUOTE NUMBER:', `${quote.quoteNumber}`);
@@ -205,142 +195,45 @@ export const generateQuotePDF = async (quote: Quote, save: boolean = false, retu
     addQuoteDetailRow('DATE:', new Date(quote.date).toLocaleDateString('en-ZA', { year: 'numeric', month: 'long', day: 'numeric' }));
     addQuoteDetailRow('VALIDITY:', `${quote.validityDays} Days`);
     addQuoteDetailRow('VENDOR NUMBER:', quote.client?.vendorNumber || '—');
-    addQuoteDetailRow('PAGE:', `${currentPage} of ${totalPages}` || '—');
+    addQuoteDetailRow('PAGE:', `${pageNumber} of {total_pages_count_string}`);
+  };
 
-    // --- Table Start ---
-    currentY = Math.max(customerBoxY + boxHeight, quoteDetailsY + boxHeight) + 5;
+  // Draws Summary, Received & Approved By, and Banking Details at fixed bottom coordinates on every page
+  const drawFixedFooter = () => {
+    doc.setTextColor(0, 0, 0);
+    doc.setDrawColor(0, 0, 0);
 
-    // Render this chunk as a table
-    // Column layout differs based on whether any item has an image
-    const imgColIndex = 1; // only relevant when hasAnyImage
-    const tableHead = hasAnyImage
-      ? [['ITEM', 'IMG', 'QTY', 'CODE', 'UOM', 'DESCRIPTION', 'UNIT PRICE', 'TOTAL']]
-      : [['ITEM', 'QTY', 'CODE', 'UOM', 'DESCRIPTION', 'UNIT PRICE', 'TOTAL']];
-
-    const tableColumnStyles: any = hasAnyImage
-      ? {
-        0: { cellWidth: 12, halign: 'center' },
-        1: { cellWidth: 15, halign: 'center' }, // IMG
-        2: { cellWidth: 10, halign: 'center' },
-        3: { cellWidth: 16, halign: 'center' },
-        4: { cellWidth: 12, halign: 'center' },
-        5: { cellWidth: 'auto' },
-        6: { cellWidth: 22, halign: 'right' },
-        7: { cellWidth: 22, halign: 'right' },
-      }
-      : {
-        0: { cellWidth: 12, halign: 'center' },
-        1: { cellWidth: 12, halign: 'center' },
-        2: { cellWidth: 18, halign: 'center' },
-        3: { cellWidth: 15, halign: 'center' },
-        4: { cellWidth: 'auto' },
-        5: { cellWidth: 25, halign: 'right' },
-        6: { cellWidth: 25, halign: 'right' },
-      };
-
-    autoTable(doc, {
-      startY: currentY,
-      head: tableHead,
-      body: chunk,
-      theme: 'plain',
-      styles: {
-        font: 'helvetica',
-        fontSize: 7.5,
-        cellPadding: 2,
-        textColor: [0, 0, 0],
-        lineColor: [0, 0, 0],
-        lineWidth: { top: 0, right: 0.1, bottom: 0, left: 0.1 }, // verticals only
-      },
-      headStyles: {
-        fillColor: [243, 244, 246],
-        textColor: [0, 0, 0],
-        fontStyle: 'bold',
-        lineWidth: { top: 0.2, right: 0.2, bottom: 0.2, left: 0.2 },
-        halign: 'center',
-        valign: 'middle',
-      },
-      columnStyles: tableColumnStyles,
-      // Expand row height to fit image (image is 12mm + 2mm padding each side = 16mm min)
-      didParseCell: (data) => {
-        if (data.section === 'body' && hasAnyImage) {
-          const absoluteRowIndex = i + data.row.index;
-          if (absoluteRowIndex < rowImages.length && rowImages[absoluteRowIndex]) {
-            data.cell.styles.minCellHeight = 16;
-          }
-        }
-      },
-      didDrawCell: (data) => {
-        // Render image in the IMG column (only when hasAnyImage)
-        if (hasAnyImage && data.section === 'body' && data.column.index === imgColIndex) {
-          const absoluteRowIndex = i + data.row.index;
-          if (absoluteRowIndex < rowImages.length) {
-            const imgBase64 = rowImages[absoluteRowIndex];
-            if (imgBase64) {
-              const imgSize = 12; // 12mm x 12mm fixed size
-              const x = data.cell.x + (data.cell.width - imgSize) / 2;
-              const y = data.cell.y + (data.cell.height - imgSize) / 2;
-              try {
-                doc.addImage(imgBase64, 'JPEG', x, y, imgSize, imgSize);
-              } catch {
-                // Silently ignore failures (e.g. unsupported format)
-              }
-            }
-          }
-        }
-
-        if (
-          data.section === 'body' &&
-          data.row.index === chunk.length - 1 &&
-          data.column.index === data.table.columns.length - 1
-        ) {
-          const y = data.cell.y + data.cell.height;
-          doc.setDrawColor(0, 0, 0);
-          doc.setLineWidth(0.2);
-          doc.line(margin, y, pageWidth - margin, y);
-        }
-      },
-      margin: margin,
-    });
-
-    // --- Summary + Footer + Payment Box (runs on every page) ---
-    const table = (doc as any).lastAutoTable;
-    currentY = Math.max(table.finalY + 8, pageHeight - margin - totalFooterHeight);
-    currentY += 10;
-
-    // Summary
+    // 1. Summary (Locked at summaryStartY)
     const summaryX = pageWidth - margin;
+    let sumY = summaryStartY;
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
-    doc.text('Sub Total', summaryX - 45, currentY);
-    doc.text(formatAmount(quote.subTotal), summaryX, currentY, { align: 'right' });
-    currentY += 4;
-    doc.text('VAT (15%)', summaryX - 45, currentY);
-    doc.text(formatAmount(quote.vat), summaryX, currentY, { align: 'right' });
-    currentY += 2;
+    doc.text('Sub Total', summaryX - 45, sumY);
+    doc.text(formatAmount(quote.subTotal), summaryX, sumY, { align: 'right' });
+    sumY += 4;
+    doc.text('VAT (15%)', summaryX - 45, sumY);
+    doc.text(formatAmount(quote.vat), summaryX, sumY, { align: 'right' });
+    sumY += 2;
     doc.setLineWidth(0.5);
     doc.setDrawColor(51, 51, 51);
-    doc.line(summaryX - 45, currentY, summaryX, currentY);
-    currentY += 5;
+    doc.line(summaryX - 45, sumY, summaryX, sumY);
+    sumY += 5;
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    doc.text('Total', summaryX - 45, currentY);
-    doc.text(formatAmount(quote.total), summaryX, currentY, { align: 'right' });
+    doc.text('Total', summaryX - 45, sumY);
+    doc.text(formatAmount(quote.total), summaryX, sumY, { align: 'right' });
+
+    // 2. Received and Approved By + Signature (Locked at receivedByY & signatureY)
     doc.setFont('helvetica', 'normal');
-
-    // Approval + Terms
-    currentY = Math.max(currentY + 5, pageHeight - margin - footerBlockHeight);
-    currentY += -14;
     doc.setFontSize(8);
-    doc.text('Received and Approved by: __________________________________________________________', margin, currentY);
-    currentY += 8;
-    doc.text('Signature: ________________________________________________________________________', margin, currentY);
+    doc.text('Received and Approved by: __________________________________________________________', margin, receivedByY);
+    doc.text('Signature: ________________________________________________________________________', margin, signatureY);
 
-    // Payment Details Box
+    // 3. Payment Details Box (Locked at paymentBoxY)
     const paymentBoxX = margin;
-    const paymentBoxY = pageHeight - 29;
     const paymentBoxWidth = pageWidth - (margin * 2);
-    const paymentBoxHeight = 25;
 
+    doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(0.2);
     doc.rect(paymentBoxX, paymentBoxY, paymentBoxWidth, paymentBoxHeight);
 
@@ -354,40 +247,113 @@ export const generateQuotePDF = async (quote: Quote, save: boolean = false, retu
     doc.setFontSize(7);
 
     let paymentTextY = paymentBoxY + 8;
-    const paymentDetails = [
-      'Bank: STANDARD BANK',
-      'Branch: MIDRAND',
-      'Branch Code: 001155',
-      'Account Name: BITURE (PTY) LTD',
-      'Account Number: 10 14 267 853 6',
-      'SWIFT Code: SBZAZAJJ'
-    ];
-    paymentDetails.forEach(line => {
+    paymentDetails.forEach((line: string) => {
       doc.text(line, paymentBoxX + 4, paymentTextY);
       paymentTextY += 3;
     });
+  };
 
-    currentY = (doc as any).lastAutoTable.finalY + 10;
+  const imgColIndex = 1;
+  const tableHead = hasAnyImage
+    ? [['ITEM', 'IMG', 'QTY', 'CODE', 'UOM', 'DESCRIPTION', 'UNIT PRICE', 'TOTAL']]
+    : [['ITEM', 'QTY', 'CODE', 'UOM', 'DESCRIPTION', 'UNIT PRICE', 'TOTAL']];
 
-    // Add new page if more chunks remain
-    if (i + MAX_ROWS_PER_PAGE < allRows.length) {
-      doc.addPage();
+  const tableColumnStyles: any = hasAnyImage
+    ? {
+      0: { cellWidth: 12, halign: 'center' },
+      1: { cellWidth: 15, halign: 'center' },
+      2: { cellWidth: 10, halign: 'center' },
+      3: { cellWidth: 16, halign: 'center' },
+      4: { cellWidth: 12, halign: 'center' },
+      5: { cellWidth: 'auto' },
+      6: { cellWidth: 22, halign: 'right' },
+      7: { cellWidth: 22, halign: 'right' },
     }
-  }
+    : {
+      0: { cellWidth: 12, halign: 'center' },
+      1: { cellWidth: 12, halign: 'center' },
+      2: { cellWidth: 18, halign: 'center' },
+      3: { cellWidth: 15, halign: 'center' },
+      4: { cellWidth: 'auto' },
+      5: { cellWidth: 25, halign: 'right' },
+      6: { cellWidth: 25, halign: 'right' },
+    };
+
+  autoTable(doc, {
+    startY: tableStartY,
+    margin: {
+      top: tableStartY,
+      bottom: bottomMargin,
+      left: margin,
+      right: margin,
+    },
+    head: tableHead,
+    body: allRows,
+    rowPageBreak: 'avoid', // Prevents a row's description or image from splitting across two pages
+    theme: 'plain',
+    styles: {
+      font: 'helvetica',
+      fontSize: 7.5,
+      cellPadding: 2,
+      textColor: [0, 0, 0],
+      lineColor: [0, 0, 0],
+      lineWidth: { top: 0, right: 0.1, bottom: 0, left: 0.1 },
+    },
+    headStyles: {
+      fillColor: [243, 244, 246],
+      textColor: [0, 0, 0],
+      fontStyle: 'bold',
+      lineWidth: { top: 0.2, right: 0.2, bottom: 0.2, left: 0.2 },
+      halign: 'center',
+      valign: 'middle',
+    },
+    columnStyles: tableColumnStyles,
+    didParseCell: (data) => {
+      if (data.section === 'body' && hasAnyImage) {
+        if (rowImages[data.row.index]) {
+          data.cell.styles.minCellHeight = 16;
+        }
+      }
+    },
+    didDrawCell: (data) => {
+      if (hasAnyImage && data.section === 'body' && data.column.index === imgColIndex) {
+        const imgBase64 = rowImages[data.row.index];
+        if (imgBase64) {
+          const imgSize = 12;
+          const x = data.cell.x + (data.cell.width - imgSize) / 2;
+          const y = data.cell.y + (data.cell.height - imgSize) / 2;
+          try {
+            doc.addImage(imgBase64, 'JPEG', x, y, imgSize, imgSize);
+          } catch {
+            // Silently ignore failures (e.g. unsupported format)
+          }
+        }
+      }
+    },
+    didDrawPage: (data) => {
+      // Draw bottom horizontal line under the table on each page
+      if (data.cursor) {
+        doc.setDrawColor(0, 0, 0);
+        doc.setLineWidth(0.2);
+        doc.line(margin, data.cursor.y, pageWidth - margin, data.cursor.y);
+      }
+
+      drawPageHeader(data.pageNumber);
+      drawFixedFooter();
+    },
+  });
+
+  // Replace total pages placeholder on every page
+  doc.putTotalPages('{total_pages_count_string}');
 
   if (save) {
-    // Trigger a download
     doc.save(`Quote_${quote.quoteNumber}_${quote.reference}.pdf`);
     return "";
   }
 
   if (returnBlob) {
-    // For download
-    const blob = doc.output("blob");
-    return blob;
+    return doc.output("blob");
   } else {
-    // For react-pdf viewing
-    const arrayBuffer = doc.output("arraybuffer");
-    return arrayBuffer;
+    return doc.output("arraybuffer");
   }
 };

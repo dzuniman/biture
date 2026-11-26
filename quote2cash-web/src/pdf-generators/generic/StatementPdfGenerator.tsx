@@ -1,10 +1,9 @@
-// quote2cash-web/src/components/StatementPdfGenerator.tsx
 import { jsPDF } from 'jspdf';
 import { autoTable } from 'jspdf-autotable';
 import type { Statement, Invoice, Client, CreditNote } from '../../types';
 import { formatAmount } from '../../../formatters';
-const project = import.meta.env.VITE_PROJECT;
 
+const project = import.meta.env.VITE_PROJECT;
 const logo = new URL(`../../assets/logo-${project}.png`, import.meta.url).href;
 
 async function getProjectInfo() {
@@ -15,12 +14,13 @@ async function getProjectInfo() {
   };
 }
 
-
-export const generateStatementPDF = async (statement: Statement,
-  invoices: Invoice[],
-  creditNotes: CreditNote[] = [],
+export const generateStatementPDF = async (
+  statement: Statement,
+  invoices: Array<Invoice>,
+  creditNotes: Array<CreditNote> = new Array<CreditNote>(),
   save: boolean = false,
-  returnBlob = false) => {
+  returnBlob = false
+) => {
   const doc = new jsPDF({
     orientation: 'p',
     unit: 'mm',
@@ -45,12 +45,12 @@ export const generateStatementPDF = async (statement: Statement,
   await new Promise((resolve) => {
     logoImg.onload = resolve;
     logoImg.onerror = () => {
-      console.error("PDF Generator: Could not load logo image from", logo);
+      console.error('PDF Generator: Could not load logo image from', logo);
       resolve(null);
     };
   });
 
-  const items = statement.items || (statement as any).Items || [];
+  const items = statement.items || (statement as any).Items || new Array<any>();
 
   const invoiceMap: Record<string, Invoice> = {};
   invoices.forEach(inv => { invoiceMap[inv.id] = inv; });
@@ -64,13 +64,17 @@ export const generateStatementPDF = async (statement: Statement,
     if (id) paymentsByInvoice[id] = (paymentsByInvoice[id] || 0) + (item.paymentAmount || item.PaymentAmount || 0);
   });
 
-  const uniqueInvoiceIds = Array.from(new Set(
-    items.filter((i: any) => !!(i.invoiceId || i.InvoiceId)).map((i: any) => i.invoiceId || i.InvoiceId)
-  )) as string[];
+  const uniqueInvoiceIds = Array.from(
+    new Set(
+      items.filter((i: any) => !!(i.invoiceId || i.InvoiceId)).map((i: any) => i.invoiceId || i.InvoiceId)
+    )
+  ) as Array<string>;
 
-  const uniqueCreditNoteIds = Array.from(new Set(
-    items.filter((i: any) => !!(i.creditNoteId || i.CreditNoteId)).map((i: any) => i.creditNoteId || i.CreditNoteId)
-  )) as string[];
+  const uniqueCreditNoteIds = Array.from(
+    new Set(
+      items.filter((i: any) => !!(i.creditNoteId || i.CreditNoteId)).map((i: any) => i.creditNoteId || i.CreditNoteId)
+    )
+  ) as Array<string>;
 
   // Invoice rows
   const invoiceRows = uniqueInvoiceIds.map(id => {
@@ -78,79 +82,117 @@ export const generateStatementPDF = async (statement: Statement,
     const paid = paymentsByInvoice[id] || 0;
     const outstanding = (inv?.amount ?? 0) - paid;
     const poNumber = (inv as any)?.quote?.poNumber || (inv as any)?.Quote?.PoNumber || '—';
-    const documentType = (inv as any)?.description || '—';
-    return [
+    return Array.of(
       inv?.invoiceNumber || '—',
       formatDate(inv?.dueDate),
       'INVOICE',
       poNumber,
       formatAmount(inv?.amount ?? 0),
       formatAmount(outstanding)
-    ];
+    );
   });
 
   // Credit Note rows
   const creditNoteRows = uniqueCreditNoteIds.map(id => {
     const cn = creditNoteMap[id];
     const cnAmount = cn?.amount ?? 0;
-    return [
+    return Array.of(
       cn?.creditNoteNumber || '—',
       '',
       'CREDIT NOTE',
       '',
       formatAmount(cnAmount),
       `(${formatAmount(cnAmount)})`
-    ];
+    );
   });
 
-  const allRows = [...invoiceRows, ...creditNoteRows];
+  const allRows = invoiceRows.concat(creditNoteRows);
 
-  const MAX_ROWS_PER_PAGE = 20;
-  const totalPages = Math.ceil(allRows.length / MAX_ROWS_PER_PAGE);
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const footerBlockHeight = 55;
-  const summaryHeight = 20;
-  const totalFooterHeight = summaryHeight + footerBlockHeight;
+  // Totals & Aging calculations
+  let totalOutstanding = uniqueInvoiceIds.reduce((sum, id) => {
+    const invAmount = invoiceMap[id]?.amount ?? 0;
+    return sum + (invAmount - (paymentsByInvoice[id] || 0));
+  }, 0);
+  uniqueCreditNoteIds.forEach(id => { totalOutstanding -= creditNoteMap[id]?.amount ?? 0; });
 
-  for (let i = 0; i < allRows.length; i += MAX_ROWS_PER_PAGE) {
-    const currentPage = Math.floor(i / MAX_ROWS_PER_PAGE) + 1;
-    let chunk = allRows.slice(i, i + MAX_ROWS_PER_PAGE);
+  let overdue30 = 0;
+  let overdue60 = 0;
+  let overdue90 = 0;
 
-    while (chunk.length < MAX_ROWS_PER_PAGE) {
-      chunk.push(['', '', '', '', '', '', '']);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  uniqueInvoiceIds.forEach(id => {
+    const inv = invoiceMap[id];
+    if (!inv) return;
+
+    const outstanding = inv?.amount ?? 0;
+    if (outstanding <= 0) return;
+
+    const dueDate = new Date(inv.dueDate);
+    dueDate.setHours(0, 0, 0, 0);
+
+    const diffTime = today.getTime() - dueDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays >= 30 && diffDays < 60) {
+      overdue30 += outstanding;
+    } else if (diffDays >= 60 && diffDays < 90) {
+      overdue60 += outstanding;
+    } else if (diffDays >= 90) {
+      overdue90 += outstanding;
     }
+  });
 
-    const margin = 5;
-    const pageWidth = doc.internal.pageSize.getWidth();
-    let currentY = margin;
+  const margin = 5;
+  const bottomEdgeMargin = 5; // Restored 5mm margin from bottom edge of A4 (297mm)
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight(); // 297mm
+
+  // Raised slightly up (~6mm higher than before)
+  const paymentBoxHeight = 22;
+  const paymentBoxY = pageHeight - paymentBoxHeight - bottomEdgeMargin; // 270mm (Banking Details box)
+  const signatureY = paymentBoxY - 2.5;                                 // 267.5mm (Signature)
+  const receivedByY = signatureY - 5.5;                                 // 262mm (Received and Approved by)
+  const agingTableHeight = 11;
+  const agingTableY = receivedByY - 3 - agingTableHeight;                 // 248mm (Payment Analysis table)
+  const agingTitleY = agingTableY - 1.5;                                  // 246.5mm ('PAYMENT ANALYSIS' & 'Total Outstanding:')
+  const tableStartY = 56;                                                 // Top of main table
+  const tableMaxBottomY = agingTitleY - 6;                              // 243mm (Bottom edge of main table)
+  const bottomMargin = pageHeight - tableMaxBottomY;
+
+  const colWidths = Array.of(28, 30, 28, pageWidth - (margin * 2) - 142, 28, 28);
+  let pageRowY = 35;
+
+  const drawPageHeader = () => {
+    const companyInfoX = margin;
+    const companyInfoY = margin - 10;
 
     // --- Company Info (Top Left) ---
-    const companyInfoX = margin;
-    let companyInfoY = currentY - 10;
-
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    doc.text(company[0], companyInfoX, companyInfoY + 12);
+    doc.setTextColor(0, 0, 0);
+    doc.text(String(company.at(0) ?? ''), companyInfoX, companyInfoY + 12);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
-    doc.text(company[1], companyInfoX, companyInfoY + 16);
-    doc.text(company[2], companyInfoX, companyInfoY + 20);
+    doc.text(String(company.at(1) ?? ''), companyInfoX, companyInfoY + 16);
+    doc.text(String(company.at(2) ?? ''), companyInfoX, companyInfoY + 20);
 
     // --- Logo (Top Right) ---
     const logoHeight = 15;
-    let logoWidth = 0;
     if (logoImg.complete && logoImg.naturalWidth > 0) {
       const aspectRatio = logoImg.naturalWidth / logoImg.naturalHeight;
-      logoWidth = logoHeight * aspectRatio;
-      doc.addImage(logoImg, 'PNG', pageWidth - margin - logoWidth, currentY - 2, logoWidth, logoHeight);
+      const logoWidth = logoHeight * aspectRatio;
+      doc.addImage(logoImg, 'PNG', pageWidth - margin - logoWidth, margin - 2, logoWidth, logoHeight);
     }
 
-    // --- Bill To Box (below company info) ---
-    let customerBoxY = companyInfoY + 23;
+    // --- Bill To Box (Left) ---
+    const customerBoxY = companyInfoY + 23;
     const boxWidth = 70;
-    const boxHeight = 33; // fixed height to match Tax Invoice block
+    const boxHeight = 33;
     const boxX = companyInfoX;
 
+    doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(0.2);
     doc.rect(boxX, customerBoxY, boxWidth, boxHeight);
 
@@ -163,8 +205,7 @@ export const generateStatementPDF = async (statement: Statement,
     let custTextY = customerBoxY + 7;
 
     if (statement.client) {
-      // Build client lines WITHOUT representative
-      const clientLines = [
+      const clientLines = Array.of(
         statement.client.name,
         statement.client.addressLine1,
         statement.client.addressLine2,
@@ -172,40 +213,24 @@ export const generateStatementPDF = async (statement: Statement,
         statement.client.addressLine4,
         statement.client.vatNumber ? `VAT No: ${statement.client.vatNumber}` : null,
         statement.client.email ? `Email: ${statement.client.email}` : null
-      ].filter(Boolean);
+      ).filter(Boolean);
 
-      // Draw normal client lines
       clientLines.forEach(line => {
         doc.text(line!, boxX + 2, custTextY);
         custTextY += 3;
       });
 
-      // Draw representative line separately (name left, number right, separator in middle)
       if (statement.client.representativeName || statement.client.representativeNumber) {
-        const repLineY = custTextY;
-        const separatorX = boxX + (boxWidth / 2);
-
         if (statement.client.representativeName) {
-          doc.text(statement.client.representativeName, boxX + 2, repLineY);
+          doc.text(statement.client.representativeName, boxX + 2, custTextY);
         }
-
         if (statement.client.representativeNumber) {
-          doc.text(statement.client.representativeNumber, boxX + boxWidth - 2, repLineY, { align: 'right' });
+          doc.text(statement.client.representativeNumber, boxX + boxWidth - 2, custTextY, { align: 'right' });
         }
-
-        custTextY += 3;
       }
     }
 
-    // Statement Details Block (Right)
-    const detailsBlockWidth = 70;
-    const detailsLabelColWidth = 25;
-    const detailsValueColWidth = detailsBlockWidth - detailsLabelColWidth - 2;
-
-    const detailsBlockX = pageWidth - margin - detailsBlockWidth;
-    let detailsY = currentY;
-
-    // STATEMENT OF ACCOUNT Title
+    // --- Statement Details Block (Right) ---
     const statementDetailsBlockWidth = 70;
     const statementDetailsBlockX = pageWidth - margin - statementDetailsBlockWidth;
     const statementDetailsY = companyInfoY + logoHeight + 8;
@@ -217,18 +242,14 @@ export const generateStatementPDF = async (statement: Statement,
     doc.setFont('helvetica', 'bold');
     doc.text('STATEMENT OF ACCOUNT', pageWidth - margin - 2, statementDetailsY + 4, { align: 'right' });
 
-    // Statement Details
     doc.setFontSize(7);
-    doc.setFont('helvetica', 'normal');
     let detailY = statementDetailsY + 7;
 
     const addStatementDetailRow = (label: string, value: string) => {
       doc.setFont('helvetica', 'bold');
       doc.text(label, statementDetailsBlockX + 2, detailY);
-
       doc.setFont('helvetica', 'normal');
       doc.text(value, statementDetailsBlockX + statementDetailsBlockWidth - 2, detailY, { align: 'right' });
-
       detailY += 4;
     };
 
@@ -236,210 +257,165 @@ export const generateStatementPDF = async (statement: Statement,
 
     addStatementDetailRow('STATEMENT NO:', statement.statementNumber || (statement as any).StatementNumber || '—');
     addStatementDetailRow('STATEMENT DATE:', formatDate(statement.createdAt || (statement as any).CreatedAt));
-    addStatementDetailRow("ACCOUNT TYPE:", `${statement.dueDays || (statement as any).dueDays} DAYS`);
+    addStatementDetailRow('ACCOUNT TYPE:', `${statement.dueDays || (statement as any).dueDays} DAYS`);
     addStatementDetailRow('VENDOR NUMBER:', client?.vendorNumber || '-');
-    addStatementDetailRow('PAGE:', `${currentPage} of ${totalPages}` || '—');
 
-    let totalOutstanding = uniqueInvoiceIds.reduce((sum, id) => {
-      const invAmount = invoiceMap[id]?.amount ?? 0;
-      return sum + (invAmount - (paymentsByInvoice[id] || 0));
-    }, 0);
-    uniqueCreditNoteIds.forEach(id => { totalOutstanding -= creditNoteMap[id]?.amount ?? 0; });
+    pageRowY = detailY;
+    doc.setFont('helvetica', 'bold');
+    doc.text('PAGE:', statementDetailsBlockX + 2, detailY);
+  };
 
-    // --- Table Start ---
-    currentY = Math.max(customerBoxY + boxHeight, statementDetailsY + boxHeight) + 5;
+  // Draws full-height vertical column borders and bottom border down to tableMaxBottomY on every page
+  const drawFullHeightTableBorders = () => {
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.1);
 
-    // --- AutoTable Generation for Statement Items ---
-    autoTable(doc, {
-      startY: currentY,
-      head: [['Document No', 'Due Date', 'Document Type', 'PO Number', 'Amount', 'Outstanding']],
-      body: chunk,
-      theme: 'plain',
-      styles: {
-        font: 'helvetica',
-        fontSize: 7.5,
-        cellPadding: 2,
-        textColor: [0, 0, 0],
-        lineColor: [0, 0, 0],
-        lineWidth: { top: 0, right: 0.1, bottom: 0, left: 0.1 }, // verticals only
-      },
-      headStyles: {
-        fillColor: [243, 244, 246],
-        textColor: [0, 0, 0],
-        fontStyle: 'bold',
-        lineWidth: { top: 0.2, right: 0.2, bottom: 0.2, left: 0.2 },
-        halign: 'center',
-        valign: 'middle',
-      },
-      columnStyles: {
-        0: { cellWidth: 28 },
-        1: { cellWidth: 30 },
-        2: { cellWidth: 28 },
-        3: { cellWidth: 'auto', halign: 'right' },
-        4: { cellWidth: 28, halign: 'right' },
-        5: { cellWidth: 28, halign: 'right' },
-      }, didDrawCell: (data) => {
-        if (
-          data.section === 'body' &&
-          data.row.index === chunk.length - 1 &&
-          data.column.index === data.table.columns.length - 1
-        ) {
-          const y = data.cell.y + data.cell.height;
-          doc.setDrawColor(0, 0, 0);
-          doc.setLineWidth(0.2);
-          doc.line(margin, y, pageWidth - margin, y);
-        }
-      },
-      margin: margin,
+    let currentX = margin;
+    doc.line(currentX, tableStartY, currentX, tableMaxBottomY);
+    colWidths.forEach((w) => {
+      currentX += w;
+      doc.line(currentX, tableStartY, currentX, tableMaxBottomY);
     });
 
-    // --- Summary + Footer + Payment Box (runs on every page) ---
-    const table = (doc as any).lastAutoTable;
-    currentY = Math.max(table.finalY + 8, pageHeight - margin - totalFooterHeight);
-    currentY += 10;
+    doc.setLineWidth(0.2);
+    doc.line(margin, tableMaxBottomY, pageWidth - margin, tableMaxBottomY);
+  };
 
-    currentY = Math.max((doc as any).lastAutoTable.finalY + 6, pageHeight - margin - totalFooterHeight);
-    currentY += 5
-    // --- Total Outstanding ---
+  const drawFixedFooter = () => {
+    doc.setTextColor(0, 0, 0);
+    doc.setDrawColor(0, 0, 0);
+
+    // 1. Payment Analysis Header (Left) & Total Outstanding (Right) right below main table
     const summaryX = pageWidth - margin;
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    doc.text('Total Outstanding:', summaryX - 55, currentY);
-    doc.text(formatAmount(totalOutstanding), summaryX, currentY, { align: 'right' });
-    currentY += 6;
+    doc.text('PAYMENT ANALYSIS', margin, agingTitleY);
+    doc.text('Total Outstanding:', summaryX - 55, agingTitleY);
+    doc.text(formatAmount(totalOutstanding), summaryX, agingTitleY, { align: 'right' });
 
-    // --- Aging Calculations ---
-    let currentBucket = 0;
-    let overdue30 = 0;
-    let overdue60 = 0;
-    let overdue90 = 0;
+    // 2. Payment Analysis Table
+    const agingColWidth = (pageWidth - (margin * 2)) / 4;
+    const agingHeaders = Array.of('Current', '30 Days Overdue', '60 Days Overdue', '90+ Days Overdue');
+    const agingValues = Array.of(
+      formatAmount(totalOutstanding),
+      formatAmount(overdue30),
+      formatAmount(overdue60),
+      formatAmount(overdue90)
+    );
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const headerRowHeight = 4.5;
+    const bodyRowHeight = 5.5;
 
-    uniqueInvoiceIds.forEach(id => {
-      const inv = invoiceMap[id];
-      if (!inv) return;
+    doc.setFillColor(243, 244, 246);
+    doc.setLineWidth(0.1);
+    doc.rect(margin, agingTableY, pageWidth - (margin * 2), headerRowHeight, 'FD');
+    doc.rect(margin, agingTableY + headerRowHeight, pageWidth - (margin * 2), bodyRowHeight, 'S');
 
-      const outstanding = (inv?.amount ?? 0);
-      console.log("Oustanding: ", outstanding);
-      if (outstanding <= 0) return;
-
-      const dueDate = new Date(inv.dueDate);
-      dueDate.setHours(0, 0, 0, 0);
-
-      const diffTime = today.getTime() - dueDate.getTime();
-      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-      if (diffDays < 30) {
-        currentBucket += outstanding;
-      } else if (diffDays >= 30 && diffDays < 60) {
-        overdue30 += outstanding;
-      } else if (diffDays >= 60 && diffDays < 90) {
-        overdue60 += outstanding;
-      } else {
-        overdue90 += outstanding;
+    for (let c = 0; c < 4; c++) {
+      const colLeftX = margin + (c * agingColWidth);
+      const colRightX = colLeftX + agingColWidth - 2;
+      if (c > 0) {
+        doc.line(colLeftX, agingTableY, colLeftX, agingTableY + headerRowHeight + bodyRowHeight);
       }
-    });
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.text(String(agingHeaders.at(c) ?? ''), colRightX, agingTableY + 3.3, { align: 'right' });
 
-    // --- Aging Table Header Title ---
+      doc.setFont('helvetica', 'normal');
+      doc.text(String(agingValues.at(c) ?? ''), colRightX, agingTableY + headerRowHeight + 3.8, { align: 'right' });
+    }
+
+    // 3. Received and Approved by + Signature (just above Banking Details)
+    doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
-    doc.setFont('helvetica', 'bold');
-    doc.text('PAYMENT ANALYSIS', margin, currentY);
-    currentY += 2;
+    doc.text('Received and Approved by: __________________________________________________________', margin, receivedByY);
+    doc.text('Signature: ________________________________________________________________________', margin, signatureY);
 
-    // --- Aging Table Generation ---
-    autoTable(doc, {
-      startY: currentY,
-      head: [['Current', '30 Days Overdue', '60 Days Overdue', '90+ Days Overdue']],
-      body: [[
-        //formatAmount(currentBucket),
-        formatAmount(totalOutstanding),
-        formatAmount(overdue30),
-        formatAmount(overdue60),
-        formatAmount(overdue90)
-      ]],
-      theme: 'grid',
-      styles: {
-        font: 'helvetica',
-        fontSize: 7.5,
-        cellPadding: 2,
-        lineColor: [0, 0, 0],
-        lineWidth: 0.1,
-        textColor: [0, 0, 0],
-        halign: 'right'
-      },
-      headStyles: {
-        fillColor: [243, 244, 246],
-        textColor: [0, 0, 0],
-        fontStyle: 'bold',
-        lineWidth: 0.1,
-        halign: 'right'
-      },
-      columnStyles: {
-        0: { cellWidth: 'auto' },
-        1: { cellWidth: 'auto' },
-        2: { cellWidth: 'auto' },
-        3: { cellWidth: 'auto' }
-      },
-      margin: margin,
-    });
-
-    currentY = (doc as any).lastAutoTable.finalY + 4;
-
-    // Approval + Terms
-    currentY = Math.max(currentY + 5, pageHeight - margin - footerBlockHeight);
-    currentY += -0;
-    doc.setFontSize(8);
-    doc.text('Received and Approved by: __________________________________________________________', margin, currentY);
-    currentY += 8;
-    doc.text('Signature: ________________________________________________________________________', margin, currentY);
-
-    // Payment Details Box
+    // 4. Banking Details Box pinned at bottom of page
     const paymentBoxX = margin;
-    const paymentBoxY = pageHeight - 29;
     const paymentBoxWidth = pageWidth - (margin * 2);
-    const paymentBoxHeight = 25;
 
+    doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(0.2);
     doc.rect(paymentBoxX, paymentBoxY, paymentBoxWidth, paymentBoxHeight);
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
     doc.setTextColor(255, 0, 0);
-    doc.text('OUR BANKING DETAILS ARE AS FOLLOWS:', paymentBoxX + 4, paymentBoxY + 5);
+    doc.text('OUR BANKING DETAILS ARE AS FOLLOWS:', paymentBoxX + 4, paymentBoxY + 4);
 
     doc.setTextColor(0, 0, 0);
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
+    doc.setFontSize(6.8);
 
-    let paymentTextY = paymentBoxY + 8;
-    paymentDetails.forEach(line => {
+    let paymentTextY = paymentBoxY + 7;
+    paymentDetails.forEach((line: string) => {
       doc.text(line, paymentBoxX + 4, paymentTextY);
-      paymentTextY += 3;
+      paymentTextY += 2.4;
     });
+  };
 
-    currentY = (doc as any).lastAutoTable.finalY + 10;
+  autoTable(doc, {
+    startY: tableStartY,
+    margin: {
+      top: tableStartY,
+      bottom: bottomMargin,
+      left: margin,
+      right: margin,
+    },
+    head: Array.of(Array.of('Document No', 'Due Date', 'Document Type', 'PO Number', 'Amount', 'Outstanding')),
+    body: allRows,
+    rowPageBreak: 'avoid',
+    theme: 'plain',
+    styles: {
+      font: 'helvetica',
+      fontSize: 7.5,
+      cellPadding: 2,
+      textColor: '#000000',
+      lineColor: '#000000',
+      lineWidth: { top: 0, right: 0, bottom: 0, left: 0 },
+    },
+    headStyles: {
+      fillColor: '#F3F4F6',
+      textColor: '#000000',
+      fontStyle: 'bold',
+      lineWidth: { top: 0.2, right: 0.2, bottom: 0.2, left: 0.2 },
+      halign: 'center',
+      valign: 'middle',
+    },
+    columnStyles: {
+      0: { cellWidth: 28 },
+      1: { cellWidth: 30 },
+      2: { cellWidth: 28 },
+      3: { cellWidth: 'auto', halign: 'right' },
+      4: { cellWidth: 28, halign: 'right' },
+      5: { cellWidth: 28, halign: 'right' },
+    },
+    didDrawPage: () => {
+      drawFullHeightTableBorders();
+      drawPageHeader();
+      drawFixedFooter();
+    },
+  });
 
-    // Add new page if more chunks remain
-    if (i + MAX_ROWS_PER_PAGE < allRows.length) {
-      doc.addPage();
-    }
+  // Draw right-aligned 'x of y' on every page after total page count is known
+  const totalPages = doc.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`${i} of ${totalPages}`, pageWidth - margin - 2, pageRowY, { align: 'right' });
   }
 
   if (save) {
-    // Trigger a download
     doc.save(`Statement_${statement.statementNumber}.pdf`);
-    return ""; // nothing needed for preview in this case
+    return '';
   }
 
   if (returnBlob) {
-    // For download
-    const blob = doc.output("blob");
-    return blob;
+    return doc.output('blob');
   } else {
-    // For react-pdf viewing
-    const arrayBuffer = doc.output("arraybuffer");
-    return arrayBuffer;
+    return doc.output('arraybuffer');
   }
 };
